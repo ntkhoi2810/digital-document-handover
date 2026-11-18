@@ -14,6 +14,7 @@
     /REJECTED|Đã hủy/.test(value) ? 'bad' :
     /PENDING|PARTIAL|Yêu cầu bổ sung|Chờ sinh viên đến nhận/.test(value) ? 'act' :
     /Đang|Chờ phê duyệt/.test(value) ? 'prog' : '';
+  const rowArrowSvg = '<svg class="row-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>';
 
   function api(name, ...args) {
     return new Promise((resolve, reject) => {
@@ -54,6 +55,13 @@
   function openModal(html) { $('#modal-content').innerHTML = html; $('#modal').classList.remove('hidden'); }
   function closeModal() { $('#modal').classList.add('hidden'); $('#modal-content').innerHTML = ''; }
 
+  function updateAvatar(name) {
+    const el = $('#user-avatar');
+    if (!el) return;
+    const token = String(name || 'T').trim().split(/\s+/).at(-1) || 'T';
+    el.textContent = token.charAt(0).toUpperCase();
+  }
+
   async function initialize() {
     bindGlobalEvents();
     try {
@@ -76,6 +84,7 @@
     $('#user-email').textContent = identity.email;
     const name = identity.role === 'ADMIN' ? (identity.name || identity.email.split('@')[0]) : (profile?.fullName || 'Sinh viên TDTU');
     $('#user-name').textContent = name;
+    updateAvatar(name);
     $('#student-nav').classList.toggle('hidden', identity.role !== 'STUDENT');
     $('#admin-nav').classList.toggle('hidden', identity.role !== 'ADMIN');
     if (identity.role === 'STUDENT') {
@@ -92,6 +101,9 @@
     document.addEventListener('click', event => {
       const nav = event.target.closest('[data-view]'); if (nav) navigate(nav.dataset.view);
       const go = event.target.closest('[data-go]'); if (go) navigate(go.dataset.go);
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !$('#modal').classList.contains('hidden')) closeModal();
     });
     $('#mobile-menu').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshCurrent(); });
@@ -164,6 +176,11 @@
     $('#admin-kpis').innerHTML = kpis([
       ['Chờ xác nhận', data.pendingTransactions], ['Đang lưu giữ', data.storedDocuments], ['Đang xử lý', data.processing], ['Cần bổ sung', data.supplement]
     ]);
+    const pendingBadge = $('#pending-badge');
+    if (pendingBadge) {
+      pendingBadge.textContent = data.pendingTransactions || 0;
+      pendingBadge.classList.toggle('hidden', !data.pendingTransactions);
+    }
   }
   const kpis = items => items.map(item => `<div class="kpi"><strong>${Number(item[1] || 0).toLocaleString('vi-VN')}</strong><span>${escapeHtml(item[0])}</span></div>`).join('');
 
@@ -179,7 +196,9 @@
     event.preventDefault(); const button = event.submitter; setBusy(button, true);
     try {
       state.boot.profile = await api('saveStudentProfile', {fullName:$('#profile-full-name').value, className:$('#profile-class').value});
-      $('#user-name').textContent = state.boot.profile.fullName; $('#profile-required').classList.add('hidden');
+      $('#user-name').textContent = state.boot.profile.fullName;
+      updateAvatar(state.boot.profile.fullName);
+      $('#profile-required').classList.add('hidden');
       toast('Đã lưu.');
     } catch (error) { showAlert(error.message); } finally { setBusy(button, false); }
   }
@@ -190,8 +209,8 @@
     const fullName = state.boot.profile?.fullName?.trim() || '';
     const firstName = fullName ? fullName.split(/\s+/).at(-1) : 'bạn';
     $('#page-title').textContent = `Chào ${firstName}`;
-    $('#student-home-note').innerHTML = dashboard.supplement > 0 ? `Bạn có ${Number(dashboard.supplement).toLocaleString('vi-VN')} hồ sơ cần bổ sung. <button class="link-button" data-go="student-documents">Xem hồ sơ</button>` : '';
-    $('#recent-documents').innerHTML = documents.slice(0,5).map(doc => `<button class="list-item" onclick="window.app.openDocument('${doc.documentId}')"><div><strong>${escapeHtml(doc.typeName)}</strong><small><span class="list-code">${escapeHtml(doc.code)}</span> · ${fmtDate(doc.updatedAt)}</small></div><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span></button>`).join('') || '<div class="empty">Chưa có hồ sơ.</div>';
+    $('#student-home-note').innerHTML = dashboard.supplement > 0 ? `<span>Bạn có ${Number(dashboard.supplement).toLocaleString('vi-VN')} hồ sơ cần bổ sung.</span><button class="link-button" data-go="student-documents">Xem hồ sơ</button>` : '';
+    $('#recent-documents').innerHTML = documents.slice(0,5).map(doc => `<button class="list-item" onclick="window.app.openDocument('${doc.documentId}')"><div><strong>${escapeHtml(doc.typeName)}</strong><small><span class="list-code">${escapeHtml(doc.code)}</span><span>Cập nhật ${fmtDate(doc.updatedAt)}</span></small></div><div class="list-item-end"><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span>${rowArrowSvg}</div></button>`).join('') || '<div class="empty">Chưa có hồ sơ.</div>';
   }
 
   async function renderTransactionOptions() {
@@ -202,7 +221,7 @@
     if (type === 'SUBMIT') options = state.boot.types.filter(item => ['SUBMIT','BOTH'].includes(item.handoverMode)).map(item => ({id:item.typeId, name:item.name, description:item.description, field:'typeId'}));
     else if (type === 'RECEIVE') options = state.boot.types.filter(item => ['RECEIVE','BOTH'].includes(item.handoverMode)).map(item => ({id:item.typeId, name:item.name, description:item.description, field:'typeId'}));
     else options = state.documents.filter(doc => !['Đã bàn giao','Đã hủy'].includes(doc.status)).map(doc => ({id:doc.documentId, name:doc.typeName, description:`${doc.code} · ${doc.status}`, field:'documentId'}));
-    $('#transaction-options').innerHTML = options.map(item => `<label class="check-option"><input type="checkbox" value="${escapeHtml(item.id)}" data-field="${item.field}"><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description || '')}</small></span></label>`).join('') || '<div class="empty">Chưa có giấy tờ nào để chọn.</div>';
+    $('#transaction-options').innerHTML = options.map(item => `<label class="check-option"><input type="checkbox" value="${escapeHtml(item.id)}" data-field="${item.field}"><span><strong>${escapeHtml(item.name)}</strong>${item.description?`<small>${escapeHtml(item.description)}</small>`:''}</span></label>`).join('') || '<div class="empty">Chưa có giấy tờ nào để chọn.</div>';
     updateTransactionSelection();
   }
 
@@ -233,7 +252,7 @@
     $('#my-documents').innerHTML = docs.map(doc => documentCard(doc)).join('') || '<div class="empty">Không có hồ sơ nào khớp.</div>';
   }
   function documentCard(doc) {
-    return `<button type="button" class="document-card" onclick="window.app.openDocument('${doc.documentId}')"><div class="document-head"><div><h3>${escapeHtml(doc.typeName)}</h3><div class="document-meta"><span>${escapeHtml(doc.code)}</span><span>Ghi nhận ${fmtDay(doc.submittedAt)}</span><span>Cập nhật ${fmtDate(doc.updatedAt)}</span></div></div><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span></div>${doc.publicNote?`<p>${escapeHtml(doc.publicNote)}</p>`:''}</button>`;
+    return `<button type="button" class="document-card" onclick="window.app.openDocument('${doc.documentId}')"><div class="document-head"><div><h3>${escapeHtml(doc.typeName)}</h3><div class="document-meta"><span class="document-code">${escapeHtml(doc.code)}</span><span>Ghi nhận ${fmtDay(doc.submittedAt)}</span><span>Cập nhật ${fmtDate(doc.updatedAt)}</span></div></div><div class="list-item-end"><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span>${rowArrowSvg}</div></div>${doc.publicNote?`<p>${escapeHtml(doc.publicNote)}</p>`:''}</button>`;
   }
 
   async function loadMyTransactions() {
@@ -242,13 +261,16 @@
   }
 
   function transactionCard(tx, admin = false) {
-    const items = tx.items.map(item => `<div class="transaction-item"><div><strong>${escapeHtml(item.typeName)}</strong><small>${escapeHtml(item.adminNote || '')}</small></div><span class="status ${statusClass(item.status)}">${escapeHtml(statusLabel(item.status))}</span></div>`).join('');
+    const items = tx.items.map(item => `<div class="transaction-item"><div><strong>${escapeHtml(item.typeName)}</strong>${item.adminNote?`<small>${escapeHtml(item.adminNote)}</small>`:''}</div><span class="status ${statusClass(item.status)}">${escapeHtml(statusLabel(item.status))}</span></div>`).join('');
     return `<article class="transaction-card"><div class="transaction-head"><div><h3>${escapeHtml(typeLabel(tx.type))}</h3><div class="transaction-meta">${admin?`<span>${escapeHtml(tx.studentName)} · ${escapeHtml(tx.studentId)}</span>`:''}<span class="transaction-code">${escapeHtml(tx.code)}</span><span>${fmtDate(tx.createdAt)}</span><span>${tx.items.length} mục</span></div></div><span class="status ${statusClass(tx.status)}">${escapeHtml(statusLabel(tx.status))}</span></div>${tx.note?`<p>${escapeHtml(tx.note)}</p>`:''}<div class="transaction-items">${items}</div></article>`;
   }
 
   async function loadNotifications() {
     state.notifications = await api('listMyNotifications');
-    $('#my-notifications').innerHTML = state.notifications.map(item => `<article class="notification-card ${item.read?'read':'unread'}"><div class="document-head"><div><h3 class="notification-title">${escapeHtml(item.title)}</h3><small>${fmtDate(item.createdAt)}</small></div></div><p>${escapeHtml(item.message)}</p><div class="notification-actions">${item.documentId?`<button class="link-button" onclick="window.app.openDocument('${item.documentId}')">Xem hồ sơ</button>`:''}${item.read?'':`<button class="link-button" onclick="window.app.readNotification('${item.notificationId}')">Đã đọc</button>`}</div></article>`).join('') || '<div class="empty">Chưa có thông báo nào.</div>';
+    const unread = state.notifications.filter(item => !item.read).length;
+    $('#notice-badge').textContent = unread;
+    $('#notice-badge').classList.toggle('hidden', !unread);
+    $('#my-notifications').innerHTML = state.notifications.map(item => `<article class="notification-card ${item.read?'read':'unread'}"><div class="document-head"><div><h3 class="notification-title">${escapeHtml(item.title)}</h3><div class="document-meta"><span>${fmtDate(item.createdAt)}</span></div></div></div><p>${escapeHtml(item.message)}</p><div class="notification-actions">${item.documentId?`<button class="link-button" onclick="window.app.openDocument('${item.documentId}')">Xem hồ sơ</button>`:''}${item.read?'':`<button class="link-button" onclick="window.app.readNotification('${item.notificationId}')">Đã đọc</button>`}</div></article>`).join('') || '<div class="empty">Chưa có thông báo nào.</div>';
   }
 
   async function openDocument(documentId) {
@@ -272,7 +294,7 @@
   async function loadAdminHome() {
     const [boot, pending] = await Promise.all([api('getBootstrap'), api('listPendingTransactions')]);
     state.boot = boot; state.pending = pending; renderAdminKpis(boot.dashboard); renderQr();
-    $('#admin-recent-pending').innerHTML = pending.slice(0,5).map(tx => `<button class="list-item" data-go="admin-pending"><div><strong>${escapeHtml(tx.studentName)} · ${escapeHtml(typeLabel(tx.type))}</strong><small><span class="list-code">${escapeHtml(tx.code)}</span> · ${fmtDate(tx.createdAt)}</small></div><span>${tx.items.filter(x=>x.status==='PENDING').length} mục</span></button>`).join('') || '<div class="empty">Không có yêu cầu nào đang chờ.</div>';
+    $('#admin-recent-pending').innerHTML = pending.slice(0,5).map(tx => `<button class="list-item" data-go="admin-pending"><div><strong>${escapeHtml(tx.studentName)} · ${escapeHtml(typeLabel(tx.type))}</strong><small><span class="list-code">${escapeHtml(tx.code)}</span><span>${fmtDate(tx.createdAt)}</span></small></div><div class="list-item-end"><span class="pill-count">${tx.items.filter(x=>x.status==='PENDING').length} mục</span>${rowArrowSvg}</div></button>`).join('') || '<div class="empty">Không có yêu cầu nào đang chờ.</div>';
   }
 
   function renderQr() {
@@ -280,12 +302,17 @@
     const url = state.boot.qrUrl || location.href;
     $('#qr-url').value = url;
     const target = $('#qr-code'); target.innerHTML = '';
-    if (window.QRCode) QRCode.toCanvas(url, {width:180, margin:1, color:{dark:'#171717', light:'#ffffff'}}, (err, canvas) => { if (!err) target.appendChild(canvas); });
+    if (window.QRCode) QRCode.toCanvas(url, {width:180, margin:1, color:{dark:'#111827', light:'#ffffff'}}, (err, canvas) => { if (!err) target.appendChild(canvas); });
     else target.textContent = 'Không tạo được mã QR.';
   }
 
   async function loadPending() {
     state.pending = await api('listPendingTransactions');
+    const pendingBadge = $('#pending-badge');
+    if (pendingBadge) {
+      pendingBadge.textContent = state.pending.length;
+      pendingBadge.classList.toggle('hidden', !state.pending.length);
+    }
     renderPendingTransactions();
   }
 
@@ -302,7 +329,7 @@
       return `<div class="transaction-item"><div class="review-item-main">${item.status==='PENDING'?`<input class="pending-item-select" type="checkbox" data-transaction-id="${escapeHtml(tx.transactionId)}" value="${escapeHtml(item.itemId)}" aria-label="Chọn ${escapeHtml(item.typeName)}" onchange="window.app.updatePendingSelection('${escapeHtml(tx.transactionId)}')">`:''}<div><strong>${escapeHtml(item.typeName)}</strong>${candidateSelect}${item.adminNote?`<small>${escapeHtml(item.adminNote)}</small>`:''}</div></div>${item.status==='PENDING'?`<button class="link-button danger" onclick="window.app.reviewItem('${item.itemId}','REJECT')">Từ chối</button>`:`<span class="status ${statusClass(item.status)}">${escapeHtml(statusLabel(item.status))}</span>`}</div>`;
     }).join('');
     const pendingCount = tx.items.filter(item => item.status === 'PENDING').length;
-    return `<article class="transaction-card"><div class="transaction-head"><div><h3>${escapeHtml(tx.studentName)}</h3><div class="transaction-meta"><span>${escapeHtml(tx.studentId)} · ${escapeHtml(tx.className)}</span><span>${fmtDate(tx.createdAt)}</span><span>${escapeHtml(typeLabel(tx.type))} · <span class="transaction-code">${escapeHtml(tx.code)}</span></span></div></div><span class="status ${statusClass(tx.status)}">${escapeHtml(statusLabel(tx.status))}</span></div>${tx.note?`<p>${escapeHtml(tx.note)}</p>`:''}${pendingCount?`<div class="select-all-row"><span>${pendingCount} giấy tờ</span><button class="link-button" onclick="window.app.selectAllPending('${escapeHtml(tx.transactionId)}')">Chọn tất cả</button></div>`:''}<div class="transaction-items">${items}</div>${pendingCount?`<details><summary>Ghi chú và email</summary><label>Ghi chú</label><textarea id="review-note-${escapeHtml(tx.transactionId)}" rows="2"></textarea><label class="check-option"><input id="review-email-${escapeHtml(tx.transactionId)}" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label></details><div class="form-actions"><button id="approve-${escapeHtml(tx.transactionId)}" class="button primary" onclick="window.app.approveTransaction('${escapeHtml(tx.transactionId)}',this)" disabled>Xác nhận · 0</button></div>`:''}</article>`;
+    return `<article class="transaction-card"><div class="transaction-head"><div><h3>${escapeHtml(tx.studentName)}</h3><div class="transaction-meta"><span>${escapeHtml(tx.studentId)} · ${escapeHtml(tx.className)}</span><span>${fmtDate(tx.createdAt)}</span><span>${escapeHtml(typeLabel(tx.type))}</span><span class="transaction-code">${escapeHtml(tx.code)}</span></div></div><span class="status ${statusClass(tx.status)}">${escapeHtml(statusLabel(tx.status))}</span></div>${tx.note?`<p>${escapeHtml(tx.note)}</p>`:''}${pendingCount?`<div class="select-all-row"><span>${pendingCount} giấy tờ chờ đối chiếu</span><button class="link-button" onclick="window.app.selectAllPending('${escapeHtml(tx.transactionId)}')">Chọn tất cả</button></div>`:''}<div class="transaction-items">${items}</div>${pendingCount?`<details><summary>Ghi chú và email</summary><label>Ghi chú</label><textarea id="review-note-${escapeHtml(tx.transactionId)}" rows="2"></textarea><label class="check-option"><input id="review-email-${escapeHtml(tx.transactionId)}" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label></details><div class="form-actions"><button id="approve-${escapeHtml(tx.transactionId)}" class="button primary" onclick="window.app.approveTransaction('${escapeHtml(tx.transactionId)}',this)" disabled>Xác nhận · 0</button></div>`:''}</article>`;
   }
 
   function updatePendingSelection(transactionId) {
@@ -348,7 +375,7 @@
 
   async function loadAdminDocuments() {
     state.adminDocuments = await api('listDocuments',{query:$('#admin-document-search').value,status:$('#admin-document-status').value});
-    $('#admin-documents-table').innerHTML = table(['','Mã hồ sơ','Sinh viên','Loại hồ sơ','Trạng thái','Cập nhật',''], state.adminDocuments.map(doc => [`<input class="document-select" type="checkbox" value="${escapeHtml(doc.documentId)}">`,`<span class="code">${escapeHtml(doc.code)}</span>`,`${escapeHtml(doc.studentName)}<small>${escapeHtml(doc.studentId)} · ${escapeHtml(doc.className)}</small>`,escapeHtml(doc.typeName),`<span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span>`,fmtDate(doc.updatedAt),`<button class="link-button" onclick="window.app.editDocument('${doc.documentId}')">Cập nhật</button>`]));
+    $('#admin-documents-table').innerHTML = table(['','Mã hồ sơ','Sinh viên','Loại hồ sơ','Trạng thái','Cập nhật',''], state.adminDocuments.map(doc => [`<input class="document-select" type="checkbox" value="${escapeHtml(doc.documentId)}">`,`<span class="code">${escapeHtml(doc.code)}</span>`,`<strong>${escapeHtml(doc.studentName)}</strong><small>${escapeHtml(doc.studentId)} · ${escapeHtml(doc.className)}</small>`,escapeHtml(doc.typeName),`<span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span>`,fmtDate(doc.updatedAt),`<button class="link-button" onclick="window.app.editDocument('${doc.documentId}')">Cập nhật</button>`]));
     updateDocumentBulkActions();
   }
 
@@ -430,9 +457,9 @@
 
   async function saveManualService(event) { event.preventDefault();const button=event.submitter;setBusy(button,true);try{const value=$('#manual-student').value.trim();const student=value.includes('@')?{studentEmail:value}:{studentId:value};await api('addManualServiceSession',{...student,startedAt:$('#manual-start').value,result:$('#manual-result').value,endedAt:$('#manual-end').value,topic:$('#manual-topic').value});event.target.reset();toast('Đã lưu buổi tiếp sinh viên.');await loadServiceHistory();}catch(error){showAlert(error.message);}finally{setBusy(button,false);} }
   async function loadServiceHistory(){const sessions=await api('listServiceSessions',{query:$('#service-search').value});renderServiceHistory(sessions);}
-  function renderServiceHistory(sessions){$('#service-history').innerHTML=table(['Sinh viên','Thời gian','Thời lượng','Nội dung','Kết quả','Cán bộ'],sessions.map(row=>[`${escapeHtml(row.studentName)}<small>${escapeHtml(row.studentId)} · ${escapeHtml(row.className)}</small>`,fmtDate(row.startedAt),`${row.durationMinutes} phút`,escapeHtml(row.topic),escapeHtml(row.result),escapeHtml(row.staffEmail)]));}
+  function renderServiceHistory(sessions){$('#service-history').innerHTML=table(['Sinh viên','Thời gian','Thời lượng','Nội dung','Kết quả','Cán bộ'],sessions.map(row=>[`<strong>${escapeHtml(row.studentName)}</strong><small>${escapeHtml(row.studentId)} · ${escapeHtml(row.className)}</small>`,fmtDate(row.startedAt),`${row.durationMinutes} phút`,escapeHtml(row.topic),escapeHtml(row.result),escapeHtml(row.staffEmail)]));}
 
-  async function loadStudents(){const rows=await api('listStudents',$('#student-search').value);$('#students-table').innerHTML=table(['MSSV','Họ tên','Lớp','Email','Cập nhật'],rows.map(row=>[escapeHtml(row.studentId),escapeHtml(row.fullName),escapeHtml(row.className),escapeHtml(row.email),fmtDate(row.updatedAt)]));}
+  async function loadStudents(){const rows=await api('listStudents',$('#student-search').value);$('#students-table').innerHTML=table(['MSSV','Họ tên','Lớp','Email','Cập nhật'],rows.map(row=>[`<span class="code">${escapeHtml(row.studentId)}</span>`,escapeHtml(row.fullName),escapeHtml(row.className),escapeHtml(row.email),fmtDate(row.updatedAt)]));}
 
   async function loadReport(){const report=await api('getReport',{from:$('#report-from').value,to:$('#report-to').value});$('#report-kpis').innerHTML=kpis([['Yêu cầu đã gửi',report.requestCount],['Còn chờ xác nhận',report.pendingRequestCount],['Giấy tờ đã nộp',report.submittedCount],['Giấy tờ đã nhận',report.receivedCount],['Giấy tờ xác nhận',report.approvedItemCount],['Đang xử lý',report.processingDocuments],['Cần bổ sung',report.supplementDocuments],['Đã hoàn thành',report.completedDocuments]]);}
   async function exportReport(){try{const csv=await api('exportReportCsv',{from:$('#report-from').value,to:$('#report-to').value});const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`bao-cao-ho-so-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);}catch(error){showAlert(error.message);}}
