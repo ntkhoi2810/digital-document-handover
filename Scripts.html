@@ -93,7 +93,7 @@
       $('#notice-badge').classList.toggle('hidden', !dashboard.unreadNotifications);
       $('#profile-required').classList.toggle('hidden', Boolean(profile));
     } else {
-      renderAdminKpis(dashboard); renderQr();
+      renderAdminKpis(dashboard);
     }
   }
 
@@ -129,7 +129,6 @@
     $('#export-report').addEventListener('click', exportReport);
     $('#settings-form').addEventListener('submit', saveSettings);
     $('#health-check').addEventListener('click', runHealthCheck);
-    $('#print-qr').addEventListener('click', () => window.print());
     $('#pending-search').addEventListener('input', renderPendingTransactions);
   }
 
@@ -293,17 +292,8 @@
 
   async function loadAdminHome() {
     const [boot, pending] = await Promise.all([api('getBootstrap'), api('listPendingTransactions')]);
-    state.boot = boot; state.pending = pending; renderAdminKpis(boot.dashboard); renderQr();
+    state.boot = boot; state.pending = pending; renderAdminKpis(boot.dashboard);
     $('#admin-recent-pending').innerHTML = pending.slice(0,5).map(tx => `<button class="list-item" data-go="admin-pending"><div><strong>${escapeHtml(tx.studentName)} · ${escapeHtml(typeLabel(tx.type))}</strong><small><span class="list-code">${escapeHtml(tx.code)}</span><span>${fmtDate(tx.createdAt)}</span></small></div><div class="list-item-end"><span class="pill-count">${tx.items.filter(x=>x.status==='PENDING').length} mục</span>${rowArrowSvg}</div></button>`).join('') || '<div class="empty">Không có yêu cầu nào đang chờ.</div>';
-  }
-
-  function renderQr() {
-    if (!state.boot || state.boot.identity.role !== 'ADMIN') return;
-    const url = state.boot.qrUrl || location.href;
-    $('#qr-url').value = url;
-    const target = $('#qr-code'); target.innerHTML = '';
-    if (window.QRCode) QRCode.toCanvas(url, {width:180, margin:1, color:{dark:'#111827', light:'#ffffff'}}, (err, canvas) => { if (!err) target.appendChild(canvas); });
-    else target.textContent = 'Không tạo được mã QR.';
   }
 
   async function loadPending() {

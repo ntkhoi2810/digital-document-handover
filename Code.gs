@@ -64,8 +64,7 @@ function getBootstrap() {
     identity: identity,
     profile: null,
     types: types.map(publicType_),
-    serverTime: iso_(new Date()),
-    qrUrl: ScriptApp.getService().getUrl() + '?view=transaction'
+    serverTime: iso_(new Date())
   };
 
   if (identity.role === 'STUDENT') {
