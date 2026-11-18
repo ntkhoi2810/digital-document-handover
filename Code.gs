@@ -39,6 +39,25 @@ const HEADERS = Object.freeze({
   AuditLog: ['audit_id', 'action', 'entity_type', 'entity_id', 'actor_email', 'detail_json', 'created_at']
 });
 
+const CACHE_TTL_SECONDS = 300;
+const INIT_CACHE_TTL_SECONDS = 21600;
+const INIT_VERSION_KEY = 'SCHEMA_INIT_V2';
+const CACHED_SHEETS = Object.freeze({
+  Settings: true,
+  Admins: true,
+  DocumentTypes: true,
+  WorkflowVersions: true,
+  WorkflowSteps: true
+});
+const runtimeCache_ = {
+  initState: '',
+  spreadsheetId: '',
+  spreadsheet: null,
+  sheets: {},
+  tables: {},
+  identity: null
+};
+
 function doGet(e) {
   const template = HtmlService.createTemplateFromFile('Index');
   template.initialView = sanitizeText_((e && e.parameter && e.parameter.view) || '', 40);
@@ -71,26 +90,34 @@ function getBootstrap() {
 
   if (identity.role === 'STUDENT') {
     const profile = findBy_(APP.SHEETS.STUDENTS, 'email', identity.email);
+    const studentDocs = getStudentDocumentsRaw_(identity.email);
     response.profile = profile ? publicStudent_(profile) : null;
-    response.dashboard = getStudentDashboard_(identity.email);
+    response.dashboard = getStudentDashboard_(identity.email, studentDocs);
+    response.documents = studentDocs.map(publicDocument_);
   } else {
     response.profile = { email: identity.email, fullName: identity.name || '' };
     response.dashboard = getAdminDashboard_();
+    response.pendingTransactions = listPendingTransactions_();
   }
   return response;
 }
 
 function getIdentity_() {
+  if (runtimeCache_.identity) return runtimeCache_.identity;
   const email = normalizeEmail_(Session.getActiveUser().getEmail());
   if (!email) {
     throw new Error('AUTH_REQUIRED|Chưa nhận ra tài khoản Google. Đăng xuất tài khoản cá nhân rồi đăng nhập bằng tài khoản TDTU.');
   }
   const admin = getAdminRecord_(email);
-  if (admin) return { email: email, role: 'ADMIN', adminRole: admin.role || 'ADMIN', name: admin.name || '' };
+  if (admin) {
+    runtimeCache_.identity = { email: email, role: 'ADMIN', adminRole: admin.role || 'ADMIN', name: admin.name || '' };
+    return runtimeCache_.identity;
+  }
   if (!isStudentEmail_(email)) {
     throw new Error('ACCESS_DENIED|Chỉ sinh viên (@student.tdtu.edu.vn) và quản trị viên được cấp quyền mới vào được.');
   }
-  return { email: email, role: 'STUDENT', studentId: extractStudentId_(email) };
+  runtimeCache_.identity = { email: email, role: 'STUDENT', studentId: extractStudentId_(email) };
+  return runtimeCache_.identity;
 }
 
 function assertStudent_() {
@@ -152,15 +179,21 @@ function getMyDashboard() {
   return getStudentDashboard_(identity.email);
 }
 
-function getStudentDashboard_(email) {
-  const documents = readTable_(APP.SHEETS.DOCUMENTS).filter(function(row) {
-    return normalizeEmail_(row.student_email) === normalizeEmail_(email) && toBoolean_(row.active);
-  });
+function getStudentDocumentsRaw_(email) {
+  const target = normalizeEmail_(email);
+  return readTable_(APP.SHEETS.DOCUMENTS).filter(function(row) {
+    return normalizeEmail_(row.student_email) === target && toBoolean_(row.active);
+  }).sort(sortDesc_('updated_at'));
+}
+
+function getStudentDashboard_(email, preloadedDocuments) {
+  const target = normalizeEmail_(email);
+  const documents = preloadedDocuments || getStudentDocumentsRaw_(target);
   const transactions = readTable_(APP.SHEETS.TRANSACTIONS).filter(function(row) {
-    return normalizeEmail_(row.student_email) === normalizeEmail_(email);
+    return normalizeEmail_(row.student_email) === target;
   });
   const notifications = readTable_(APP.SHEETS.NOTIFICATIONS).filter(function(row) {
-    return normalizeEmail_(row.student_email) === normalizeEmail_(email);
+    return normalizeEmail_(row.student_email) === target;
   });
   return {
     processing: documents.filter(function(row) { return ['Đã hoàn thành', 'Chờ sinh viên đến nhận', 'Đã bàn giao', 'Đã hủy'].indexOf(String(row.status)) === -1; }).length,
@@ -349,15 +382,19 @@ function listMyTransactions() {
   const txs = readTable_(APP.SHEETS.TRANSACTIONS).filter(function(row) {
     return normalizeEmail_(row.student_email) === identity.email;
   }).sort(sortDesc_('created_at'));
-  return txs.map(function(row) { return getTransactionResult_(row.transaction_id, identity.email, false); });
+  return buildTransactionResults_(txs, identity.email, false);
 }
 
 function listPendingTransactions() {
   assertAdmin_();
+  return listPendingTransactions_();
+}
+
+function listPendingTransactions_() {
   const txs = readTable_(APP.SHEETS.TRANSACTIONS).filter(function(row) {
     return ['PENDING', 'PARTIAL'].indexOf(String(row.status)) !== -1;
   }).sort(sortDesc_('created_at'));
-  return txs.map(function(row) { return getTransactionResult_(row.transaction_id, '', true); });
+  return buildTransactionResults_(txs, '', true);
 }
 
 function reviewTransactionItem(payload) {
@@ -887,23 +924,33 @@ function getReport(filters) {
     const date = dateValue_(value);
     return (!from || date >= from) && (!to || date <= to);
   }
-  const transactions = readTable_(APP.SHEETS.TRANSACTIONS).filter(function(row) { return within(row.created_at); });
+  const allTransactions = readTable_(APP.SHEETS.TRANSACTIONS);
+  const transactions = allTransactions.filter(function(row) { return within(row.created_at); });
   const allItems = readTable_(APP.SHEETS.ITEMS);
-  const items = allItems.filter(function(row) { return within(row.created_at); });
   const approvedItems = allItems.filter(function(row) { return String(row.status) === 'APPROVED' && within(row.reviewed_at); });
   const transactionById = {};
-  readTable_(APP.SHEETS.TRANSACTIONS).forEach(function(row) { transactionById[row.transaction_id] = row; });
-  const documents = readTable_(APP.SHEETS.DOCUMENTS).filter(function(row) { return within(row.submitted_at); });
+  allTransactions.forEach(function(row) { transactionById[row.transaction_id] = row; });
+  const allDocuments = readTable_(APP.SHEETS.DOCUMENTS);
+  const activeDocuments = allDocuments.filter(function(row) { return toBoolean_(row.active); });
+  const documents = allDocuments.filter(function(row) { return within(row.submitted_at); });
   const events = readTable_(APP.SHEETS.EVENTS);
+  const earliestCompletedByDoc = {};
+  events.forEach(function(event) {
+    if (['Đã hoàn thành', 'Đã bàn giao'].indexOf(String(event.status)) === -1) return;
+    const docId = event.document_id;
+    const ts = dateValue_(event.created_at).getTime();
+    if (!isNaN(ts) && (earliestCompletedByDoc[docId] == null || ts < earliestCompletedByDoc[docId])) {
+      earliestCompletedByDoc[docId] = ts;
+    }
+  });
   const services = readTable_(APP.SHEETS.SERVICES).filter(function(row) { return within(row.started_at) && String(row.status) === 'COMPLETED'; });
   const completedDocs = documents.filter(function(row) { return ['Đã hoàn thành', 'Đã bàn giao'].indexOf(String(row.status)) !== -1; });
   const processingDays = completedDocs.map(function(row) {
-    const completedEvent = events.filter(function(event) {
-      return event.document_id === row.document_id && ['Đã hoàn thành', 'Đã bàn giao'].indexOf(String(event.status)) !== -1;
-    }).sort(sortAsc_('created_at'))[0];
-    return completedEvent ? Math.max(0, (dateValue_(completedEvent.created_at) - dateValue_(row.submitted_at)) / 86400000) : 0;
+    const completedTs = earliestCompletedByDoc[row.document_id];
+    return completedTs != null ? Math.max(0, (completedTs - dateValue_(row.submitted_at).getTime()) / 86400000) : 0;
   });
   const totalMinutes = services.reduce(function(sum, row) { return sum + Number(row.duration_minutes || 0); }, 0);
+  const now = new Date();
   return {
     from: from ? iso_(from) : '', to: to ? iso_(to) : '',
     transactionCount: approvedItems.map(function(item) { return item.transaction_id; }).filter(function(id, index, array) { return array.indexOf(id) === index; }).length,
@@ -914,12 +961,12 @@ function getReport(filters) {
     submittedRequestCount: transactions.filter(function(row) { return row.transaction_type === 'SUBMIT'; }).length,
     receivedRequestCount: transactions.filter(function(row) { return row.transaction_type === 'RECEIVE'; }).length,
     pendingRequestCount: transactions.filter(function(row) { return ['PENDING', 'PARTIAL'].indexOf(String(row.status)) !== -1; }).length,
-    storedDocuments: readTable_(APP.SHEETS.DOCUMENTS).filter(function(row) { return String(row.storage_status) === 'AT_OFFICE' && toBoolean_(row.active); }).length,
-    processingDocuments: readTable_(APP.SHEETS.DOCUMENTS).filter(function(row) { return ['Đã hoàn thành', 'Đã bàn giao', 'Đã hủy'].indexOf(String(row.status)) === -1 && toBoolean_(row.active); }).length,
-    supplementDocuments: readTable_(APP.SHEETS.DOCUMENTS).filter(function(row) { return String(row.status) === 'Yêu cầu bổ sung' && toBoolean_(row.active); }).length,
-    overdueDocuments: readTable_(APP.SHEETS.DOCUMENTS).filter(function(row) { return row.expected_at && dateValue_(row.expected_at) < new Date() && ['Đã hoàn thành', 'Đã bàn giao', 'Đã hủy'].indexOf(String(row.status)) === -1; }).length,
+    storedDocuments: activeDocuments.filter(function(row) { return String(row.storage_status) === 'AT_OFFICE'; }).length,
+    processingDocuments: activeDocuments.filter(function(row) { return ['Đã hoàn thành', 'Đã bàn giao', 'Đã hủy'].indexOf(String(row.status)) === -1; }).length,
+    supplementDocuments: activeDocuments.filter(function(row) { return String(row.status) === 'Yêu cầu bổ sung'; }).length,
+    overdueDocuments: allDocuments.filter(function(row) { return row.expected_at && dateValue_(row.expected_at) < now && ['Đã hoàn thành', 'Đã bàn giao', 'Đã hủy'].indexOf(String(row.status)) === -1; }).length,
     completedDocuments: completedDocs.length,
-    waitingPickup: readTable_(APP.SHEETS.DOCUMENTS).filter(function(row) { return String(row.status) === 'Chờ sinh viên đến nhận'; }).length,
+    waitingPickup: allDocuments.filter(function(row) { return String(row.status) === 'Chờ sinh viên đến nhận'; }).length,
     averageProcessingDays: processingDays.length ? Math.round(processingDays.reduce(function(a, b) { return a + b; }, 0) / processingDays.length * 10) / 10 : 0,
     serviceCount: services.length,
     serviceMinutes: totalMinutes,
@@ -979,7 +1026,7 @@ function retryEmail(emailId) {
 }
 
 function setupSystem() {
-  ensureSystemInitialized_();
+  ensureSystemInitialized_(true);
   const admin = assertAdmin_();
   const spreadsheet = getSpreadsheet_();
   PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', spreadsheet.getId());
@@ -987,14 +1034,63 @@ function setupSystem() {
   return { ok: true, spreadsheetId: spreadsheet.getId(), spreadsheetUrl: spreadsheet.getUrl(), webAppUrl: ScriptApp.getService().getUrl() };
 }
 
-function ensureSystemInitialized_() {
+function isSystemInitializedFast_(expectedState) {
+  if (!expectedState) return false;
+  if (runtimeCache_.initState === expectedState) return true;
+  try {
+    if (typeof CacheService !== 'undefined') {
+      const cached = CacheService.getScriptCache().get(INIT_VERSION_KEY);
+      if (cached === expectedState) {
+        runtimeCache_.initState = expectedState;
+        return true;
+      }
+    }
+    if (typeof PropertiesService !== 'undefined') {
+      const stored = PropertiesService.getScriptProperties().getProperty(INIT_VERSION_KEY);
+      if (stored === expectedState) {
+        runtimeCache_.initState = expectedState;
+        if (typeof CacheService !== 'undefined') {
+          CacheService.getScriptCache().put(INIT_VERSION_KEY, expectedState, INIT_CACHE_TTL_SECONDS);
+        }
+        return true;
+      }
+    }
+  } catch (error) {}
+  return false;
+}
+
+function markSystemInitialized_(spreadsheetId, stateValue) {
+  runtimeCache_.initState = stateValue;
+  try {
+    if (typeof PropertiesService !== 'undefined') {
+      PropertiesService.getScriptProperties().setProperties({
+        SPREADSHEET_ID: spreadsheetId,
+        SCHEMA_INIT_V2: stateValue
+      });
+    }
+    if (typeof CacheService !== 'undefined') {
+      CacheService.getScriptCache().put(INIT_VERSION_KEY, stateValue, INIT_CACHE_TTL_SECONDS);
+    }
+  } catch (error) {}
+}
+
+function ensureSystemInitialized_(force) {
+  const configuredId = getConfiguredSpreadsheetId_();
+  const expectedState = configuredId ? (configuredId + ':v2') : '';
+  if (!force && isSystemInitializedFast_(expectedState)) return;
+
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
+    if (!force && isSystemInitializedFast_(expectedState)) return;
     const spreadsheet = getSpreadsheet_();
+    const actualState = spreadsheet.getId() + ':v2';
+    if (!force && isSystemInitializedFast_(actualState)) return;
+
     Object.keys(HEADERS).forEach(function(name) {
       let sheet = spreadsheet.getSheetByName(name);
       if (!sheet) sheet = spreadsheet.insertSheet(name);
+      runtimeCache_.sheets[name] = sheet;
       ensureSheetSchema_(sheet, name);
     });
     if (!findBy_(APP.SHEETS.ADMINS, 'email', APP.DEFAULT_ADMIN)) {
@@ -1002,7 +1098,7 @@ function ensureSystemInitialized_() {
     }
     migrateSystemData_();
     ensureDefaultSettings_();
-    PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', spreadsheet.getId());
+    markSystemInitialized_(spreadsheet.getId(), actualState);
   } finally {
     lock.releaseLock();
   }
@@ -1058,54 +1154,140 @@ function ensureDefaultSettings_() {
   });
 }
 
+function getConfiguredSpreadsheetId_() {
+  if (runtimeCache_.spreadsheetId) return runtimeCache_.spreadsheetId;
+  let id = APP.SPREADSHEET_ID;
+  try {
+    if (typeof PropertiesService !== 'undefined') {
+      id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID') || APP.SPREADSHEET_ID;
+    }
+  } catch (error) {}
+  runtimeCache_.spreadsheetId = id || '';
+  return runtimeCache_.spreadsheetId;
+}
+
 function getSpreadsheet_() {
-  const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID') || APP.SPREADSHEET_ID;
-  if (id) return SpreadsheetApp.openById(id);
+  if (runtimeCache_.spreadsheet) return runtimeCache_.spreadsheet;
+  const id = getConfiguredSpreadsheetId_();
+  if (id) {
+    runtimeCache_.spreadsheet = SpreadsheetApp.openById(id);
+    return runtimeCache_.spreadsheet;
+  }
   try {
     const active = SpreadsheetApp.getActiveSpreadsheet();
-    if (active) return active;
+    if (active) {
+      runtimeCache_.spreadsheet = active;
+      runtimeCache_.spreadsheetId = active.getId();
+      return active;
+    }
   } catch (error) {}
   throw new Error('SETUP_REQUIRED|Chưa cấu hình Google Sheets cho ứng dụng.');
 }
 
 function getSheet_(name) {
+  if (runtimeCache_.sheets[name]) return runtimeCache_.sheets[name];
   const sheet = getSpreadsheet_().getSheetByName(name);
   if (!sheet) throw new Error('SHEET_MISSING|Không tìm thấy tab dữ liệu ' + name + '.');
+  runtimeCache_.sheets[name] = sheet;
   return sheet;
 }
 
+function getScriptCacheKey_(name) {
+  return 'TABLE_V2_' + (getConfiguredSpreadsheetId_() || 'default') + '_' + name;
+}
+
+function clearScriptCacheForSheet_(name) {
+  if (!CACHED_SHEETS[name]) return;
+  try {
+    if (typeof CacheService !== 'undefined') {
+      CacheService.getScriptCache().remove(getScriptCacheKey_(name));
+    }
+  } catch (error) {}
+}
+
 function readTable_(name) {
+  if (runtimeCache_.tables[name]) return runtimeCache_.tables[name];
+  const headers = HEADERS[name];
+  if (CACHED_SHEETS[name]) {
+    try {
+      if (typeof CacheService !== 'undefined') {
+        const raw = CacheService.getScriptCache().get(getScriptCacheKey_(name));
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            runtimeCache_.tables[name] = parsed;
+            return parsed;
+          }
+        }
+      }
+    } catch (error) {}
+  }
   const sheet = getSheet_(name);
   const lastRow = sheet.getLastRow();
-  const headers = HEADERS[name];
-  if (lastRow < 2) return [];
+  if (lastRow < 2) {
+    runtimeCache_.tables[name] = [];
+    return [];
+  }
   const values = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
-  return values.filter(function(row) { return row.some(function(value) { return value !== '' && value != null; }); }).map(function(row, index) {
+  const rows = [];
+  for (let index = 0; index < values.length; index += 1) {
+    const row = values[index];
+    if (!row.some(function(value) { return value !== '' && value != null; })) continue;
     const record = { _row: index + 2 };
     headers.forEach(function(header, column) { record[header] = row[column]; });
-    return record;
-  });
+    rows.push(record);
+  }
+  runtimeCache_.tables[name] = rows;
+  if (CACHED_SHEETS[name]) {
+    try {
+      if (typeof CacheService !== 'undefined') {
+        const serialized = JSON.stringify(rows);
+        if (serialized.length < 95000) {
+          CacheService.getScriptCache().put(getScriptCacheKey_(name), serialized, CACHE_TTL_SECONDS);
+        }
+      }
+    } catch (error) {}
+  }
+  return rows;
 }
 
 function appendRecord_(name, record) {
   const sheet = getSheet_(name);
   const headers = HEADERS[name];
-  sheet.appendRow(headers.map(function(header) { return record[header] == null ? '' : record[header]; }));
+  const values = headers.map(function(header) { return record[header] == null ? '' : record[header]; });
+  sheet.appendRow(values);
+  if (runtimeCache_.tables[name]) {
+    const rows = runtimeCache_.tables[name];
+    const nextRow = rows.length ? (rows[rows.length - 1]._row + 1) : 2;
+    const cachedRecord = { _row: nextRow };
+    headers.forEach(function(header, index) { cachedRecord[header] = values[index]; });
+    rows.push(cachedRecord);
+  }
+  clearScriptCacheForSheet_(name);
 }
 
 function updateRow_(name, rowNumber, patch) {
   const sheet = getSheet_(name);
   const headers = HEADERS[name];
   const range = sheet.getRange(rowNumber, 1, 1, headers.length);
-  const values = range.getValues()[0];
+  const cachedRow = runtimeCache_.tables[name] ? runtimeCache_.tables[name].find(function(item) { return item._row === rowNumber; }) : null;
+  const values = cachedRow
+    ? headers.map(function(header) { return cachedRow[header] == null ? '' : cachedRow[header]; })
+    : range.getValues()[0];
   headers.forEach(function(header, index) {
-    if (Object.prototype.hasOwnProperty.call(patch, header)) values[index] = patch[header] == null ? '' : patch[header];
+    if (Object.prototype.hasOwnProperty.call(patch, header)) {
+      values[index] = patch[header] == null ? '' : patch[header];
+      if (cachedRow) cachedRow[header] = values[index];
+    }
   });
   range.setValues([values]);
+  clearScriptCacheForSheet_(name);
 }
 
 function deleteRow_(name, rowNumber) {
   getSheet_(name).deleteRow(rowNumber);
+  delete runtimeCache_.tables[name];
+  clearScriptCacheForSheet_(name);
 }
 
 function findBy_(name, field, value) {
@@ -1123,27 +1305,52 @@ function refreshTransactionStatus_(transactionId, adminEmail) {
   updateRow_(APP.SHEETS.TRANSACTIONS, transaction._row, { status: status, updated_at: new Date(), reviewed_by: adminEmail });
 }
 
+function buildTransactionResults_(transactions, ownerEmail, adminView) {
+  if (!transactions.length) return [];
+  const allItems = readTable_(APP.SHEETS.ITEMS);
+  const itemsByTx = {};
+  allItems.forEach(function(item) {
+    const txId = item.transaction_id;
+    if (!itemsByTx[txId]) itemsByTx[txId] = [];
+    itemsByTx[txId].push(item);
+  });
+  const needsPickupCandidates = adminView && transactions.some(function(tx) { return tx.transaction_type === 'RECEIVE'; });
+  const waitingDocsByKey = {};
+  if (needsPickupCandidates) {
+    readTable_(APP.SHEETS.DOCUMENTS).forEach(function(doc) {
+      if (String(doc.status) !== 'Chờ sinh viên đến nhận' || !toBoolean_(doc.active)) return;
+      const key = normalizeEmail_(doc.student_email) + '|' + doc.type_id;
+      if (!waitingDocsByKey[key]) waitingDocsByKey[key] = [];
+      waitingDocsByKey[key].push({ documentId: doc.document_id, code: doc.document_code, updatedAt: iso_(doc.updated_at) });
+    });
+  }
+  const normalizedOwner = normalizeEmail_(ownerEmail);
+  return transactions.map(function(transaction) {
+    if (!adminView && normalizeEmail_(transaction.student_email) !== normalizedOwner) {
+      throw new Error('ACCESS_DENIED|Bạn không có quyền xem yêu cầu này.');
+    }
+    const items = itemsByTx[transaction.transaction_id] || [];
+    const studentEmailKey = normalizeEmail_(transaction.student_email);
+    return {
+      transactionId: transaction.transaction_id, code: transaction.transaction_code, studentId: transaction.student_id,
+      studentEmail: transaction.student_email, studentName: transaction.student_name, className: transaction.class_name,
+      type: transaction.transaction_type, status: transaction.status, note: transaction.student_note || '',
+      createdAt: iso_(transaction.created_at), updatedAt: iso_(transaction.updated_at),
+      items: items.map(function(item) {
+        const result = { itemId: item.item_id, typeId: item.type_id, typeName: item.type_name, documentId: item.document_id || '', relatedDocumentId: item.related_document_id || '', status: item.status, adminNote: item.admin_note || '', reviewedAt: iso_(item.reviewed_at), reviewedBy: item.reviewed_by || '' };
+        if (adminView && transaction.transaction_type === 'RECEIVE' && !item.document_id && String(item.status) === 'PENDING') {
+          result.pickupCandidates = waitingDocsByKey[studentEmailKey + '|' + item.type_id] || [];
+        }
+        return result;
+      })
+    };
+  });
+}
+
 function getTransactionResult_(transactionId, ownerEmail, adminView) {
   const transaction = findBy_(APP.SHEETS.TRANSACTIONS, 'transaction_id', transactionId);
   if (!transaction) throw new Error('NOT_FOUND|Không tìm thấy yêu cầu.');
-  if (!adminView && normalizeEmail_(transaction.student_email) !== normalizeEmail_(ownerEmail)) throw new Error('ACCESS_DENIED|Bạn không có quyền xem yêu cầu này.');
-  const items = readTable_(APP.SHEETS.ITEMS).filter(function(row) { return row.transaction_id === transactionId; });
-  const documents = adminView && transaction.transaction_type === 'RECEIVE' ? readTable_(APP.SHEETS.DOCUMENTS) : [];
-  return {
-    transactionId: transaction.transaction_id, code: transaction.transaction_code, studentId: transaction.student_id,
-    studentEmail: transaction.student_email, studentName: transaction.student_name, className: transaction.class_name,
-    type: transaction.transaction_type, status: transaction.status, note: transaction.student_note || '',
-    createdAt: iso_(transaction.created_at), updatedAt: iso_(transaction.updated_at),
-    items: items.map(function(item) {
-      const result = { itemId: item.item_id, typeId: item.type_id, typeName: item.type_name, documentId: item.document_id || '', relatedDocumentId: item.related_document_id || '', status: item.status, adminNote: item.admin_note || '', reviewedAt: iso_(item.reviewed_at), reviewedBy: item.reviewed_by || '' };
-      if (adminView && transaction.transaction_type === 'RECEIVE' && !item.document_id && String(item.status) === 'PENDING') {
-        result.pickupCandidates = documents.filter(function(document) {
-          return normalizeEmail_(document.student_email) === normalizeEmail_(transaction.student_email) && document.type_id === item.type_id && String(document.status) === 'Chờ sinh viên đến nhận' && toBoolean_(document.active);
-        }).map(function(document) { return { documentId: document.document_id, code: document.document_code, updatedAt: iso_(document.updated_at) }; });
-      }
-      return result;
-    })
-  };
+  return buildTransactionResults_([transaction], ownerEmail, adminView)[0];
 }
 
 function getWorkflowSteps_(workflowId) {

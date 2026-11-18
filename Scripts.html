@@ -1,7 +1,7 @@
 <script>
 (() => {
   'use strict';
-  const state = { boot: null, documents: [], transactions: [], notifications: [], pending: [], adminDocuments: [], workflows: [], types: [], serviceTimer: null, toastTimer: null };
+  const state = { boot: null, documents: [], transactions: [], notifications: [], pending: [], adminDocuments: [], workflows: [], types: [], serviceTimer: null, toastTimer: null, bootFresh: false, lastRefreshAt: 0 };
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -66,6 +66,10 @@
     bindGlobalEvents();
     try {
       state.boot = await api('getBootstrap');
+      state.documents = Array.isArray(state.boot.documents) ? state.boot.documents : [];
+      state.pending = Array.isArray(state.boot.pendingTransactions) ? state.boot.pendingTransactions : [];
+      state.bootFresh = true;
+      state.lastRefreshAt = Date.now();
       renderShell();
       $('#loading').classList.add('hidden');
       $('#app').classList.remove('hidden');
@@ -107,7 +111,9 @@
       if (event.key === 'Escape' && !$('#modal').classList.contains('hidden')) closeModal();
     });
     $('#mobile-menu').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshCurrent(); });
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && Date.now() - state.lastRefreshAt > 60000) refreshCurrent();
+    });
     $('#modal-close').addEventListener('click', closeModal);
     $('#modal').addEventListener('click', event => { if (event.target === $('#modal')) closeModal(); });
     $('#profile-form').addEventListener('submit', saveProfile);
@@ -163,6 +169,7 @@
       'admin-reports': loadReport, 'admin-settings': loadSettings
     };
     if (map[view]) await map[view]();
+    state.lastRefreshAt = Date.now();
   }
 
   async function refreshCurrent() { const current = $('.view.active-view'); if (current) await loadView(current.id); }
@@ -203,9 +210,8 @@
     } catch (error) { showAlert(error.message); } finally { setBusy(button, false); }
   }
 
-  async function loadStudentHome() {
-    const [dashboard, documents] = await Promise.all([api('getMyDashboard'), api('getMyDocuments')]);
-    state.boot.dashboard = dashboard; state.documents = documents; renderStudentKpis(dashboard);
+  function renderStudentHomeView(dashboard, documents) {
+    renderStudentKpis(dashboard);
     const fullName = state.boot.profile?.fullName?.trim() || '';
     const firstName = fullName ? fullName.split(/\s+/).at(-1) : 'bạn';
     $('#page-title').textContent = `Chào ${firstName}`;
@@ -213,9 +219,15 @@
     $('#recent-documents').innerHTML = documents.slice(0,5).map(doc => `<button class="list-item" onclick="window.app.openDocument('${doc.documentId}')"><div><strong>${escapeHtml(doc.typeName)}</strong><small><span class="list-code">${escapeHtml(doc.code)}</span><span>Cập nhật ${fmtDate(doc.updatedAt)}</span></small></div><div class="list-item-end"><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span>${rowArrowSvg}</div></button>`).join('') || '<div class="empty">Chưa có hồ sơ.</div>';
   }
 
-  async function renderTransactionOptions() {
-    if (!state.boot || state.boot.identity.role !== 'STUDENT') return;
-    state.documents = await api('getMyDocuments');
+  async function loadStudentHome() {
+    renderStudentHomeView(state.boot.dashboard, state.documents);
+    if (state.bootFresh) { state.bootFresh = false; return; }
+    const [dashboard, documents] = await Promise.all([api('getMyDashboard'), api('getMyDocuments')]);
+    state.boot.dashboard = dashboard; state.documents = documents;
+    renderStudentHomeView(dashboard, documents);
+  }
+
+  function renderTransactionOptionList() {
     const type = $('input[name="transactionType"]:checked')?.value || 'SUBMIT';
     let options = [];
     if (type === 'SUBMIT') options = state.boot.types.filter(item => ['SUBMIT','BOTH'].includes(item.handoverMode)).map(item => ({id:item.typeId, name:item.name, description:item.description, field:'typeId'}));
@@ -223,6 +235,17 @@
     else options = state.documents.filter(doc => !['Đã bàn giao','Đã hủy'].includes(doc.status)).map(doc => ({id:doc.documentId, name:doc.typeName, description:`${doc.code} - ${doc.status}`, field:'documentId'}));
     $('#transaction-options').innerHTML = options.map(item => `<label class="check-option"><input type="checkbox" value="${escapeHtml(item.id)}" data-field="${item.field}"><span><strong>${escapeHtml(item.name)}</strong>${item.description?`<small>${escapeHtml(item.description)}</small>`:''}</span></label>`).join('') || '<div class="empty">Chưa có giấy tờ nào để chọn.</div>';
     updateTransactionSelection();
+  }
+
+  async function renderTransactionOptions() {
+    if (!state.boot || state.boot.identity.role !== 'STUDENT') return;
+    renderTransactionOptionList();
+    const type = $('input[name="transactionType"]:checked')?.value || 'SUBMIT';
+    if (state.bootFresh) { state.bootFresh = false; return; }
+    if (type === 'SUPPLEMENT' || !state.documents.length) {
+      state.documents = await api('getMyDocuments');
+      renderTransactionOptionList();
+    }
   }
 
   function updateTransactionSelection() {
@@ -245,7 +268,11 @@
     } catch (error) { showAlert(error.message); } finally { setBusy(button, false); }
   }
 
-  async function loadMyDocuments() { state.documents = await api('getMyDocuments'); renderMyDocuments(); }
+  async function loadMyDocuments() {
+    if (state.documents.length) renderMyDocuments();
+    state.documents = await api('getMyDocuments');
+    renderMyDocuments();
+  }
   function renderMyDocuments() {
     const query = ($('#my-document-search').value || '').toLowerCase();
     const docs = state.documents.filter(doc => !query || `${doc.code} ${doc.typeName} ${doc.status}`.toLowerCase().includes(query));
@@ -291,13 +318,22 @@
 
   async function readNotification(id) { await api('markNotificationRead', id); await loadNotifications(); }
 
-  async function loadAdminHome() {
-    const [boot, pending] = await Promise.all([api('getBootstrap'), api('listPendingTransactions')]);
-    state.boot = boot; state.pending = pending; renderAdminKpis(boot.dashboard);
+  function renderAdminHomeView(dashboard, pending) {
+    renderAdminKpis(dashboard);
     $('#admin-recent-pending').innerHTML = pending.slice(0,5).map(tx => `<button class="list-item" data-go="admin-pending"><div><strong>${escapeHtml(tx.studentName)} - ${escapeHtml(typeLabel(tx.type))}</strong><small><span class="list-code">${escapeHtml(tx.code)}</span><span>${fmtDate(tx.createdAt)}</span></small></div><div class="list-item-end"><span class="pill-count">${tx.items.filter(x=>x.status==='PENDING').length} mục</span>${rowArrowSvg}</div></button>`).join('') || '<div class="empty">Không có yêu cầu nào đang chờ.</div>';
   }
 
+  async function loadAdminHome() {
+    renderAdminHomeView(state.boot.dashboard, state.pending);
+    if (state.bootFresh) { state.bootFresh = false; return; }
+    const boot = await api('getBootstrap');
+    state.boot = boot;
+    state.pending = Array.isArray(boot.pendingTransactions) ? boot.pendingTransactions : state.pending;
+    renderAdminHomeView(boot.dashboard, state.pending);
+  }
+
   async function loadPending() {
+    if (state.pending.length) renderPendingTransactions();
     state.pending = await api('listPendingTransactions');
     const pendingBadge = $('#pending-badge');
     if (pendingBadge) {
