@@ -2,94 +2,95 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <?!= include('Styles'); ?>
 </head>
 <body>
   <div id="loading" class="loading-screen">
     <div class="spinner"></div>
-    <p>Đang xác minh tài khoản TDTU…</p>
+    <p>Đang đăng nhập…</p>
   </div>
 
   <div id="app" class="app-shell hidden">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">TDTU</div>
-        <div><strong id="brand-title">Giao nhận hồ sơ</strong><span id="office-name">Văn phòng Khoa</span></div>
+        <strong id="brand-title">Giao nhận hồ sơ</strong>
+        <span id="office-name">Văn phòng Khoa</span>
       </div>
-      <nav id="student-nav" class="nav-list">
-        <button data-view="student-home" class="nav-item active"><span>⌂</span> Trang chủ</button>
-        <button data-view="student-transaction" class="nav-item"><span>⇄</span> Nộp / nhận hồ sơ</button>
-        <button data-view="student-documents" class="nav-item"><span>▤</span> Hồ sơ của tôi</button>
-        <button data-view="student-history" class="nav-item"><span>◷</span> Lịch sử giao nhận</button>
-        <button data-view="student-notifications" class="nav-item"><span>◉</span> Thông báo <b id="notice-badge" class="badge hidden">0</b></button>
-        <button data-view="student-profile" class="nav-item"><span>♙</span> Tài khoản</button>
+      <nav id="student-nav" class="nav-list" aria-label="Điều hướng sinh viên">
+        <button data-view="student-home" class="nav-item active"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Trang chủ</span></button>
+        <button data-view="student-transaction" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h13l-3-3M17 17H4l3 3"/></svg><span>Nộp &amp; nhận</span></button>
+        <button data-view="student-documents" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5"/></svg><span>Hồ sơ của tôi</span></button>
+        <button data-view="student-history" class="nav-item nav-history"><span>Lịch sử</span></button>
+        <button data-view="student-notifications" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/></svg><span>Thông báo</span><b id="notice-badge" class="badge hidden">0</b></button>
+        <button data-view="student-profile" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Tài khoản</span></button>
       </nav>
-      <nav id="admin-nav" class="nav-list hidden">
-        <button data-view="admin-home" class="nav-item active"><span>⌂</span> Dashboard</button>
-        <button data-view="admin-pending" class="nav-item"><span>✓</span> Xác nhận giao nhận</button>
-        <button data-view="admin-documents" class="nav-item"><span>▤</span> Quản lý hồ sơ</button>
-        <button data-view="admin-catalog" class="nav-item"><span>☷</span> Danh mục & quy trình</button>
-        <button data-view="admin-service" class="nav-item"><span>◷</span> Tiếp sinh viên</button>
-        <button data-view="admin-students" class="nav-item"><span>♙</span> Sinh viên</button>
-        <button data-view="admin-reports" class="nav-item"><span>▥</span> Báo cáo</button>
-        <button data-view="admin-settings" class="nav-item"><span>⚙</span> Cài đặt</button>
+      <nav id="admin-nav" class="nav-list hidden" aria-label="Điều hướng quản trị">
+        <button data-view="admin-home" class="nav-item active">Tổng quan</button>
+        <button data-view="admin-pending" class="nav-item">Chờ xác nhận</button>
+        <button data-view="admin-documents" class="nav-item">Hồ sơ</button>
+        <button data-view="admin-catalog" class="nav-item">Danh mục</button>
+        <button data-view="admin-service" class="nav-item">Tiếp sinh viên</button>
+        <button data-view="admin-students" class="nav-item">Sinh viên</button>
+        <button data-view="admin-reports" class="nav-item">Báo cáo</button>
+        <button data-view="admin-settings" class="nav-item">Cài đặt</button>
       </nav>
-      <div class="sidebar-user"><span id="user-avatar">SV</span><div><strong id="user-name">Đang tải</strong><small id="user-email"></small></div></div>
+      <div class="sidebar-user"><div><strong id="user-name">Đang tải</strong><small id="user-email"></small></div></div>
     </aside>
 
     <main class="main">
-      <header class="topbar">
-        <button id="mobile-menu" class="icon-button" aria-label="Mở menu">☰</button>
-        <div><h1 id="page-title">Trang chủ</h1><p id="page-subtitle">Theo dõi hồ sơ và giao dịch của bạn</p></div>
-        <button id="refresh-button" class="button secondary small">Làm mới</button>
+      <header class="page-head">
+        <button id="mobile-menu" class="icon-button" aria-label="Mở menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+        <div><h1 id="page-title">Trang chủ</h1><p id="page-subtitle"></p></div>
       </header>
-
       <div id="alert" class="alert hidden"></div>
 
       <section id="student-home" class="view active-view">
+        <div id="student-home-note" class="page-note"></div>
         <div id="student-kpis" class="kpi-grid"></div>
-        <div class="grid two-col">
-          <article class="card"><div class="card-head"><div><h2>Hồ sơ gần đây</h2><p>Các hồ sơ vừa được cập nhật</p></div><button class="link-button" data-go="student-documents">Xem tất cả</button></div><div id="recent-documents" class="list"></div></article>
-          <article class="card"><div class="card-head"><div><h2>Giao dịch tại quầy</h2><p>Yêu cầu chỉ hoàn tất sau khi cán bộ xác nhận</p></div></div><div class="qr-callout"><div class="qr-placeholder">QR</div><div><strong>Quét mã QR được in tại văn phòng</strong><p>Hoàn thiện tài khoản trước khi chọn giấy tờ cần nộp hoặc nhận.</p><button class="button primary" data-go="student-transaction">Tạo yêu cầu</button></div></div></article>
-        </div>
+        <article class="section-block"><div class="section-head"><h2>Hồ sơ gần đây</h2><button class="link-button" data-go="student-documents">Xem tất cả</button></div><div id="recent-documents" class="list"></div></article>
+        <article class="panel home-action"><div><h2>Nộp hoặc nhận giấy tờ</h2><p>Chọn giấy tờ rồi gửi yêu cầu. Yêu cầu hoàn tất khi cán bộ xác nhận tại quầy.</p></div><button class="button primary" data-go="student-transaction">Tạo yêu cầu</button></article>
       </section>
 
       <section id="student-transaction" class="view">
-        <article class="card form-card">
-          <div class="card-head"><div><h2>Tạo yêu cầu giao nhận</h2><p>Quét QR tại văn phòng, chọn giấy tờ và gửi yêu cầu. Giao nhận chỉ hoàn tất sau khi cán bộ xác nhận tại quầy.</p></div></div>
-          <div id="profile-required" class="inline-warning hidden">Bạn cần hoàn thiện họ tên và lớp trước khi giao dịch. <button class="link-button" data-go="student-profile">Cập nhật ngay</button></div>
-          <form id="transaction-form">
-            <label>Hình thức giao dịch</label>
-            <div class="segmented"><label><input type="radio" name="transactionType" value="SUBMIT" checked><span>Tôi đến nộp hồ sơ</span></label><label><input type="radio" name="transactionType" value="RECEIVE"><span>Tôi đến nhận hồ sơ</span></label><label><input type="radio" name="transactionType" value="SUPPLEMENT"><span>Tôi đến bổ sung giấy tờ</span></label></div>
-            <div id="transaction-options" class="checklist"></div>
-            <label for="transaction-note">Ghi chú</label><textarea id="transaction-note" rows="3" maxlength="1000" placeholder="Thông tin cần lưu ý (không bắt buộc)"></textarea>
-            <div class="form-actions"><button type="submit" class="button primary">Gửi yêu cầu</button></div>
-          </form>
-        </article>
+        <div id="profile-required" class="inline-warning hidden">Nhập họ tên và lớp trước khi gửi yêu cầu. <button class="link-button" data-go="student-profile">Cập nhật</button></div>
+        <form id="transaction-form" class="transaction-form">
+          <div class="segmented" aria-label="Loại yêu cầu"><label><input type="radio" name="transactionType" value="SUBMIT" checked><span>Nộp hồ sơ</span></label><label><input type="radio" name="transactionType" value="RECEIVE"><span>Nhận hồ sơ</span></label><label><input type="radio" name="transactionType" value="SUPPLEMENT"><span>Bổ sung giấy tờ</span></label></div>
+          <div id="transaction-options" class="checklist"></div>
+          <label for="transaction-note">Ghi chú</label><textarea id="transaction-note" rows="3" maxlength="1000" placeholder="Không bắt buộc"></textarea>
+          <div class="form-actions transaction-footer"><span id="transaction-selection">Chọn ít nhất một giấy tờ.</span><button id="transaction-submit" type="submit" class="button primary" disabled>Gửi yêu cầu · 0</button></div>
+        </form>
       </section>
 
-      <section id="student-documents" class="view"><div class="toolbar"><input id="my-document-search" type="search" placeholder="Tìm theo mã hoặc tên hồ sơ"><button class="button secondary" id="reload-my-documents">Tải lại</button></div><div id="my-documents" class="cards-list"></div></section>
+      <section id="student-documents" class="view"><div class="toolbar student-toolbar"><input id="my-document-search" type="search" placeholder="Tìm theo mã hoặc tên hồ sơ"></div><div id="my-documents" class="cards-list"></div><button class="link-button history-link" data-go="student-history">Lịch sử yêu cầu</button></section>
       <section id="student-history" class="view"><div id="my-transactions" class="cards-list"></div></section>
       <section id="student-notifications" class="view"><div id="my-notifications" class="cards-list"></div></section>
-      <section id="student-profile" class="view"><article class="card form-card narrow"><div class="card-head"><div><h2>Thông tin sinh viên</h2><p>MSSV được xác định từ email trường và không thể chỉnh sửa.</p></div></div><form id="profile-form"><label>Email TDTU</label><input id="profile-email" disabled><label>Mã số sinh viên</label><input id="profile-student-id" disabled><label for="profile-full-name">Họ và tên</label><input id="profile-full-name" required maxlength="120"><label for="profile-class">Lớp</label><input id="profile-class" required maxlength="80"><div class="form-actions"><button type="submit" class="button primary">Lưu thông tin</button></div></form></article></section>
+      <section id="student-profile" class="view"><article class="form-card narrow"><form id="profile-form"><label>Email TDTU</label><input id="profile-email" disabled><label>Mã số sinh viên</label><input id="profile-student-id" disabled><label for="profile-full-name">Họ và tên</label><input id="profile-full-name" required maxlength="120"><label for="profile-class">Lớp</label><input id="profile-class" required maxlength="80"><div class="form-actions"><button type="submit" class="button primary">Lưu</button></div></form></article></section>
 
-      <section id="admin-home" class="view"><div id="admin-kpis" class="kpi-grid"></div><div class="grid two-col"><article class="card"><div class="card-head"><div><h2>Yêu cầu chờ xác nhận</h2><p>Các giao dịch mới nhất tại quầy</p></div><button class="link-button" data-go="admin-pending">Mở danh sách</button></div><div id="admin-recent-pending" class="list"></div></article><article class="card"><div class="card-head"><div><h2>Mã QR tại quầy</h2><p>In mã này và đặt tại bàn làm việc</p></div></div><div class="qr-admin"><div id="qr-code"></div><div><input id="qr-url" readonly><button id="print-qr" class="button secondary">In mã QR</button></div></div></article></div></section>
-      <section id="admin-pending" class="view"><div class="toolbar"><input id="pending-search" type="search" placeholder="Tìm theo MSSV, họ tên hoặc mã yêu cầu"></div><div id="pending-transactions" class="cards-list"></div></section>
-      <section id="admin-documents" class="view"><div class="toolbar"><input id="admin-document-search" type="search" placeholder="MSSV, họ tên, email, mã hồ sơ"><select id="admin-document-status"><option value="">Tất cả trạng thái</option><option>Đã tiếp nhận</option><option>Đang kiểm tra hồ sơ</option><option>Yêu cầu bổ sung</option><option>Đang trình duyệt</option><option>Chờ phê duyệt</option><option>Đã hoàn thành</option><option>Chờ sinh viên đến nhận</option><option>Đã bàn giao</option></select><button id="search-admin-documents" class="button primary">Tìm kiếm</button><button id="batch-documents" class="button secondary">Cập nhật đã chọn</button><button id="new-manual-document" class="button secondary">Thêm hồ sơ</button></div><div id="admin-documents-table" class="table-wrap"></div></section>
-      <section id="admin-catalog" class="view"><div class="grid two-col"><article class="card"><div class="card-head"><div><h2>Danh mục hồ sơ</h2><p>Thêm, chỉnh sửa hoặc ngừng sử dụng</p></div><button id="new-type" class="button primary small">Thêm loại</button></div><div id="document-types-admin" class="list"></div></article><article class="card"><div class="card-head"><div><h2>Quy trình xử lý</h2><p>Mỗi phiên bản giữ nguyên lịch sử hồ sơ đã tạo</p></div><button id="new-workflow" class="button primary small">Tạo quy trình</button></div><div id="workflows-admin" class="list"></div></article></div></section>
-      <section id="admin-service" class="view"><div class="grid two-col"><article class="card"><div class="card-head"><div><h2>Ghi nhận trực tiếp</h2><p>Bộ đếm được tính theo thời gian máy chủ</p></div></div><div id="service-recorder"></div></article><article class="card"><div class="card-head"><div><h2>Ghi nhận thủ công</h2><p>Bổ sung buổi tiếp đã diễn ra</p></div></div><form id="manual-service-form"><label>Email hoặc MSSV</label><input id="manual-student" required><div class="grid two-col compact"><div><label>Bắt đầu</label><input id="manual-start" type="datetime-local" required></div><div><label>Kết thúc</label><input id="manual-end" type="datetime-local" required></div></div><label>Nội dung trao đổi</label><textarea id="manual-topic" required></textarea><label>Kết quả xử lý</label><textarea id="manual-result" required></textarea><button class="button primary" type="submit">Lưu buổi tiếp</button></form></article></div><article class="card"><div class="card-head"><div><h2>Lịch sử tiếp sinh viên</h2></div><input id="service-search" placeholder="Tìm sinh viên hoặc nội dung"></div><div id="service-history" class="table-wrap"></div></article></section>
+      <section id="admin-home" class="view">
+        <div id="admin-kpis" class="kpi-grid"></div>
+        <div class="admin-home-grid"><article class="section-block"><div class="section-head"><h2>Chờ xác nhận</h2><button class="link-button" data-go="admin-pending">Mở danh sách</button></div><div id="admin-recent-pending" class="list"></div></article><article class="panel qr-panel"><div class="section-head"><h2>Mã QR tại quầy</h2></div><div class="qr-admin"><div id="qr-code"></div><div class="qr-controls"><input id="qr-url" readonly><button id="print-qr" class="button">In mã QR</button></div></div></article></div>
+      </section>
+      <section id="admin-pending" class="view"><div class="toolbar"><input id="pending-search" type="search" placeholder="Tìm theo MSSV, họ tên hoặc mã yêu cầu"></div><div id="pending-transactions" class="cards-list pending-list"></div></section>
+      <section id="admin-documents" class="view">
+        <div class="toolbar admin-document-toolbar"><input id="admin-document-search" type="search" placeholder="MSSV, họ tên, email, mã hồ sơ"><select id="admin-document-status"><option value="">Tất cả trạng thái</option><option>Đã tiếp nhận</option><option>Đang kiểm tra hồ sơ</option><option>Yêu cầu bổ sung</option><option>Đang xử lý</option><option>Đang trình duyệt</option><option>Chờ phê duyệt</option><option>Đã hoàn thành</option><option>Chờ sinh viên đến nhận</option><option>Đã bàn giao</option><option>Đã hủy</option></select><button id="search-admin-documents" class="button">Tìm kiếm</button><button id="new-manual-document" class="button primary toolbar-push">Thêm hồ sơ</button></div>
+        <div id="document-bulk-actions" class="bulk-actions hidden"><span id="document-selection-count">Đã chọn 0 hồ sơ</span><button id="batch-documents" class="bulk-button">Cập nhật trạng thái</button><button id="clear-document-selection" class="bulk-button">Bỏ chọn</button></div>
+        <div id="admin-documents-table" class="table-wrap"></div>
+      </section>
+      <section id="admin-catalog" class="view"><div class="grid two-col catalog-grid"><article class="section-block"><div class="section-head"><h2>Danh mục hồ sơ</h2><button id="new-type" class="button small">Thêm loại</button></div><div id="document-types-admin" class="list"></div></article><article class="section-block"><div class="section-head"><h2>Quy trình xử lý</h2><button id="new-workflow" class="button small">Tạo quy trình</button></div><div id="workflows-admin" class="list"></div></article></div></section>
+      <section id="admin-service" class="view"><div class="grid two-col service-grid"><article class="section-block"><div class="section-head"><h2>Ghi nhận trực tiếp</h2></div><div id="service-recorder"></div></article><article class="form-card"><div class="section-head"><h2>Ghi nhận thủ công</h2></div><form id="manual-service-form"><label>Email hoặc MSSV</label><input id="manual-student" required><div class="grid two-col compact"><div><label>Bắt đầu</label><input id="manual-start" type="datetime-local" required></div><div><label>Kết thúc</label><input id="manual-end" type="datetime-local" required></div></div><label>Nội dung trao đổi</label><textarea id="manual-topic" required></textarea><label>Kết quả xử lý</label><textarea id="manual-result" required></textarea><div class="form-actions"><button class="button primary" type="submit">Lưu buổi tiếp</button></div></form></article></div><article class="section-block service-history-block"><div class="section-head"><h2>Lịch sử tiếp sinh viên</h2><input id="service-search" placeholder="Tìm sinh viên hoặc nội dung"></div><div id="service-history" class="table-wrap"></div></article></section>
       <section id="admin-students" class="view"><div class="toolbar"><input id="student-search" type="search" placeholder="MSSV, họ tên, lớp hoặc email"><button id="search-students" class="button primary">Tìm kiếm</button></div><div id="students-table" class="table-wrap"></div></section>
-      <section id="admin-reports" class="view"><article class="card"><div class="toolbar"><div><label>Từ ngày</label><input id="report-from" type="date"></div><div><label>Đến ngày</label><input id="report-to" type="date"></div><button id="run-report" class="button primary">Xem báo cáo</button><button id="export-report" class="button secondary">Xuất CSV</button></div><div id="report-kpis" class="kpi-grid"></div></article></section>
-      <section id="admin-settings" class="view"><div class="grid two-col"><article class="card form-card"><div class="card-head"><div><h2>Cài đặt ứng dụng</h2></div></div><form id="settings-form"><label>Tên ứng dụng</label><input id="setting-app-name"><label>Tên văn phòng</label><input id="setting-office-name"><button class="button primary" type="submit">Lưu cài đặt</button></form></article><article class="card"><div class="card-head"><div><h2>Kiểm tra hệ thống</h2><p>Xác nhận bảng dữ liệu và bản triển khai</p></div></div><button id="health-check" class="button secondary">Chạy kiểm tra</button><pre id="health-result" class="health-result"></pre></article></div></section>
+      <section id="admin-reports" class="view"><div class="toolbar report-toolbar"><div><label>Từ ngày</label><input id="report-from" type="date"></div><div><label>Đến ngày</label><input id="report-to" type="date"></div><button id="run-report" class="button primary">Xem báo cáo</button><button id="export-report" class="button">Xuất CSV</button></div><div id="report-kpis" class="kpi-grid report-kpis"></div></section>
+      <section id="admin-settings" class="view"><div class="grid two-col settings-grid"><article class="form-card"><div class="section-head"><h2>Cài đặt ứng dụng</h2></div><form id="settings-form"><label>Tên ứng dụng</label><input id="setting-app-name"><label>Tên văn phòng</label><input id="setting-office-name"><div class="form-actions"><button class="button primary" type="submit">Lưu</button></div></form></article><article class="section-block"><div class="section-head"><h2>Kiểm tra hệ thống</h2></div><button id="health-check" class="button">Chạy kiểm tra</button><pre id="health-result" class="health-result"></pre></article></div></section>
     </main>
   </div>
 
   <div id="modal" class="modal hidden" role="dialog" aria-modal="true"><div class="modal-panel"><button id="modal-close" class="modal-close" aria-label="Đóng">×</button><div id="modal-content"></div></div></div>
-  <div id="toast" class="toast hidden"></div>
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
   <script>window.INITIAL_VIEW = <?!= JSON.stringify(initialView || '') ?>;</script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <?!= include('Scripts'); ?>

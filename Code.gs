@@ -1,5 +1,5 @@
 const APP = Object.freeze({
-  NAME: 'Hệ thống Giao nhận Hồ sơ Sinh viên',
+  NAME: 'Giao nhận hồ sơ',
   SPREADSHEET_ID: '1iQjaNfuHtqrN-d2LI7cSJGThOcWbxn-TE7tIGwtaHas',
   STUDENT_DOMAIN: 'student.tdtu.edu.vn',
   DEFAULT_ADMIN: 'nguyenthaikhoi@tdtu.edu.vn',
@@ -82,12 +82,12 @@ function getBootstrap() {
 function getIdentity_() {
   const email = normalizeEmail_(Session.getActiveUser().getEmail());
   if (!email) {
-    throw new Error('AUTH_REQUIRED|Không xác định được tài khoản Google. Hãy đăng xuất tài khoản cá nhân và đăng nhập tài khoản TDTU.');
+    throw new Error('AUTH_REQUIRED|Chưa nhận ra tài khoản Google. Đăng xuất tài khoản cá nhân rồi đăng nhập bằng tài khoản TDTU.');
   }
   const admin = getAdminRecord_(email);
   if (admin) return { email: email, role: 'ADMIN', adminRole: admin.role || 'ADMIN', name: admin.name || '' };
   if (!isStudentEmail_(email)) {
-    throw new Error('ACCESS_DENIED|Chỉ tài khoản sinh viên @student.tdtu.edu.vn hoặc quản trị viên được cấp quyền mới có thể truy cập.');
+    throw new Error('ACCESS_DENIED|Chỉ sinh viên (@student.tdtu.edu.vn) và quản trị viên được cấp quyền mới vào được.');
   }
   return { email: email, role: 'STUDENT', studentId: extractStudentId_(email) };
 }
@@ -118,9 +118,9 @@ function saveStudentProfile(payload) {
   payload = payload || {};
   const fullName = sanitizeText_(payload.fullName, 120);
   const className = sanitizeText_(payload.className, 80);
-  if (fullName.length < 2) throw new Error('VALIDATION|Vui lòng nhập họ và tên.');
-  if (className.length < 2) throw new Error('VALIDATION|Vui lòng nhập lớp.');
-  if (!identity.studentId) throw new Error('STUDENT_ID_REQUIRED|Email không có MSSV dạng số. Vui lòng liên hệ quản trị viên để được gán MSSV.');
+  if (fullName.length < 2) throw new Error('VALIDATION|Nhập họ và tên.');
+  if (className.length < 2) throw new Error('VALIDATION|Nhập lớp.');
+  if (!identity.studentId) throw new Error('STUDENT_ID_REQUIRED|Email không có MSSV dạng số. Liên hệ quản trị viên để được gán MSSV.');
 
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
@@ -239,7 +239,7 @@ function deleteDocumentType(typeId) {
     const documentCount = readTable_(APP.SHEETS.DOCUMENTS).filter(function(row) { return row.type_id === typeId; }).length;
     const transactionItemCount = readTable_(APP.SHEETS.ITEMS).filter(function(row) { return row.type_id === typeId; }).length;
     if (documentCount || transactionItemCount) {
-      throw new Error('IN_USE|Loại hồ sơ đã được sử dụng nên không thể xoá. Hãy chỉnh sửa và bỏ chọn “Đang sử dụng” để ngừng dùng loại hồ sơ này.');
+      throw new Error('IN_USE|Loại đã có hồ sơ hoặc yêu cầu nên không thể xoá. Chọn “Ngừng sử dụng” để giữ lịch sử.');
     }
 
     deleteRow_(APP.SHEETS.TYPES, type._row);
@@ -256,11 +256,11 @@ function createTransaction(payload) {
   payload = payload || {};
   const transactionType = String(payload.transactionType || '').toUpperCase();
   if (['SUBMIT', 'RECEIVE', 'SUPPLEMENT'].indexOf(transactionType) === -1) {
-    throw new Error('VALIDATION|Hình thức giao dịch không hợp lệ.');
+    throw new Error('VALIDATION|Hình thức yêu cầu không hợp lệ.');
   }
   const requestToken = sanitizeId_(payload.requestToken) || Utilities.getUuid();
   const selected = Array.isArray(payload.items) ? payload.items : [];
-  if (!selected.length || selected.length > 20) throw new Error('VALIDATION|Vui lòng chọn từ 1 đến 20 hồ sơ.');
+  if (!selected.length || selected.length > 20) throw new Error('VALIDATION|Chọn từ 1 đến 20 giấy tờ.');
 
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -336,7 +336,7 @@ function createTransaction(payload) {
       });
     });
     audit_('CREATE_TRANSACTION', 'Transaction', transactionId, identity.email, { type: transactionType, itemCount: normalizedItems.length });
-    notify_(identity.email, '', 'Đã ghi nhận yêu cầu', 'Yêu cầu ' + transaction.transaction_code + ' đang chờ cán bộ xác nhận.', identity.email, false);
+    notify_(identity.email, '', 'Đã gửi yêu cầu', 'Yêu cầu ' + transaction.transaction_code + ' đang chờ cán bộ xác nhận.', identity.email, false);
     return getTransactionResult_(transactionId, identity.email, false);
   } finally {
     lock.releaseLock();
@@ -376,10 +376,10 @@ function reviewTransactionItems(payload) {
   const decision = String(payload.decision || '').toUpperCase();
   if (['APPROVE', 'REJECT'].indexOf(decision) === -1) throw new Error('VALIDATION|Quyết định duyệt không hợp lệ.');
   const note = sanitizeText_(payload.note, 1000);
-  if (decision === 'REJECT' && !note) throw new Error('VALIDATION|Vui lòng nhập lý do từ chối.');
+  if (decision === 'REJECT' && !note) throw new Error('VALIDATION|Ghi lý do từ chối.');
   const itemIds = Array.isArray(payload.itemIds) ? payload.itemIds.map(sanitizeId_).filter(Boolean) : [];
   const uniqueIds = itemIds.filter(function(id, index) { return itemIds.indexOf(id) === index; });
-  if (!uniqueIds.length || uniqueIds.length > 20) throw new Error('VALIDATION|Vui lòng chọn từ 1 đến 20 giấy tờ.');
+  if (!uniqueIds.length || uniqueIds.length > 20) throw new Error('VALIDATION|Chọn từ 1 đến 20 giấy tờ.');
   const selections = payload.documentSelections || {};
 
   const lock = LockService.getScriptLock();
@@ -388,7 +388,7 @@ function reviewTransactionItems(payload) {
     const now = new Date();
     const items = uniqueIds.map(function(itemId) {
       const item = findBy_(APP.SHEETS.ITEMS, 'item_id', itemId);
-      if (!item) throw new Error('NOT_FOUND|Không tìm thấy mục giao dịch ' + itemId + '.');
+      if (!item) throw new Error('NOT_FOUND|Không tìm thấy mục yêu cầu ' + itemId + '.');
       return item;
     });
     const transactionId = items[0].transaction_id;
@@ -396,7 +396,7 @@ function reviewTransactionItems(payload) {
       throw new Error('VALIDATION|Chỉ có thể xác nhận các giấy tờ trong cùng một yêu cầu.');
     }
     const transaction = findBy_(APP.SHEETS.TRANSACTIONS, 'transaction_id', transactionId);
-    if (!transaction) throw new Error('DATA_ERROR|Không tìm thấy giao dịch cha.');
+    if (!transaction) throw new Error('DATA_ERROR|Không tìm thấy yêu cầu tương ứng.');
     items.forEach(function(item) {
       processTransactionItem_(transaction, item, decision, note, sanitizeId_(selections[item.item_id]), admin.email, now, toBoolean_(payload.sendEmail));
     });
@@ -438,8 +438,8 @@ function processTransactionItem_(transaction, item, decision, note, selectedDocu
     status: expectedStatus, admin_note: note, document_id: documentId,
     reviewed_at: now, reviewed_by: adminEmail
   });
-  const title = decision === 'APPROVE' ? 'Giao dịch đã được xác nhận' : 'Có mục giao dịch bị từ chối';
-  const message = item.type_name + (note ? ': ' + note : (decision === 'APPROVE' ? ' đã được xác nhận tại quầy.' : ' chưa được xác nhận.'));
+  const title = decision === 'APPROVE' ? 'Yêu cầu đã được xác nhận' : 'Có giấy tờ chưa được xác nhận';
+  const message = item.type_name + (note ? ': ' + note : (decision === 'APPROVE' ? ' đã xác nhận tại quầy.' : ' chưa được xác nhận.'));
   notify_(transaction.student_email, documentId || item.related_document_id, title, message, adminEmail, sendEmail);
 }
 
@@ -502,7 +502,7 @@ function resolvePickupDocument_(transaction, item, selectedDocumentId, adminEmai
   if (item.document_id) document = candidates.find(function(row) { return row.document_id === item.document_id; }) || findBy_(APP.SHEETS.DOCUMENTS, 'document_id', item.document_id);
   else if (selectedDocumentId) document = candidates.find(function(row) { return row.document_id === selectedDocumentId; }) || null;
   else if (candidates.length === 1) document = candidates[0];
-  else if (candidates.length > 1) throw new Error('VALIDATION|Có nhiều hồ sơ ' + item.type_name + ' đang chờ nhận. Vui lòng chọn đúng hồ sơ.');
+  else if (candidates.length > 1) throw new Error('VALIDATION|Có nhiều hồ sơ ' + item.type_name + ' đang chờ nhận. Chọn đúng hồ sơ.');
   if (selectedDocumentId && !document) throw new Error('VALIDATION|Hồ sơ được chọn không còn phù hợp để bàn giao.');
   if (document) {
     handOverDocument_(document.document_id, adminEmail, note, 'evt_handover_' + item.item_id);
@@ -643,7 +643,7 @@ function createManualDocument(payload) {
   appendRecord_(APP.SHEETS.DOCUMENTS, document);
   appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_' + shortId_(), document_id: document.document_id, event_type: 'MANUAL_CREATED', from_step_id: '', to_step_id: document.current_step_id, status: status, public_note: document.public_note, internal_note: document.internal_note, created_at: now, created_by: admin.email });
   audit_('CREATE_MANUAL_DOCUMENT', 'Document', document.document_id, admin.email, { studentId: student.student_id, typeId: type.type_id });
-  notify_(student.email, document.document_id, 'Văn phòng đã ghi nhận hồ sơ', document.type_name + ': ' + status, admin.email, toBoolean_(payload.sendEmail));
+  notify_(student.email, document.document_id, 'Văn phòng đã nhận hồ sơ', document.type_name + ': ' + status, admin.email, toBoolean_(payload.sendEmail));
   return publicDocumentAdmin_(document);
 }
 
@@ -653,7 +653,7 @@ function batchUpdateDocuments(payload) {
   const ids = Array.isArray(payload.documentIds) ? payload.documentIds.map(sanitizeId_).filter(Boolean) : [];
   if (!ids.length || ids.length > 100) throw new Error('VALIDATION|Chọn từ 1 đến 100 hồ sơ để cập nhật.');
   const status = sanitizeText_(payload.status, 120);
-  if (!status) throw new Error('VALIDATION|Vui lòng chọn trạng thái mới.');
+  if (!status) throw new Error('VALIDATION|Chọn trạng thái mới.');
   const note = sanitizeText_(payload.publicNote, 1500);
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -683,7 +683,7 @@ function updateDocumentProgress(payload) {
     const document = findBy_(APP.SHEETS.DOCUMENTS, 'document_id', documentId);
     if (!document) throw new Error('NOT_FOUND|Không tìm thấy hồ sơ.');
     if (payload.version != null && Number(payload.version) !== Number(document.version || 0)) {
-      throw new Error('VERSION_CONFLICT|Hồ sơ đã được người khác cập nhật. Vui lòng tải lại dữ liệu.');
+      throw new Error('VERSION_CONFLICT|Hồ sơ vừa được người khác cập nhật. Tải lại để xem bản mới.');
     }
     const steps = getWorkflowSteps_(document.workflow_version_id);
     const step = payload.stepId ? steps.find(function(row) { return row.step_id === payload.stepId; }) : null;
@@ -725,7 +725,7 @@ function cancelDocument(payload) {
   const document = findBy_(APP.SHEETS.DOCUMENTS, 'document_id', sanitizeId_(payload.documentId));
   if (!document) throw new Error('NOT_FOUND|Không tìm thấy hồ sơ.');
   const reason = sanitizeText_(payload.reason, 1000);
-  if (!reason) throw new Error('VALIDATION|Vui lòng nhập lý do hủy hồ sơ.');
+  if (!reason) throw new Error('VALIDATION|Nhập lý do hủy hồ sơ.');
   const now = new Date();
   updateRow_(APP.SHEETS.DOCUMENTS, document._row, { status: 'Đã hủy', active: false, public_note: reason, updated_at: now, updated_by: admin.email, version: Number(document.version || 0) + 1 });
   appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_' + shortId_(), document_id: document.document_id, event_type: 'CANCELLED', from_step_id: document.current_step_id, to_step_id: document.current_step_id, status: 'Đã hủy', public_note: reason, internal_note: '', created_at: now, created_by: admin.email });
@@ -819,7 +819,7 @@ function finishServiceSession(payload) {
   const duration = Math.max(1, Math.round((now.getTime() - started.getTime()) / 60000));
   const topic = sanitizeText_(payload.topic, 1500);
   const result = sanitizeText_(payload.result, 1500);
-  if (!topic || !result) throw new Error('VALIDATION|Vui lòng nhập nội dung trao đổi và kết quả xử lý.');
+  if (!topic || !result) throw new Error('VALIDATION|Nhập nội dung trao đổi và kết quả xử lý.');
   updateRow_(APP.SHEETS.SERVICES, row._row, { ended_at: now, duration_minutes: duration, topic: topic, result: result, note: sanitizeText_(payload.note, 1000), status: 'COMPLETED', updated_at: now });
   audit_('FINISH_SERVICE_SESSION', 'ServiceSession', row.session_id, admin.email, { duration: duration });
   return publicService_(Object.assign({}, row, { ended_at: now, duration_minutes: duration, topic: topic, result: result, note: payload.note || '', status: 'COMPLETED', updated_at: now }));
@@ -834,7 +834,7 @@ function addManualServiceSession(payload) {
   if (!started || !ended || ended.getTime() < started.getTime()) throw new Error('VALIDATION|Thời gian tiếp sinh viên không hợp lệ.');
   const topic = sanitizeText_(payload.topic, 1500);
   const result = sanitizeText_(payload.result, 1500);
-  if (!topic || !result) throw new Error('VALIDATION|Vui lòng nhập nội dung trao đổi và kết quả xử lý.');
+  if (!topic || !result) throw new Error('VALIDATION|Nhập nội dung trao đổi và kết quả xử lý.');
   const now = new Date();
   const record = {
     session_id: 'svc_' + shortId_(), student_id: student.student_id, student_email: student.email,
@@ -1120,8 +1120,8 @@ function refreshTransactionStatus_(transactionId, adminEmail) {
 
 function getTransactionResult_(transactionId, ownerEmail, adminView) {
   const transaction = findBy_(APP.SHEETS.TRANSACTIONS, 'transaction_id', transactionId);
-  if (!transaction) throw new Error('NOT_FOUND|Không tìm thấy giao dịch.');
-  if (!adminView && normalizeEmail_(transaction.student_email) !== normalizeEmail_(ownerEmail)) throw new Error('ACCESS_DENIED|Bạn không có quyền xem giao dịch này.');
+  if (!transaction) throw new Error('NOT_FOUND|Không tìm thấy yêu cầu.');
+  if (!adminView && normalizeEmail_(transaction.student_email) !== normalizeEmail_(ownerEmail)) throw new Error('ACCESS_DENIED|Bạn không có quyền xem yêu cầu này.');
   const items = readTable_(APP.SHEETS.ITEMS).filter(function(row) { return row.transaction_id === transactionId; });
   const documents = adminView && transaction.transaction_type === 'RECEIVE' ? readTable_(APP.SHEETS.DOCUMENTS) : [];
   return {
@@ -1167,7 +1167,7 @@ function queueAndSendEmail_(recipient, subject, body) {
 
 function sendQueuedEmail_(row) {
   try {
-    MailApp.sendEmail({ to: row.recipient, subject: row.subject, htmlBody: '<div style="font-family:Arial,sans-serif;line-height:1.6"><h2 style="color:#005AAB">' + escapeHtml_(row.subject) + '</h2><p>' + escapeHtml_(row.body).replace(/\n/g, '<br>') + '</p><p style="color:#6B7280">' + APP.NAME + '</p></div>' });
+    MailApp.sendEmail({ to: row.recipient, subject: row.subject, htmlBody: '<div style="font-family:Arial,sans-serif;line-height:1.6;background:#FFFFFF;color:#171717"><h2 style="margin:0 0 16px;color:#171717;font-size:15px">' + escapeHtml_(row.subject) + '</h2><p>' + escapeHtml_(row.body).replace(/\n/g, '<br>') + '</p><p style="color:#5C5C58">' + APP.NAME + '</p></div>' });
     updateRow_(APP.SHEETS.EMAIL_QUEUE, row._row, { status: 'SENT', attempts: Number(row.attempts || 0) + 1, last_error: '', sent_at: new Date() });
   } catch (error) {
     updateRow_(APP.SHEETS.EMAIL_QUEUE, row._row, { status: 'FAILED', attempts: Number(row.attempts || 0) + 1, last_error: sanitizeText_(error.message, 1000) });
@@ -1180,7 +1180,7 @@ function audit_(action, entityType, entityId, actor, detail) {
 
 function requireProfile_(email) {
   const profile = findBy_(APP.SHEETS.STUDENTS, 'email', email);
-  if (!profile || !toBoolean_(profile.active) || !profile.full_name || !profile.class_name) throw new Error('PROFILE_REQUIRED|Vui lòng hoàn thiện họ tên và lớp trong phần Tài khoản trước khi giao dịch.');
+  if (!profile || !toBoolean_(profile.active) || !profile.full_name || !profile.class_name) throw new Error('PROFILE_REQUIRED|Nhập họ tên và lớp trong mục Tài khoản trước khi gửi yêu cầu.');
   return profile;
 }
 

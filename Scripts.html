@@ -1,7 +1,7 @@
 <script>
 (() => {
   'use strict';
-  const state = { boot: null, documents: [], transactions: [], notifications: [], pending: [], adminDocuments: [], workflows: [], types: [], serviceTimer: null };
+  const state = { boot: null, documents: [], transactions: [], notifications: [], pending: [], adminDocuments: [], workflows: [], types: [], serviceTimer: null, toastTimer: null };
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -9,7 +9,11 @@
   const fmtDay = value => value ? new Intl.DateTimeFormat('vi-VN', {dateStyle:'short', timeZone:'Asia/Ho_Chi_Minh'}).format(new Date(value)) : '—';
   const typeLabel = value => ({SUBMIT:'Nộp hồ sơ', RECEIVE:'Nhận hồ sơ', SUPPLEMENT:'Bổ sung giấy tờ'})[value] || value;
   const statusLabel = value => ({PENDING:'Chờ xác nhận', PARTIAL:'Đã xác nhận một phần', COMPLETED:'Hoàn tất', REJECTED:'Bị từ chối', APPROVED:'Đã xác nhận'})[value] || value;
-  const statusClass = value => /APPROVED|COMPLETED|Đã hoàn thành|Đã bàn giao|Đã tiếp nhận/.test(value) ? 'success' : /REJECTED|Đã hủy/.test(value) ? 'danger' : /PENDING|PARTIAL|Đang|Chờ|Yêu cầu/.test(value) ? 'pending' : 'info';
+  const statusClass = value =>
+    /APPROVED|COMPLETED|Đã hoàn thành|Đã bàn giao/.test(value) ? 'ok' :
+    /REJECTED|Đã hủy/.test(value) ? 'bad' :
+    /PENDING|PARTIAL|Yêu cầu bổ sung|Chờ sinh viên đến nhận/.test(value) ? 'act' :
+    /Đang|Chờ phê duyệt/.test(value) ? 'prog' : '';
 
   function api(name, ...args) {
     return new Promise((resolve, reject) => {
@@ -37,7 +41,8 @@
 
   function toast(message, error = false) {
     const el = $('#toast'); el.textContent = message; el.className = 'toast' + (error ? ' error' : '');
-    setTimeout(() => el.classList.add('hidden'), 3500);
+    clearTimeout(state.toastTimer);
+    state.toastTimer = setTimeout(() => el.classList.add('hidden'), 3500);
   }
 
   function showAlert(message, success = false) {
@@ -59,18 +64,18 @@
       const initial = window.INITIAL_VIEW === 'transaction' && state.boot.identity.role === 'STUDENT' ? 'student-transaction' : (state.boot.identity.role === 'ADMIN' ? 'admin-home' : 'student-home');
       await navigate(initial);
     } catch (error) {
-      $('#loading').innerHTML = `<div class="card" style="max-width:540px"><h2>Không thể truy cập hệ thống</h2><p>${escapeHtml(error.message)}</p><p style="color:#697386">Hãy đăng nhập đúng tài khoản Google TDTU rồi tải lại trang.</p><button class="button primary" onclick="location.reload()">Tải lại</button></div>`;
+      $('#loading').innerHTML = `<div class="access-error"><h2>Không vào được</h2><p>${escapeHtml(error.message)}</p><p>Đăng nhập bằng tài khoản TDTU rồi tải lại trang.</p><button class="button primary" onclick="location.reload()">Tải lại</button></div>`;
     }
   }
 
   function renderShell() {
     const {identity, profile, appName, officeName, dashboard} = state.boot;
+    $('#app').dataset.role = identity.role;
     $('#brand-title').textContent = appName;
     $('#office-name').textContent = officeName;
     $('#user-email').textContent = identity.email;
     const name = identity.role === 'ADMIN' ? (identity.name || identity.email.split('@')[0]) : (profile?.fullName || 'Sinh viên TDTU');
     $('#user-name').textContent = name;
-    $('#user-avatar').textContent = name.split(/\s+/).slice(-2).map(x => x[0]).join('').toUpperCase();
     $('#student-nav').classList.toggle('hidden', identity.role !== 'STUDENT');
     $('#admin-nav').classList.toggle('hidden', identity.role !== 'ADMIN');
     if (identity.role === 'STUDENT') {
@@ -89,18 +94,20 @@
       const go = event.target.closest('[data-go]'); if (go) navigate(go.dataset.go);
     });
     $('#mobile-menu').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
-    $('#refresh-button').addEventListener('click', async () => { hideAlert(); await refreshCurrent(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshCurrent(); });
     $('#modal-close').addEventListener('click', closeModal);
     $('#modal').addEventListener('click', event => { if (event.target === $('#modal')) closeModal(); });
     $('#profile-form').addEventListener('submit', saveProfile);
     $('#transaction-form').addEventListener('submit', submitTransaction);
     $$('input[name="transactionType"]').forEach(input => input.addEventListener('change', () => renderTransactionOptions().catch(error => showAlert(error.message))));
-    $('#reload-my-documents').addEventListener('click', loadMyDocuments);
     $('#my-document-search').addEventListener('input', renderMyDocuments);
+    $('#transaction-options').addEventListener('change', updateTransactionSelection);
     $('#search-admin-documents').addEventListener('click', loadAdminDocuments);
     $('#admin-document-search').addEventListener('keydown', e => { if (e.key === 'Enter') loadAdminDocuments(); });
     $('#new-manual-document').addEventListener('click', showManualDocumentForm);
     $('#batch-documents').addEventListener('click', showBatchDocumentForm);
+    $('#clear-document-selection').addEventListener('click', () => { $$('.document-select').forEach(input => { input.checked = false; }); updateDocumentBulkActions(); });
+    $('#admin-documents-table').addEventListener('change', event => { if (event.target.matches('.document-select')) updateDocumentBulkActions(); });
     $('#new-type').addEventListener('click', () => showTypeForm());
     $('#new-workflow').addEventListener('click', showWorkflowForm);
     $('#manual-service-form').addEventListener('submit', saveManualService);
@@ -115,13 +122,13 @@
   }
 
   const viewMeta = {
-    'student-home':['Trang chủ','Theo dõi hồ sơ và giao dịch của bạn'], 'student-transaction':['Nộp / nhận hồ sơ','Tạo yêu cầu giao dịch tại văn phòng'],
-    'student-documents':['Hồ sơ của tôi','Theo dõi trạng thái và tiến độ xử lý'], 'student-history':['Lịch sử giao nhận','Các yêu cầu đã gửi tại văn phòng'],
-    'student-notifications':['Thông báo','Phản hồi và cập nhật từ văn phòng'], 'student-profile':['Tài khoản','Thông tin dùng trong các giao dịch'],
-    'admin-home':['Dashboard','Tổng quan hoạt động tại văn phòng'], 'admin-pending':['Xác nhận giao nhận','Đối chiếu và xác nhận từng giấy tờ'],
-    'admin-documents':['Quản lý hồ sơ','Tra cứu và cập nhật tiến độ xử lý'], 'admin-catalog':['Danh mục & quy trình','Thiết lập loại hồ sơ và các bước xử lý'],
-    'admin-service':['Tiếp sinh viên','Ghi nhận trực tiếp và bổ sung thủ công'], 'admin-students':['Quản lý sinh viên','Tra cứu tài khoản sinh viên đã đăng ký'],
-    'admin-reports':['Báo cáo','Thống kê hoạt động theo khoảng thời gian'], 'admin-settings':['Cài đặt','Cấu hình và kiểm tra hệ thống']
+    'student-home':['Trang chủ',''], 'student-transaction':['Tạo yêu cầu',''],
+    'student-documents':['Hồ sơ của tôi',''], 'student-history':['Lịch sử yêu cầu',''],
+    'student-notifications':['Thông báo',''], 'student-profile':['Tài khoản','MSSV lấy từ email trường, không sửa được.'],
+    'admin-home':['Tổng quan',''], 'admin-pending':['Chờ xác nhận','Chỉ xác nhận khi đã đối chiếu sinh viên và giấy tờ thực tế.'],
+    'admin-documents':['Hồ sơ',''], 'admin-catalog':['Danh mục',''],
+    'admin-service':['Tiếp sinh viên',''], 'admin-students':['Sinh viên',''],
+    'admin-reports':['Báo cáo',''], 'admin-settings':['Cài đặt','']
   };
 
   async function navigate(view) {
@@ -150,15 +157,15 @@
 
   function renderStudentKpis(data) {
     $('#student-kpis').innerHTML = kpis([
-      ['Đang xử lý', data.processing, '▤'], ['Cần bổ sung', data.supplement, '!'], ['Đã hoàn thành', data.completed, '✓'], ['Chờ đến nhận', data.waitingPickup, '⇩']
+      ['Đang xử lý', data.processing], ['Cần bổ sung', data.supplement], ['Đã hoàn thành', data.completed], ['Chờ đến nhận', data.waitingPickup]
     ]);
   }
   function renderAdminKpis(data) {
     $('#admin-kpis').innerHTML = kpis([
-      ['Chờ xác nhận', data.pendingTransactions, '✓'], ['Đang lưu giữ', data.storedDocuments, '▤'], ['Đang xử lý', data.processing, '◷'], ['Cần bổ sung', data.supplement, '!']
+      ['Chờ xác nhận', data.pendingTransactions], ['Đang lưu giữ', data.storedDocuments], ['Đang xử lý', data.processing], ['Cần bổ sung', data.supplement]
     ]);
   }
-  const kpis = items => items.map(item => `<div class="kpi"><i>${item[2]}</i><strong>${Number(item[1] || 0).toLocaleString('vi-VN')}</strong><span>${escapeHtml(item[0])}</span></div>`).join('');
+  const kpis = items => items.map(item => `<div class="kpi"><strong>${Number(item[1] || 0).toLocaleString('vi-VN')}</strong><span>${escapeHtml(item[0])}</span></div>`).join('');
 
   function renderProfile() {
     const {identity, profile} = state.boot;
@@ -173,14 +180,18 @@
     try {
       state.boot.profile = await api('saveStudentProfile', {fullName:$('#profile-full-name').value, className:$('#profile-class').value});
       $('#user-name').textContent = state.boot.profile.fullName; $('#profile-required').classList.add('hidden');
-      toast('Đã lưu thông tin sinh viên.');
+      toast('Đã lưu.');
     } catch (error) { showAlert(error.message); } finally { setBusy(button, false); }
   }
 
   async function loadStudentHome() {
     const [dashboard, documents] = await Promise.all([api('getMyDashboard'), api('getMyDocuments')]);
     state.boot.dashboard = dashboard; state.documents = documents; renderStudentKpis(dashboard);
-    $('#recent-documents').innerHTML = documents.slice(0,5).map(doc => `<button class="list-item" onclick="window.app.openDocument('${doc.documentId}')"><div><strong>${escapeHtml(doc.typeName)}</strong><small>${escapeHtml(doc.code)} · ${fmtDate(doc.updatedAt)}</small></div><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span></button>`).join('') || '<div class="empty">Chưa có hồ sơ.</div>';
+    const fullName = state.boot.profile?.fullName?.trim() || '';
+    const firstName = fullName ? fullName.split(/\s+/).at(-1) : 'bạn';
+    $('#page-title').textContent = `Chào ${firstName}`;
+    $('#student-home-note').innerHTML = dashboard.supplement > 0 ? `Bạn có ${Number(dashboard.supplement).toLocaleString('vi-VN')} hồ sơ cần bổ sung. <button class="link-button" data-go="student-documents">Xem hồ sơ</button>` : '';
+    $('#recent-documents').innerHTML = documents.slice(0,5).map(doc => `<button class="list-item" onclick="window.app.openDocument('${doc.documentId}')"><div><strong>${escapeHtml(doc.typeName)}</strong><small><span class="list-code">${escapeHtml(doc.code)}</span> · ${fmtDate(doc.updatedAt)}</small></div><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span></button>`).join('') || '<div class="empty">Chưa có hồ sơ.</div>';
   }
 
   async function renderTransactionOptions() {
@@ -191,7 +202,15 @@
     if (type === 'SUBMIT') options = state.boot.types.filter(item => ['SUBMIT','BOTH'].includes(item.handoverMode)).map(item => ({id:item.typeId, name:item.name, description:item.description, field:'typeId'}));
     else if (type === 'RECEIVE') options = state.boot.types.filter(item => ['RECEIVE','BOTH'].includes(item.handoverMode)).map(item => ({id:item.typeId, name:item.name, description:item.description, field:'typeId'}));
     else options = state.documents.filter(doc => !['Đã bàn giao','Đã hủy'].includes(doc.status)).map(doc => ({id:doc.documentId, name:doc.typeName, description:`${doc.code} · ${doc.status}`, field:'documentId'}));
-    $('#transaction-options').innerHTML = options.map(item => `<label class="check-option"><input type="checkbox" value="${escapeHtml(item.id)}" data-field="${item.field}"><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description || '')}</small></span></label>`).join('') || '<div class="empty">Không có hồ sơ phù hợp cho hình thức này.</div>';
+    $('#transaction-options').innerHTML = options.map(item => `<label class="check-option"><input type="checkbox" value="${escapeHtml(item.id)}" data-field="${item.field}"><span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description || '')}</small></span></label>`).join('') || '<div class="empty">Chưa có giấy tờ nào để chọn.</div>';
+    updateTransactionSelection();
+  }
+
+  function updateTransactionSelection() {
+    const count = $$('#transaction-options input:checked').length;
+    $('#transaction-selection').textContent = count ? `Đã chọn ${count} giấy tờ.` : 'Chọn ít nhất một giấy tờ.';
+    $('#transaction-submit').textContent = `Gửi yêu cầu · ${count}`;
+    $('#transaction-submit').disabled = count === 0;
   }
 
   async function submitTransaction(event) {
@@ -203,7 +222,7 @@
       const items = $$('#transaction-options input:checked').map(input => ({[input.dataset.field]:input.value}));
       const result = await api('createTransaction', {transactionType, items, note:$('#transaction-note').value, requestToken:'req_' + crypto.randomUUID().replaceAll('-','')});
       $('#transaction-form').reset(); $('#transaction-note').value='';
-      toast(`Đã tạo yêu cầu ${result.code}. Yêu cầu chưa hoàn tất cho đến khi cán bộ xác nhận tại quầy.`); await navigate('student-history');
+      toast(`Đã gửi yêu cầu ${result.code}. Cán bộ sẽ xác nhận khi bạn đến quầy.`); await navigate('student-history');
     } catch (error) { showAlert(error.message); } finally { setBusy(button, false); }
   }
 
@@ -211,37 +230,40 @@
   function renderMyDocuments() {
     const query = ($('#my-document-search').value || '').toLowerCase();
     const docs = state.documents.filter(doc => !query || `${doc.code} ${doc.typeName} ${doc.status}`.toLowerCase().includes(query));
-    $('#my-documents').innerHTML = docs.map(doc => documentCard(doc)).join('') || '<div class="card empty">Chưa có hồ sơ phù hợp.</div>';
+    $('#my-documents').innerHTML = docs.map(doc => documentCard(doc)).join('') || '<div class="empty">Không có hồ sơ nào khớp.</div>';
   }
   function documentCard(doc) {
-    return `<article class="document-card"><div class="document-head"><div><h3>${escapeHtml(doc.typeName)}</h3><div class="document-meta"><span>${escapeHtml(doc.code)}</span><span>Ghi nhận: ${fmtDay(doc.submittedAt)}</span><span>Cập nhật: ${fmtDate(doc.updatedAt)}</span></div></div><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span></div>${doc.publicNote?`<p>${escapeHtml(doc.publicNote)}</p>`:''}<button class="button secondary small" onclick="window.app.openDocument('${doc.documentId}')">Xem tiến độ</button></article>`;
+    return `<button type="button" class="document-card" onclick="window.app.openDocument('${doc.documentId}')"><div class="document-head"><div><h3>${escapeHtml(doc.typeName)}</h3><div class="document-meta"><span>${escapeHtml(doc.code)}</span><span>Ghi nhận ${fmtDay(doc.submittedAt)}</span><span>Cập nhật ${fmtDate(doc.updatedAt)}</span></div></div><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span></div>${doc.publicNote?`<p>${escapeHtml(doc.publicNote)}</p>`:''}</button>`;
   }
 
   async function loadMyTransactions() {
     state.transactions = await api('listMyTransactions');
-    $('#my-transactions').innerHTML = state.transactions.map(transactionCard).join('') || '<div class="card empty">Chưa có giao dịch.</div>';
+    $('#my-transactions').innerHTML = state.transactions.map(transactionCard).join('') || '<div class="empty">Chưa có yêu cầu nào.</div>';
   }
 
   function transactionCard(tx, admin = false) {
     const items = tx.items.map(item => `<div class="transaction-item"><div><strong>${escapeHtml(item.typeName)}</strong><small>${escapeHtml(item.adminNote || '')}</small></div><span class="status ${statusClass(item.status)}">${escapeHtml(statusLabel(item.status))}</span></div>`).join('');
-    return `<article class="transaction-card"><div class="transaction-head"><div><h3>${escapeHtml(typeLabel(tx.type))} · ${escapeHtml(tx.code)}</h3><div class="transaction-meta">${admin?`<span>${escapeHtml(tx.studentName)} · ${escapeHtml(tx.studentId)}</span>`:''}<span>${fmtDate(tx.createdAt)}</span><span>${tx.items.length} mục</span></div></div><span class="status ${statusClass(tx.status)}">${escapeHtml(statusLabel(tx.status))}</span></div>${tx.note?`<p>${escapeHtml(tx.note)}</p>`:''}<div class="transaction-items">${items}</div></article>`;
+    return `<article class="transaction-card"><div class="transaction-head"><div><h3>${escapeHtml(typeLabel(tx.type))}</h3><div class="transaction-meta">${admin?`<span>${escapeHtml(tx.studentName)} · ${escapeHtml(tx.studentId)}</span>`:''}<span class="transaction-code">${escapeHtml(tx.code)}</span><span>${fmtDate(tx.createdAt)}</span><span>${tx.items.length} mục</span></div></div><span class="status ${statusClass(tx.status)}">${escapeHtml(statusLabel(tx.status))}</span></div>${tx.note?`<p>${escapeHtml(tx.note)}</p>`:''}<div class="transaction-items">${items}</div></article>`;
   }
 
   async function loadNotifications() {
     state.notifications = await api('listMyNotifications');
-    $('#my-notifications').innerHTML = state.notifications.map(item => `<article class="notification-card" style="${item.read?'opacity:.72':''}"><div class="document-head"><div><h3>${escapeHtml(item.title)}</h3><small>${fmtDate(item.createdAt)}</small></div>${item.read?'':'<span class="status info">Mới</span>'}</div><p>${escapeHtml(item.message)}</p>${item.documentId?`<button class="link-button" onclick="window.app.openDocument('${item.documentId}')">Xem hồ sơ</button>`:''}${item.read?'':`<button class="link-button" onclick="window.app.readNotification('${item.notificationId}')">Đánh dấu đã đọc</button>`}</article>`).join('') || '<div class="card empty">Chưa có thông báo.</div>';
+    $('#my-notifications').innerHTML = state.notifications.map(item => `<article class="notification-card ${item.read?'read':'unread'}"><div class="document-head"><div><h3 class="notification-title">${escapeHtml(item.title)}</h3><small>${fmtDate(item.createdAt)}</small></div></div><p>${escapeHtml(item.message)}</p><div class="notification-actions">${item.documentId?`<button class="link-button" onclick="window.app.openDocument('${item.documentId}')">Xem hồ sơ</button>`:''}${item.read?'':`<button class="link-button" onclick="window.app.readNotification('${item.notificationId}')">Đã đọc</button>`}</div></article>`).join('') || '<div class="empty">Chưa có thông báo nào.</div>';
   }
 
   async function openDocument(documentId) {
     try {
       const doc = await api('getDocumentDetail', documentId);
-      const total = doc.steps.length || 1; const completed = doc.steps.filter(step => step.state === 'DONE').length + (doc.status === 'Đã hoàn thành' || doc.status === 'Đã bàn giao' ? 1 : 0);
-      const progress = Math.min(100, Math.round(completed / total * 100));
+      const total = doc.steps.length || 1;
+      const doneCount = doc.steps.filter(step => step.state === 'DONE').length;
+      const currentIndex = doc.steps.findIndex(step => step.state === 'CURRENT');
+      const stepNumber = currentIndex >= 0 ? currentIndex + 1 : Math.min(total, Math.max(1, doneCount));
       const timeline = doc.steps.length ? doc.steps.map(step => {
         const event = [...doc.events].reverse().find(evt => evt.toStepId === step.stepId);
-        return `<div class="timeline-step ${step.state.toLowerCase()}"><strong>${escapeHtml(step.name)}</strong><small>${event ? fmtDate(event.createdAt) : (step.state==='CURRENT'?'Đang thực hiện':'')}</small>${event?.publicNote?`<div class="timeline-note">${escapeHtml(event.publicNote)}</div>`:''}</div>`;
+        const attention = step.state === 'CURRENT' && doc.status === 'Yêu cầu bổ sung' ? ' attention' : '';
+        return `<div class="timeline-step ${step.state.toLowerCase()}${attention}"><strong>${escapeHtml(step.name)}</strong><small>${event ? fmtDate(event.createdAt) : (step.state==='CURRENT'?'Đang làm':'')}</small>${event?.publicNote?`<div class="timeline-note">${escapeHtml(event.publicNote)}</div>`:''}</div>`;
       }).join('') : doc.events.map(evt => `<div class="timeline-step done"><strong>${escapeHtml(evt.status)}</strong><small>${fmtDate(evt.createdAt)}</small>${evt.publicNote?`<div class="timeline-note">${escapeHtml(evt.publicNote)}</div>`:''}</div>`).join('');
-      openModal(`<div class="document-head"><div><h2>${escapeHtml(doc.typeName)}</h2><p>${escapeHtml(doc.code)}</p></div><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span></div><div class="grid two-col compact"><div><small>Ngày ghi nhận</small><strong>${fmtDay(doc.submittedAt)}</strong></div><div><small>Dự kiến hoàn thành</small><strong>${fmtDay(doc.expectedAt)}</strong></div></div><div class="document-head" style="margin-top:22px"><strong>Tiến độ xử lý</strong><span>${completed}/${total} bước</span></div><div class="progress-bar"><span style="width:${progress}%"></span></div><div class="timeline">${timeline}</div><p class="timeline-note">Cập nhật lần cuối: ${fmtDate(doc.updatedAt)}</p>`);
+      openModal(`<h2 class="detail-title">${escapeHtml(doc.typeName)}</h2><div class="detail-meta"><code>${escapeHtml(doc.code)}</code><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span></div><div class="detail-facts"><div><small>Ghi nhận</small><strong>${fmtDay(doc.submittedAt)}</strong></div><div><small>Dự kiến xong</small><strong>${fmtDay(doc.expectedAt)}</strong></div></div><div class="detail-section-head"><span>Tiến độ</span><span>Bước ${stepNumber}/${total}</span></div><div class="timeline">${timeline}</div><p class="detail-updated">Cập nhật ${fmtDate(doc.updatedAt)}</p>`);
     } catch (error) { showAlert(error.message); }
   }
 
@@ -250,7 +272,7 @@
   async function loadAdminHome() {
     const [boot, pending] = await Promise.all([api('getBootstrap'), api('listPendingTransactions')]);
     state.boot = boot; state.pending = pending; renderAdminKpis(boot.dashboard); renderQr();
-    $('#admin-recent-pending').innerHTML = pending.slice(0,5).map(tx => `<button class="list-item" data-go="admin-pending"><div><strong>${escapeHtml(tx.studentName)} · ${escapeHtml(typeLabel(tx.type))}</strong><small>${escapeHtml(tx.code)} · ${fmtDate(tx.createdAt)}</small></div><span class="status pending">${tx.items.filter(x=>x.status==='PENDING').length} mục</span></button>`).join('') || '<div class="empty">Không có yêu cầu chờ xác nhận.</div>';
+    $('#admin-recent-pending').innerHTML = pending.slice(0,5).map(tx => `<button class="list-item" data-go="admin-pending"><div><strong>${escapeHtml(tx.studentName)} · ${escapeHtml(typeLabel(tx.type))}</strong><small><span class="list-code">${escapeHtml(tx.code)}</span> · ${fmtDate(tx.createdAt)}</small></div><span>${tx.items.filter(x=>x.status==='PENDING').length} mục</span></button>`).join('') || '<div class="empty">Không có yêu cầu nào đang chờ.</div>';
   }
 
   function renderQr() {
@@ -258,8 +280,8 @@
     const url = state.boot.qrUrl || location.href;
     $('#qr-url').value = url;
     const target = $('#qr-code'); target.innerHTML = '';
-    if (window.QRCode) QRCode.toCanvas(url, {width:180, margin:1, color:{dark:'#10243d', light:'#ffffff'}}, (err, canvas) => { if (!err) target.appendChild(canvas); });
-    else target.innerHTML = '<div class="qr-placeholder">QR</div>';
+    if (window.QRCode) QRCode.toCanvas(url, {width:180, margin:1, color:{dark:'#171717', light:'#ffffff'}}, (err, canvas) => { if (!err) target.appendChild(canvas); });
+    else target.textContent = 'Không tạo được mã QR.';
   }
 
   async function loadPending() {
@@ -270,64 +292,82 @@
   function renderPendingTransactions() {
     const query = ($('#pending-search').value || '').trim().toLowerCase();
     const rows = state.pending.filter(tx => !query || `${tx.studentId} ${tx.studentName} ${tx.code}`.toLowerCase().includes(query));
-    $('#pending-transactions').innerHTML = rows.map(adminTransactionCard).join('') || '<div class="card empty">Không có yêu cầu chờ xác nhận phù hợp.</div>';
+    $('#pending-transactions').innerHTML = rows.map(adminTransactionCard).join('') || `<div class="empty">${query ? 'Không có yêu cầu nào khớp.' : 'Không có yêu cầu nào đang chờ.'}</div>`;
   }
 
   function adminTransactionCard(tx) {
     const items = tx.items.map(item => {
       const candidates = item.pickupCandidates || [];
       const candidateSelect = candidates.length > 1 ? `<select class="pickup-document-select" data-item-id="${escapeHtml(item.itemId)}"><option value="">Chọn hồ sơ cụ thể</option>${candidates.map(doc=>`<option value="${escapeHtml(doc.documentId)}">${escapeHtml(doc.code)} · ${fmtDate(doc.updatedAt)}</option>`).join('')}</select>` : candidates.length === 1 ? `<small>Sẽ bàn giao hồ sơ ${escapeHtml(candidates[0].code)}</small>` : '';
-      return `<div class="transaction-item"><div class="review-item-main">${item.status==='PENDING'?`<input class="pending-item-select" type="checkbox" data-transaction-id="${escapeHtml(tx.transactionId)}" value="${escapeHtml(item.itemId)}" aria-label="Chọn ${escapeHtml(item.typeName)}">`:''}<div><strong>${escapeHtml(item.typeName)}</strong>${candidateSelect}${item.adminNote?`<small>${escapeHtml(item.adminNote)}</small>`:''}</div></div>${item.status==='PENDING'?`<button class="button danger small" onclick="window.app.reviewItem('${item.itemId}','REJECT')">Từ chối</button>`:`<span class="status ${statusClass(item.status)}">${escapeHtml(statusLabel(item.status))}</span>`}</div>`;
+      return `<div class="transaction-item"><div class="review-item-main">${item.status==='PENDING'?`<input class="pending-item-select" type="checkbox" data-transaction-id="${escapeHtml(tx.transactionId)}" value="${escapeHtml(item.itemId)}" aria-label="Chọn ${escapeHtml(item.typeName)}" onchange="window.app.updatePendingSelection('${escapeHtml(tx.transactionId)}')">`:''}<div><strong>${escapeHtml(item.typeName)}</strong>${candidateSelect}${item.adminNote?`<small>${escapeHtml(item.adminNote)}</small>`:''}</div></div>${item.status==='PENDING'?`<button class="link-button danger" onclick="window.app.reviewItem('${item.itemId}','REJECT')">Từ chối</button>`:`<span class="status ${statusClass(item.status)}">${escapeHtml(statusLabel(item.status))}</span>`}</div>`;
     }).join('');
     const pendingCount = tx.items.filter(item => item.status === 'PENDING').length;
-    return `<article class="transaction-card"><div class="transaction-head"><div><h3>${escapeHtml(typeLabel(tx.type))} · ${escapeHtml(tx.code)}</h3><div class="transaction-meta"><span>${escapeHtml(tx.studentName)} · ${escapeHtml(tx.studentId)}</span><span>${escapeHtml(tx.className)}</span><span>${fmtDate(tx.createdAt)}</span></div></div><span class="status ${statusClass(tx.status)}">${escapeHtml(statusLabel(tx.status))}</span></div><p class="presence-reminder">Chỉ xác nhận sau khi đã đối chiếu sinh viên và giấy tờ thực tế tại quầy.</p>${tx.note?`<p><strong>Ghi chú:</strong> ${escapeHtml(tx.note)}</p>`:''}<div class="transaction-items">${items}</div>${pendingCount?`<details><summary>Tùy chọn thông báo</summary><label>Ghi chú</label><textarea id="review-note-${escapeHtml(tx.transactionId)}" rows="2"></textarea><label class="check-option"><input id="review-email-${escapeHtml(tx.transactionId)}" type="checkbox"><span><strong>Gửi thêm email TDTU</strong></span></label></details><div class="form-actions"><button class="button primary" onclick="window.app.approveTransaction('${escapeHtml(tx.transactionId)}',this)">Xác nhận các mục đã chọn</button></div>`:''}</article>`;
+    return `<article class="transaction-card"><div class="transaction-head"><div><h3>${escapeHtml(tx.studentName)}</h3><div class="transaction-meta"><span>${escapeHtml(tx.studentId)} · ${escapeHtml(tx.className)}</span><span>${fmtDate(tx.createdAt)}</span><span>${escapeHtml(typeLabel(tx.type))} · <span class="transaction-code">${escapeHtml(tx.code)}</span></span></div></div><span class="status ${statusClass(tx.status)}">${escapeHtml(statusLabel(tx.status))}</span></div>${tx.note?`<p>${escapeHtml(tx.note)}</p>`:''}${pendingCount?`<div class="select-all-row"><span>${pendingCount} giấy tờ</span><button class="link-button" onclick="window.app.selectAllPending('${escapeHtml(tx.transactionId)}')">Chọn tất cả</button></div>`:''}<div class="transaction-items">${items}</div>${pendingCount?`<details><summary>Ghi chú và email</summary><label>Ghi chú</label><textarea id="review-note-${escapeHtml(tx.transactionId)}" rows="2"></textarea><label class="check-option"><input id="review-email-${escapeHtml(tx.transactionId)}" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label></details><div class="form-actions"><button id="approve-${escapeHtml(tx.transactionId)}" class="button primary" onclick="window.app.approveTransaction('${escapeHtml(tx.transactionId)}',this)" disabled>Xác nhận · 0</button></div>`:''}</article>`;
+  }
+
+  function updatePendingSelection(transactionId) {
+    const count = $$(`.pending-item-select[data-transaction-id="${transactionId}"]:checked`).length;
+    const button = $(`#approve-${transactionId}`);
+    if (button) { button.textContent = `Xác nhận · ${count}`; button.disabled = count === 0; }
+  }
+
+  function selectAllPending(transactionId) {
+    $$(`.pending-item-select[data-transaction-id="${transactionId}"]`).forEach(input => { input.checked = true; });
+    updatePendingSelection(transactionId);
   }
 
   async function approveTransaction(transactionId, button) {
     const selected = $$(`.pending-item-select[data-transaction-id="${transactionId}"]:checked`);
-    if (!selected.length) { toast('Hãy chọn ít nhất một giấy tờ đã giao nhận thực tế.', true); return; }
+    if (!selected.length) { toast('Chọn ít nhất một giấy tờ.', true); return; }
     const itemIds = selected.map(input => input.value);
     const documentSelections = {};
     for (const itemId of itemIds) {
       const select = $(`.pickup-document-select[data-item-id="${itemId}"]`);
       if (select) {
-        if (!select.value) { toast('Hãy chọn hồ sơ cụ thể cho mục có nhiều hồ sơ đang chờ nhận.', true); return; }
+        if (!select.value) { toast('Chọn hồ sơ cụ thể cho mục có nhiều hồ sơ.', true); return; }
         documentSelections[itemId] = select.value;
       }
     }
     setBusy(button,true,'Đang xác nhận…');
     try {
       await api('reviewTransactionItems',{itemIds,decision:'APPROVE',note:$(`#review-note-${transactionId}`).value,sendEmail:$(`#review-email-${transactionId}`).checked,documentSelections});
-      toast(`Đã xác nhận giao nhận ${itemIds.length} giấy tờ.`); await loadPending();
+      toast(`Đã xác nhận ${itemIds.length} giấy tờ.`); await loadPending();
     } catch(error) { toast(error.message,true); }
     finally { setBusy(button,false); }
   }
 
   function reviewItem(itemId, decision) {
     const title = decision === 'APPROVE' ? 'Xác nhận giấy tờ' : 'Từ chối giấy tờ';
-    openModal(`<h2>${title}</h2><p>${decision==='APPROVE'?'Xác nhận sau khi đã đối chiếu sinh viên và giấy tờ thực tế tại quầy.':'Nhập lý do để sinh viên biết cần điều chỉnh gì.'}</p><form id="review-form"><label>Ghi chú</label><textarea id="review-note" rows="4" ${decision==='REJECT'?'required':''}></textarea><label class="check-option"><input id="review-email" type="checkbox"><span><strong>Gửi thêm email TDTU</strong><small>Thông báo trong ứng dụng luôn được tạo.</small></span></label><div class="form-actions"><button class="button ${decision==='APPROVE'?'primary':'danger'}" type="submit">${title}</button></div></form>`);
+    openModal(`<h2>${title}</h2><p>${decision==='APPROVE'?'Xác nhận sau khi đã đối chiếu sinh viên và giấy tờ thực tế tại quầy.':'Ghi lý do để sinh viên biết cần làm gì.'}</p><form id="review-form"><label>Ghi chú</label><textarea id="review-note" rows="4" ${decision==='REJECT'?'required':''}></textarea><label class="check-option"><input id="review-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button ${decision==='APPROVE'?'primary':'danger'}" type="submit">${title}</button></div></form>`);
     $('#review-form').addEventListener('submit', async event => {
       event.preventDefault(); const button=event.submitter; setBusy(button,true);
-      try { await api('reviewTransactionItem',{itemId,decision,note:$('#review-note').value,sendEmail:$('#review-email').checked}); closeModal(); toast('Đã cập nhật giao dịch.'); await loadPending(); }
+      try { await api('reviewTransactionItem',{itemId,decision,note:$('#review-note').value,sendEmail:$('#review-email').checked}); closeModal(); toast('Đã cập nhật yêu cầu.'); await loadPending(); }
       catch(error){ toast(error.message,true); } finally { setBusy(button,false); }
     });
   }
 
   async function loadAdminDocuments() {
     state.adminDocuments = await api('listDocuments',{query:$('#admin-document-search').value,status:$('#admin-document-status').value});
-    $('#admin-documents-table').innerHTML = table(['','Mã hồ sơ','Sinh viên','Loại hồ sơ','Trạng thái','Cập nhật',''], state.adminDocuments.map(doc => [`<input class="document-select" type="checkbox" value="${escapeHtml(doc.documentId)}" style="width:18px;height:18px">`,escapeHtml(doc.code),`${escapeHtml(doc.studentName)}<small>${escapeHtml(doc.studentId)} · ${escapeHtml(doc.className)}</small>`,escapeHtml(doc.typeName),`<span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span>`,fmtDate(doc.updatedAt),`<button class="button secondary small" onclick="window.app.editDocument('${doc.documentId}')">Cập nhật</button>`]));
+    $('#admin-documents-table').innerHTML = table(['','Mã hồ sơ','Sinh viên','Loại hồ sơ','Trạng thái','Cập nhật',''], state.adminDocuments.map(doc => [`<input class="document-select" type="checkbox" value="${escapeHtml(doc.documentId)}">`,`<span class="code">${escapeHtml(doc.code)}</span>`,`${escapeHtml(doc.studentName)}<small>${escapeHtml(doc.studentId)} · ${escapeHtml(doc.className)}</small>`,escapeHtml(doc.typeName),`<span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span>`,fmtDate(doc.updatedAt),`<button class="link-button" onclick="window.app.editDocument('${doc.documentId}')">Cập nhật</button>`]));
+    updateDocumentBulkActions();
+  }
+
+  function updateDocumentBulkActions() {
+    const count = $$('.document-select:checked').length;
+    $('#document-selection-count').textContent = `Đã chọn ${count} hồ sơ`;
+    $('#document-bulk-actions').classList.toggle('hidden', count === 0);
   }
 
   function showManualDocumentForm(){
     const options=state.boot.types.map(type=>`<option value="${escapeHtml(type.typeId)}">${escapeHtml(type.name)}</option>`).join('');
-    openModal(`<h2>Thêm hồ sơ tại văn phòng</h2><form id="manual-document-form"><label>Email hoặc MSSV sinh viên</label><input id="manual-document-student" required><label>Loại hồ sơ</label><select id="manual-document-type" required>${options}</select><label>Trạng thái ban đầu</label><select id="manual-document-status"><option>Đã tiếp nhận</option><option>Chờ sinh viên đến nhận</option><option>Đang xử lý</option></select><label>Ngày dự kiến</label><input id="manual-document-expected" type="date"><label>Phản hồi công khai</label><textarea id="manual-document-note"></textarea><label class="check-option"><input id="manual-document-email" type="checkbox"><span><strong>Gửi thêm email TDTU</strong></span></label><div class="form-actions"><button class="button primary" type="submit">Tạo hồ sơ</button></div></form>`);
+    openModal(`<h2>Thêm hồ sơ tại văn phòng</h2><form id="manual-document-form"><label>Email hoặc MSSV sinh viên</label><input id="manual-document-student" required><label>Loại hồ sơ</label><select id="manual-document-type" required>${options}</select><label>Trạng thái ban đầu</label><select id="manual-document-status"><option>Đã tiếp nhận</option><option>Chờ sinh viên đến nhận</option><option>Đang xử lý</option></select><label>Ngày dự kiến</label><input id="manual-document-expected" type="date"><label>Phản hồi công khai</label><textarea id="manual-document-note"></textarea><label class="check-option"><input id="manual-document-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Tạo hồ sơ</button></div></form>`);
     $('#manual-document-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{const value=$('#manual-document-student').value.trim();const student=value.includes('@')?{studentEmail:value}:{studentId:value};await api('createManualDocument',{...student,typeId:$('#manual-document-type').value,status:$('#manual-document-status').value,expectedAt:$('#manual-document-expected').value,publicNote:$('#manual-document-note').value,sendEmail:$('#manual-document-email').checked});closeModal();toast('Đã tạo hồ sơ.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
   }
 
   function showBatchDocumentForm(){
-    const ids=$$('.document-select:checked').map(input=>input.value);if(!ids.length){toast('Hãy chọn ít nhất một hồ sơ.',true);return;}
+    const ids=$$('.document-select:checked').map(input=>input.value);if(!ids.length){toast('Chọn ít nhất một hồ sơ.',true);return;}
     const statuses=['Đang kiểm tra hồ sơ','Yêu cầu bổ sung','Đang xử lý','Đang trình duyệt','Chờ phê duyệt','Đã hoàn thành','Chờ sinh viên đến nhận'].map(s=>`<option>${s}</option>`).join('');
-    openModal(`<h2>Cập nhật ${ids.length} hồ sơ</h2><form id="batch-document-form"><label>Trạng thái mới</label><select id="batch-status">${statuses}</select><label>Phản hồi công khai</label><textarea id="batch-note"></textarea><label class="check-option"><input id="batch-email" type="checkbox"><span><strong>Gửi thêm email TDTU</strong></span></label><div class="form-actions"><button class="button primary" type="submit">Cập nhật hàng loạt</button></div></form>`);
+    openModal(`<h2>Cập nhật ${ids.length} hồ sơ</h2><form id="batch-document-form"><label>Trạng thái mới</label><select id="batch-status">${statuses}</select><label>Phản hồi công khai</label><textarea id="batch-note"></textarea><label class="check-option"><input id="batch-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Cập nhật hàng loạt</button></div></form>`);
     $('#batch-document-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('batchUpdateDocuments',{documentIds:ids,status:$('#batch-status').value,publicNote:$('#batch-note').value,sendEmail:$('#batch-email').checked});closeModal();toast('Đã cập nhật các hồ sơ đã chọn.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
   }
 
@@ -338,7 +378,7 @@
       const workflow=workflows.find(w=>w.workflowVersionId===state.adminDocuments.find(x=>x.documentId===documentId)?.workflowVersionId);
       const steps=(workflow?.steps||doc.steps||[]).map(step=>`<option value="${escapeHtml(step.stepId)}" ${step.stepId===state.adminDocuments.find(x=>x.documentId===documentId)?.currentStepId?'selected':''}>${escapeHtml(step.order+'. '+step.name)}</option>`).join('');
       const statuses=['Đã tiếp nhận','Đang kiểm tra hồ sơ','Yêu cầu bổ sung','Đang xử lý','Đang trình duyệt','Chờ phê duyệt','Đã hoàn thành','Chờ sinh viên đến nhận','Đã bàn giao'].map(s=>`<option ${s===doc.status?'selected':''}>${s}</option>`).join('');
-      openModal(`<h2>Cập nhật ${escapeHtml(doc.code)}</h2><p>${escapeHtml(doc.typeName)}</p><form id="document-update-form"><label>Bước xử lý</label><select id="doc-step"><option value="">Giữ nguyên bước hiện tại</option>${steps}</select><label>Trạng thái</label><select id="doc-status">${statuses}</select><label>Ngày hoàn thành dự kiến</label><input id="doc-expected" type="date" value="${doc.expectedAt?doc.expectedAt.slice(0,10):''}"><label>Phản hồi công khai</label><textarea id="doc-public-note" rows="3">${escapeHtml(doc.publicNote||'')}</textarea><label>Ghi chú nội bộ</label><textarea id="doc-internal-note" rows="3">${escapeHtml(doc.internalNote||'')}</textarea><label class="check-option"><input id="doc-send-email" type="checkbox"><span><strong>Gửi thêm email TDTU</strong></span></label><div class="form-actions"><button class="button primary" type="submit">Lưu cập nhật</button></div></form>`);
+      openModal(`<h2>Cập nhật ${escapeHtml(doc.code)}</h2><p>${escapeHtml(doc.typeName)}</p><form id="document-update-form"><label>Bước xử lý</label><select id="doc-step"><option value="">Giữ nguyên bước hiện tại</option>${steps}</select><label>Trạng thái</label><select id="doc-status">${statuses}</select><label>Ngày hoàn thành dự kiến</label><input id="doc-expected" type="date" value="${doc.expectedAt?doc.expectedAt.slice(0,10):''}"><label>Phản hồi công khai</label><textarea id="doc-public-note" rows="3">${escapeHtml(doc.publicNote||'')}</textarea><label>Ghi chú nội bộ</label><textarea id="doc-internal-note" rows="3">${escapeHtml(doc.internalNote||'')}</textarea><label class="check-option"><input id="doc-send-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Lưu cập nhật</button></div></form>`);
       $('#document-update-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('updateDocumentProgress',{documentId,version:doc.version,stepId:$('#doc-step').value,status:$('#doc-status').value,expectedAt:$('#doc-expected').value,publicNote:$('#doc-public-note').value,internalNote:$('#doc-internal-note').value,sendEmail:$('#doc-send-email').checked});closeModal();toast('Đã cập nhật tiến độ hồ sơ.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
     } catch(error){showAlert(error.message);}
   }
@@ -347,7 +387,7 @@
     const [types,workflows]=await Promise.all([api('listDocumentTypes',true),api('listWorkflows')]);
     state.workflows=workflows; state.types=types; state.boot.types=types.filter(x=>x.active);
     const handoverLabel={SUBMIT:'Nộp',RECEIVE:'Nhận',BOTH:'Nộp và nhận'};
-    $('#document-types-admin').innerHTML=types.map(item=>`<div class="list-item"><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(handoverLabel[item.handoverMode]||'Nộp và nhận')} · ${item.tracksProgress?'Theo dõi tiến độ':'Chỉ ghi nhận giao nhận'} · ${item.active?'Đang sử dụng':'Ngừng sử dụng'}</small></div><div class="review-actions"><button class="button secondary small" onclick="window.app.editType('${escapeHtml(item.typeId)}')">Sửa</button><button class="button danger small" onclick="window.app.deleteType('${escapeHtml(item.typeId)}')">Xoá</button></div></div>`).join('')||'<div class="empty">Chưa có loại hồ sơ.</div>';
+    $('#document-types-admin').innerHTML=types.map(item=>`<div class="list-item"><div><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(handoverLabel[item.handoverMode]||'Nộp và nhận')} · ${item.tracksProgress?'Theo dõi tiến độ':'Chỉ ghi nhận'} · ${item.active?'Đang sử dụng':'Ngừng sử dụng'}</small></div><div class="review-actions"><button class="link-button" onclick="window.app.editType('${escapeHtml(item.typeId)}')">Sửa</button><button class="link-button danger" onclick="window.app.deleteType('${escapeHtml(item.typeId)}')">Xóa</button></div></div>`).join('')||'<div class="empty">Chưa có loại hồ sơ.</div>';
     $('#workflows-admin').innerHTML=workflows.map(w=>`<div class="list-item"><div><strong>${escapeHtml(w.name)}</strong><small>Phiên bản ${w.version} · ${w.steps.length} bước</small></div><button class="link-button" onclick="window.app.viewWorkflow('${w.workflowVersionId}')">Xem</button></div>`).join('')||'<div class="empty">Chưa có quy trình.</div>';
   }
 
@@ -362,13 +402,13 @@
   function confirmDeleteType(typeId) {
     const item=state.types.find(type=>type.typeId===typeId);
     if(!item){toast('Không tìm thấy loại hồ sơ.',true);return;}
-    openModal(`<h2>Xoá loại hồ sơ</h2><p>Bạn có chắc muốn xoá <strong>${escapeHtml(item.name)}</strong>?</p><div class="inline-warning">Chỉ loại hồ sơ chưa từng phát sinh hồ sơ hoặc giao dịch mới có thể xoá. Nếu đã được sử dụng, hãy chuyển sang “Ngừng sử dụng” để giữ nguyên lịch sử.</div><form id="delete-type-form"><div class="form-actions"><button id="cancel-delete-type" class="button secondary" type="button">Huỷ</button><button class="button danger" type="submit">Xoá loại hồ sơ</button></div></form>`);
+    openModal(`<h2>Xóa ${escapeHtml(item.name)}?</h2><div class="inline-warning">Chỉ xóa được loại chưa có hồ sơ hay yêu cầu nào. Nếu đã dùng, chọn “Ngừng sử dụng” để giữ lịch sử.</div><form id="delete-type-form"><div class="form-actions"><button id="cancel-delete-type" class="button" type="button">Hủy</button><button class="button danger" type="submit">Xóa loại hồ sơ</button></div></form>`);
     $('#cancel-delete-type').addEventListener('click',closeModal);
-    $('#delete-type-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true,'Đang xoá…');try{await api('deleteDocumentType',typeId);closeModal();toast('Đã xoá loại hồ sơ.');await loadCatalog();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
+    $('#delete-type-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true,'Đang xóa…');try{await api('deleteDocumentType',typeId);closeModal();toast('Đã xóa loại hồ sơ.');await loadCatalog();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
   }
 
   function showWorkflowForm() {
-    openModal(`<h2>Tạo phiên bản quy trình</h2><p>Quy trình mới không làm thay đổi lịch sử của hồ sơ đang xử lý.</p><form id="workflow-form"><label>Tên quy trình</label><input id="workflow-name" required><label>Các bước xử lý</label><div id="workflow-steps"></div><button id="add-workflow-step" type="button" class="button secondary small">Thêm bước</button><div class="form-actions"><button class="button primary" type="submit">Tạo quy trình</button></div></form>`);
+    openModal(`<h2>Tạo phiên bản quy trình</h2><p>Quy trình mới không ảnh hưởng hồ sơ đang xử lý.</p><form id="workflow-form"><label>Tên quy trình</label><input id="workflow-name" required><label>Các bước xử lý</label><div id="workflow-steps"></div><button id="add-workflow-step" type="button" class="button small">Thêm bước</button><div class="form-actions"><button class="button primary" type="submit">Tạo quy trình</button></div></form>`);
     const add=()=>{$('#workflow-steps').insertAdjacentHTML('beforeend',`<div class="grid two-col compact workflow-step-input"><input placeholder="Tên bước" required><input placeholder="Nhãn trạng thái" required></div>`)}; add(); add();
     $('#add-workflow-step').addEventListener('click',add);
     $('#workflow-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{const steps=$$('.workflow-step-input').map(row=>({name:$('input:first-child',row).value,statusLabel:$('input:last-child',row).value}));await api('saveWorkflow',{name:$('#workflow-name').value,steps});closeModal();toast('Đã tạo quy trình.');await loadCatalog();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
@@ -394,16 +434,16 @@
 
   async function loadStudents(){const rows=await api('listStudents',$('#student-search').value);$('#students-table').innerHTML=table(['MSSV','Họ tên','Lớp','Email','Cập nhật'],rows.map(row=>[escapeHtml(row.studentId),escapeHtml(row.fullName),escapeHtml(row.className),escapeHtml(row.email),fmtDate(row.updatedAt)]));}
 
-  async function loadReport(){const report=await api('getReport',{from:$('#report-from').value,to:$('#report-to').value});$('#report-kpis').innerHTML=kpis([['Yêu cầu đã gửi',report.requestCount,'⇄'],['Còn chờ xác nhận',report.pendingRequestCount,'◷'],['Giấy tờ đã nộp',report.submittedCount,'⇧'],['Giấy tờ đã nhận',report.receivedCount,'⇩'],['Giấy tờ xác nhận',report.approvedItemCount,'✓'],['Đang xử lý',report.processingDocuments,'◷'],['Cần bổ sung',report.supplementDocuments,'!'],['Đã hoàn thành',report.completedDocuments,'✓']]);}
+  async function loadReport(){const report=await api('getReport',{from:$('#report-from').value,to:$('#report-to').value});$('#report-kpis').innerHTML=kpis([['Yêu cầu đã gửi',report.requestCount],['Còn chờ xác nhận',report.pendingRequestCount],['Giấy tờ đã nộp',report.submittedCount],['Giấy tờ đã nhận',report.receivedCount],['Giấy tờ xác nhận',report.approvedItemCount],['Đang xử lý',report.processingDocuments],['Cần bổ sung',report.supplementDocuments],['Đã hoàn thành',report.completedDocuments]]);}
   async function exportReport(){try{const csv=await api('exportReportCsv',{from:$('#report-from').value,to:$('#report-to').value});const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`bao-cao-ho-so-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);}catch(error){showAlert(error.message);}}
 
   async function loadSettings(){const settings=await api('getSettings');$('#setting-app-name').value=settings.APP_NAME||'';$('#setting-office-name').value=settings.OFFICE_NAME||'';}
-  async function saveSettings(event){event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('saveSettings',{APP_NAME:$('#setting-app-name').value,OFFICE_NAME:$('#setting-office-name').value});toast('Đã lưu cài đặt.');state.boot=await api('getBootstrap');renderShell();}catch(error){showAlert(error.message);}finally{setBusy(button,false);}}
+  async function saveSettings(event){event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('saveSettings',{APP_NAME:$('#setting-app-name').value,OFFICE_NAME:$('#setting-office-name').value});toast('Đã lưu.');state.boot=await api('getBootstrap');renderShell();}catch(error){showAlert(error.message);}finally{setBusy(button,false);}}
   async function runHealthCheck(){const button=$('#health-check');setBusy(button,true);try{$('#health-result').textContent=JSON.stringify(await api('healthCheck'),null,2);}catch(error){$('#health-result').textContent=error.message;}finally{setBusy(button,false);}}
 
   function table(headers, rows){if(!rows.length)return '<div class="empty">Không có dữ liệu.</div>';return `<table class="data-table"><thead><tr>${headers.map(h=>`<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(cell=>`<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody></table>`;}
 
-  window.app = {openDocument, readNotification, reviewItem, approveTransaction, editDocument, editType:editTypeById, deleteType:confirmDeleteType, viewWorkflow, finishService};
+  window.app = {openDocument, readNotification, reviewItem, approveTransaction, updatePendingSelection, selectAllPending, editDocument, editType:editTypeById, deleteType:confirmDeleteType, viewWorkflow, finishService};
   initialize();
 })();
 </script>
