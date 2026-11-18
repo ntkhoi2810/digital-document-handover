@@ -43,5 +43,11 @@ assert.match(code, /SCHEMA_VERSION[^\n]*2/, "Missing schema version 2 migration"
 assert.match(code, /function\s+ensureDefaultSettings_\s*\(/, "Missing default settings initialization");
 assert.doesNotMatch(code, /function\s+seedIfEmpty_\s*\(/, "Runtime must not recreate sample catalog data");
 assert.doesNotMatch(code, /Bằng tốt nghiệp|Bảng điểm/, "Runtime must not contain sample document types");
+assert.match(code, /NAME:\s*'Sổ giao nhận hồ sơ'/, "App default name must be Sổ giao nhận hồ sơ");
+assert.match(index, /<strong id="brand-title">Sổ giao nhận hồ sơ<\/strong>/, "Sidebar brand title must be Sổ giao nhận hồ sơ");
+assert.doesNotMatch(index, /·/, "Index.html must not contain middle dot separators");
+assert.doesNotMatch(scriptsHtml, /·/, "Scripts.html must not contain middle dot separators");
+assert.match(styles, /\.meta-tag/, "Missing catalog meta-tag styling");
+assert.match(styles, /\.kpi\.kpi-act/, "Missing semantic KPI color styling");
 
 console.log("Source verification passed");

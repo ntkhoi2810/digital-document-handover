@@ -31,7 +31,7 @@ const schemas = {
 
 const seed = {
   Settings: [
-    ["APP_NAME", "Hệ thống Giao nhận Hồ sơ Sinh viên", "Tên hiển thị của ứng dụng", "", ""],
+    ["APP_NAME", "Sổ giao nhận hồ sơ", "Tên hiển thị của ứng dụng", "", ""],
     ["OFFICE_NAME", "Văn phòng Khoa", "Tên đơn vị vận hành", "", ""],
     ["QR_PATH", "?view=transaction", "Đường dẫn gắn vào mã QR in tại quầy", "", ""],
     ["TIMEZONE", "Asia/Ho_Chi_Minh", "Múi giờ vận hành", "", ""],

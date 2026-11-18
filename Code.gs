@@ -1,5 +1,5 @@
 const APP = Object.freeze({
-  NAME: 'Giao nhận hồ sơ',
+  NAME: 'Sổ giao nhận hồ sơ',
   SPREADSHEET_ID: '1iQjaNfuHtqrN-d2LI7cSJGThOcWbxn-TE7tIGwtaHas',
   STUDENT_DOMAIN: 'student.tdtu.edu.vn',
   DEFAULT_ADMIN: 'nguyenthaikhoi@tdtu.edu.vn',
@@ -58,8 +58,10 @@ function getBootstrap() {
   const settings = getSettings_();
   const types = readTable_(APP.SHEETS.TYPES).filter(function(row) { return toBoolean_(row.active); })
     .sort(function(a, b) { return Number(a.sort_order || 0) - Number(b.sort_order || 0); });
+  const rawAppName = settings.APP_NAME || APP.NAME;
+  const appName = ['Hệ thống Giao nhận Hồ sơ Sinh viên', 'Giao nhận hồ sơ'].indexOf(rawAppName) !== -1 ? APP.NAME : rawAppName;
   const response = {
-    appName: settings.APP_NAME || APP.NAME,
+    appName: appName,
     officeName: settings.OFFICE_NAME || 'Văn phòng Khoa',
     identity: identity,
     profile: null,
@@ -1025,6 +1027,10 @@ function migrateSystemData_() {
   readTable_(APP.SHEETS.TYPES).forEach(function(row) {
     if (!row.handover_mode) updateRow_(APP.SHEETS.TYPES, row._row, { handover_mode: 'BOTH' });
   });
+  const appNameRow = findBy_(APP.SHEETS.SETTINGS, 'key', 'APP_NAME');
+  if (appNameRow && ['Hệ thống Giao nhận Hồ sơ Sinh viên', 'Giao nhận hồ sơ'].indexOf(String(appNameRow.value)) !== -1) {
+    updateRow_(APP.SHEETS.SETTINGS, appNameRow._row, { value: APP.NAME, updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
+  }
   const version = findBy_(APP.SHEETS.SETTINGS, 'key', 'SCHEMA_VERSION');
   if (version) {
     if (String(version.value) !== '2') updateRow_(APP.SHEETS.SETTINGS, version._row, { value: '2', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });

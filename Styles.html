@@ -104,8 +104,8 @@ a{color:inherit;text-decoration:none}
 .brand{
   display:flex;
   align-items:center;
-  gap:12px;
-  padding:6px 8px;
+  gap:10px;
+  padding:6px 6px;
 }
 .brand-logo{
   flex:none;
@@ -123,23 +123,21 @@ a{color:inherit;text-decoration:none}
 .brand-text{min-width:0;flex:1}
 .brand strong{
   display:block;
-  font-size:15.5px;
+  font-size:15px;
   font-weight:600;
+  line-height:1.3;
   letter-spacing:-.01em;
   color:var(--ink);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  word-break:break-word;
 }
 .brand span{
   display:block;
-  margin-top:1px;
+  margin-top:2px;
   color:var(--ink-3);
   font-size:13px;
   font-weight:500;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  line-height:1.3;
+  word-break:break-word;
 }
 
 .nav-list{display:flex;flex-direction:column;gap:2px}
@@ -440,15 +438,15 @@ form>label,.form-card label,.modal-panel form label{
 }
 .transaction-footer>span{color:var(--ink-3);font-size:15px}
 
-/* Nhãn trạng thái: chấm màu + chữ trung tính */
+/* Nhãn trạng thái & phân loại nổi bật */
 .status{
   display:inline-flex;
   align-items:center;
   gap:7px;
   padding:3px 10px;
-  border:1px solid var(--line);
+  border:1px solid var(--line-strong);
   border-radius:999px;
-  background:var(--surface);
+  background:var(--bg-subtle);
   color:var(--ink-2);
   font-size:13.5px;
   font-weight:500;
@@ -456,12 +454,35 @@ form>label,.form-card label,.modal-panel form label{
   white-space:nowrap;
 }
 .status:before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--neutral)}
+.status.ok{background:#DCFCE7;border-color:#86EFAC;color:#166534}
 .status.ok:before{background:var(--ok)}
-.status.act{background:var(--act-bg);border-color:#FDE68A;color:var(--act-ink)}
+.status.act{background:#FEF3C7;border-color:#FCD34D;color:#92400E}
 .status.act:before{background:var(--act)}
+.status.prog{background:#DBEAFE;border-color:#93C5FD;color:#1E40AF}
 .status.prog:before{background:var(--prog)}
-.status.bad{background:var(--bad-bg);border-color:#FECACA;color:var(--bad-ink)}
+.status.bad{background:#FEE2E2;border-color:#FCA5A5;color:#991B1B}
 .status.bad:before{background:var(--bad)}
+
+.meta-tag{
+  display:inline-flex;
+  align-items:center;
+  padding:2px 9px;
+  border:1px solid var(--line);
+  border-radius:var(--r-xs);
+  background:var(--bg-subtle);
+  color:var(--ink-2);
+  font-size:13px;
+  font-weight:500;
+  line-height:1.45;
+  white-space:nowrap;
+}
+.meta-tag.submit{background:#EFF6FF;border-color:#BFDBFE;color:#1E40AF}
+.meta-tag.receive{background:#F0FDFA;border-color:#99F6E4;color:#0F766E}
+.meta-tag.both{background:#EEF2FF;border-color:#C7D2FE;color:#3730A3}
+.meta-tag.track{background:#F5F3FF;border-color:#DDD6FE;color:#5B21B6}
+.meta-tag.record{background:var(--bg-subtle);border-color:var(--line-strong);color:var(--ink-2)}
+.list-item.inactive-item{background:var(--surface-subtle)}
+.list-item.inactive-item strong{color:var(--ink-3)}
 
 /* Khối mục & danh sách */
 .section-block{margin-top:40px}
@@ -510,8 +531,8 @@ button.list-item,button.document-card{cursor:pointer}
   display:flex;
   align-items:center;
   flex-wrap:wrap;
-  gap:8px;
-  margin-top:4px;
+  gap:6px;
+  margin-top:6px;
   color:var(--ink-3);
   font-size:14px;
 }
@@ -581,6 +602,7 @@ button.list-item:hover .row-arrow,button.document-card:hover .row-arrow{stroke:v
 .kpi{
   padding:22px 24px;
   border-left:1px solid var(--line);
+  border-top:3px solid transparent;
 }
 .kpi:first-child{border-left:0}
 .kpi strong,.kpi span{display:block}
@@ -592,7 +614,17 @@ button.list-item:hover .row-arrow,button.document-card:hover .row-arrow{stroke:v
   color:var(--ink);
   font-variant-numeric:tabular-nums;
 }
-.kpi span{margin-top:6px;color:var(--ink-3);font-size:14px}
+.kpi span{margin-top:6px;color:var(--ink-2);font-size:14px;font-weight:500}
+.kpi.kpi-act{border-top-color:var(--act);background:linear-gradient(180deg,rgba(217,119,6,.04),transparent 65%)}
+.kpi.kpi-act strong{color:var(--act)}
+.kpi.kpi-store{border-top-color:#4F46E5;background:linear-gradient(180deg,rgba(79,70,229,.04),transparent 65%)}
+.kpi.kpi-store strong{color:#4F46E5}
+.kpi.kpi-prog{border-top-color:var(--prog);background:linear-gradient(180deg,rgba(37,99,235,.04),transparent 65%)}
+.kpi.kpi-prog strong{color:var(--prog)}
+.kpi.kpi-bad{border-top-color:var(--bad);background:linear-gradient(180deg,rgba(220,38,38,.04),transparent 65%)}
+.kpi.kpi-bad strong{color:var(--bad)}
+.kpi.kpi-ok{border-top-color:var(--ok);background:linear-gradient(180deg,rgba(22,163,74,.04),transparent 65%)}
+.kpi.kpi-ok strong{color:var(--ok)}
 .report-kpis{margin-top:24px}
 
 /* Thanh công cụ & lưới */
