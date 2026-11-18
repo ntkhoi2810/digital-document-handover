@@ -6,7 +6,7 @@
 
 - Xác thực email sinh viên `@student.tdtu.edu.vn` từ phiên Google; quản trị viên mặc định là `nguyenthaikhoi@tdtu.edu.vn`.
 - Sinh viên hoàn thiện họ tên và lớp; MSSV lấy từ phần trước `@` và không cho tự sửa.
-- QR in tại quầy, yêu cầu nộp/nhận/bổ sung và cán bộ đối chiếu sinh viên trước khi xác nhận một hoặc nhiều giấy tờ.
+- Sinh viên gửi yêu cầu nộp/nhận/bổ sung trực tuyến và cán bộ đối chiếu sinh viên tại quầy trước khi xác nhận một hoặc nhiều giấy tờ.
 - Danh mục hồ sơ phân loại `SUBMIT`, `RECEIVE` hoặc `BOTH`; sinh viên có thể chọn loại hồ sơ đến nhận mà không cần tạo sẵn hồ sơ cá nhân.
 - Hồ sơ, tồn lưu tại văn phòng, quy trình tùy chỉnh, timeline tiến độ, phản hồi công khai/nội bộ.
 - Ghi nhận tiếp sinh viên trực tiếp hoặc thủ công, thông báo trong ứng dụng, email tùy chọn, báo cáo CSV và nhật ký kiểm toán.
