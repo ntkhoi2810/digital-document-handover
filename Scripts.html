@@ -106,7 +106,10 @@
     document.addEventListener('click', event => {
       const nav = event.target.closest('[data-view]'); if (nav) navigate(nav.dataset.view);
       const go = event.target.closest('[data-go]'); if (go) navigate(go.dataset.go);
+      const sidebar = $('.sidebar');
+      if (sidebar && sidebar.classList.contains('open') && !event.target.closest('.sidebar') && !event.target.closest('#mobile-menu')) sidebar.classList.remove('open');
     });
+    window.addEventListener('resize', syncSegmented);
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && !$('#modal').classList.contains('hidden')) closeModal();
     });
@@ -118,7 +121,7 @@
     $('#modal').addEventListener('click', event => { if (event.target === $('#modal')) closeModal(); });
     $('#profile-form').addEventListener('submit', saveProfile);
     $('#transaction-form').addEventListener('submit', submitTransaction);
-    $$('input[name="transactionType"]').forEach(input => input.addEventListener('change', () => renderTransactionOptions().catch(error => showAlert(error.message))));
+    $$('input[name="transactionType"]').forEach(input => input.addEventListener('change', () => syncSegmented() || renderTransactionOptions().catch(error => showAlert(error.message))));
     $('#my-document-search').addEventListener('input', renderMyDocuments);
     $('#transaction-options').addEventListener('change', updateTransactionSelection);
     $('#search-admin-documents').addEventListener('click', loadAdminDocuments);
@@ -157,7 +160,25 @@
     $('#page-title').textContent = viewMeta[view]?.[0] || '';
     $('#page-subtitle').textContent = viewMeta[view]?.[1] || '';
     hideAlert();
+    requestAnimationFrame(syncSegmented);
     try { await loadView(view); } catch (error) { showAlert(error.message); }
+  }
+
+  function syncSegmented() {
+    $$('.segmented').forEach(group => {
+      let indicator = group.querySelector('.seg-indicator');
+      if (!indicator) {
+        indicator = document.createElement('span');
+        indicator.className = 'seg-indicator';
+        indicator.setAttribute('aria-hidden', 'true');
+        group.prepend(indicator);
+        group.classList.add('has-indicator');
+      }
+      const label = group.querySelector('input:checked')?.closest('label');
+      if (!label || !label.offsetWidth) return;
+      indicator.style.width = label.offsetWidth + 'px';
+      indicator.style.transform = 'translateX(' + label.offsetLeft + 'px)';
+    });
   }
 
   async function loadView(view) {
@@ -189,7 +210,7 @@
       pendingBadge.classList.toggle('hidden', !data.pendingTransactions);
     }
   }
-  const kpis = items => items.map(item => `<div class="kpi${item[2] ? ' ' + item[2] : ''}"><strong>${Number(item[1] || 0).toLocaleString('vi-VN')}</strong><span>${escapeHtml(item[0])}</span></div>`).join('');
+  const kpis = items => items.map(item => `<div class="kpi${item[2] ? ' ' + item[2] : ''}"><div class="kpi-head"><span>${escapeHtml(item[0])}</span><i class="kpi-dot" aria-hidden="true"></i></div><strong>${Number(item[1] || 0).toLocaleString('vi-VN')}</strong></div>`).join('');
 
   function renderProfile() {
     const {identity, profile} = state.boot;
@@ -263,7 +284,7 @@
       const transactionType = $('input[name="transactionType"]:checked').value;
       const items = $$('#transaction-options input:checked').map(input => ({[input.dataset.field]:input.value}));
       const result = await api('createTransaction', {transactionType, items, note:$('#transaction-note').value, requestToken:'req_' + crypto.randomUUID().replaceAll('-','')});
-      $('#transaction-form').reset(); $('#transaction-note').value='';
+      $('#transaction-form').reset(); $('#transaction-note').value=''; syncSegmented();
       toast(`Đã gửi yêu cầu ${result.code}. Cán bộ sẽ xác nhận khi bạn đến quầy.`); await navigate('student-history');
     } catch (error) { showAlert(error.message); } finally { setBusy(button, false); }
   }
