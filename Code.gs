@@ -1000,7 +1000,7 @@ function ensureSystemInitialized_() {
       appendRecord_(APP.SHEETS.ADMINS, { email: APP.DEFAULT_ADMIN, name: 'Nguyễn Thái Khôi', role: 'SUPER_ADMIN', active: true, created_at: new Date(), updated_at: new Date() });
     }
     migrateSystemData_();
-    seedIfEmpty_();
+    ensureDefaultSettings_();
     PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', spreadsheet.getId());
   } finally {
     lock.releaseLock();
@@ -1044,45 +1044,11 @@ function healthCheck() {
   return { ok: sheets.every(function(item) { return item.exists; }), actor: admin.email, spreadsheetId: spreadsheet.getId(), webAppUrl: ScriptApp.getService().getUrl(), sheets: sheets };
 }
 
-function seedIfEmpty_() {
+function ensureDefaultSettings_() {
   const now = new Date();
   [['APP_NAME', APP.NAME, 'Tên hiển thị của ứng dụng'], ['OFFICE_NAME', 'Văn phòng Khoa', 'Tên đơn vị vận hành'], ['TIMEZONE', APP.TIMEZONE, 'Múi giờ vận hành'], ['SCHEMA_VERSION', '2', 'Phiên bản cấu trúc dữ liệu']].forEach(function(row) {
     if (!findBy_(APP.SHEETS.SETTINGS, 'key', row[0])) {
       appendRecord_(APP.SHEETS.SETTINGS, { key: row[0], value: row[1], description: row[2], updated_at: now, updated_by: APP.DEFAULT_ADMIN });
-    }
-  });
-  if (readTable_(APP.SHEETS.WORKFLOW_VERSIONS).length === 0) {
-    appendRecord_(APP.SHEETS.WORKFLOW_VERSIONS, { workflow_version_id: 'wf_nckh_v1', name: 'Quy trình xử lý hồ sơ', version: 1, active: true, created_at: now, created_by: APP.DEFAULT_ADMIN });
-  }
-  if (readTable_(APP.SHEETS.WORKFLOW_STEPS).length === 0) {
-    [['Tiếp nhận hồ sơ', 'Đã tiếp nhận'], ['Kiểm tra hồ sơ', 'Đang kiểm tra hồ sơ'], ['Trình duyệt hồ sơ', 'Đang trình duyệt'], ['Chờ kết quả phê duyệt', 'Chờ phê duyệt'], ['Hoàn tất xử lý', 'Đã hoàn thành']].forEach(function(row, index) {
-      appendRecord_(APP.SHEETS.WORKFLOW_STEPS, { step_id: 'wf_nckh_v1_s' + (index + 1), workflow_version_id: 'wf_nckh_v1', step_order: index + 1, name: row[0], status_label: row[1], created_at: now });
-    });
-  }
-  const typeSeeds = [
-    ['nckh_registration', 'Hồ sơ đăng ký NCKH', true, 'BOTH'],
-    ['topic_registration', 'Hồ sơ đăng ký đề tài', true, 'BOTH'],
-    ['topic_acceptance', 'Hồ sơ nghiệm thu đề tài', true, 'BOTH'],
-    ['degree', 'Bằng tốt nghiệp', false, 'BOTH'],
-    ['transcript', 'Bảng điểm', false, 'BOTH'],
-    ['certificate', 'Chứng chỉ', false, 'BOTH'],
-    ['request_form', 'Đơn đề nghị', true, 'BOTH'],
-    ['confirmation', 'Giấy xác nhận', true, 'BOTH'],
-    ['internship_intro', 'Giấy giới thiệu thực tập', false, 'RECEIVE'],
-    ['student_confirmation_visa', 'Giấy xác nhận sinh viên (Gia hạn visa)', false, 'RECEIVE'],
-    ['student_confirmation_internal_internship', 'Giấy xác nhận sinh viên (Thực tập trong trường)', false, 'RECEIVE'],
-    ['scholarship_certificate_2025_2026_hk1', 'Giấy khen Học bổng KKHT HK1/2025-2026', false, 'RECEIVE'],
-    ['student_research_award_2025_2026', 'Hồ sơ khen thưởng NCKHSV 2025-2026', true, 'SUBMIT'],
-    ['graduation_thesis_bonus_or_replacement', 'Hồ sơ cộng điểm KLTN/Thay thế tốt nghiệp', true, 'SUBMIT'],
-    ['enterprise_scholarship', 'Hồ sơ xét học bổng doanh nghiệp', true, 'SUBMIT']
-  ];
-  typeSeeds.forEach(function(row, index) {
-    if (!findBy_(APP.SHEETS.TYPES, 'type_id', row[0])) {
-      appendRecord_(APP.SHEETS.TYPES, {
-        type_id: row[0], name: row[1], description: row[1], tracks_progress: row[2],
-        workflow_version_id: row[2] ? 'wf_nckh_v1' : '', active: true, sort_order: index + 1,
-        created_at: now, updated_at: now, handover_mode: row[3]
-      });
     }
   });
 }

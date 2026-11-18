@@ -17,7 +17,7 @@
 
 Không đổi tên tab hoặc hàng tiêu đề. Không chia sẻ Google Sheets cho sinh viên; web app chạy bằng quyền tài khoản triển khai.
 
-Phiên bản cấu trúc dữ liệu hiện tại là `2`. Lần mở đầu tiên sau khi cập nhật sẽ tự thêm cột `handover_mode` vào cuối tab `DocumentTypes`, gán `BOTH` cho dữ liệu cũ và bổ sung các danh mục nhận/nộp chuẩn nếu chưa có.
+Phiên bản cấu trúc dữ liệu hiện tại là `2`. Lần mở đầu tiên sau khi cập nhật sẽ tự thêm cột `handover_mode` vào cuối tab `DocumentTypes` và gán `BOTH` cho dữ liệu cũ. Ứng dụng không tự tạo danh mục hoặc quy trình mẫu; quản trị viên chủ động cấu hình dữ liệu vận hành thực tế.
 
 ## Triển khai
 
