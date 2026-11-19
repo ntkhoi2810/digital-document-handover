@@ -13,6 +13,8 @@ const APP = Object.freeze({
     WORKFLOW_STEPS: 'WorkflowSteps',
     DOCUMENTS: 'Documents',
     EVENTS: 'DocumentEvents',
+    REQUESTS: 'DocumentRequests',
+    REQUEST_EVENTS: 'DocumentRequestEvents',
     TRANSACTIONS: 'Transactions',
     ITEMS: 'TransactionItems',
     SERVICES: 'ServiceSessions',
@@ -26,22 +28,24 @@ const HEADERS = Object.freeze({
   Settings: ['key', 'value', 'description', 'updated_at', 'updated_by'],
   Admins: ['email', 'name', 'role', 'active', 'created_at', 'updated_at'],
   Students: ['student_id', 'email', 'full_name', 'class_name', 'active', 'created_at', 'updated_at', 'updated_by'],
-  DocumentTypes: ['type_id', 'name', 'description', 'tracks_progress', 'workflow_version_id', 'active', 'sort_order', 'created_at', 'updated_at', 'handover_mode', 'name_en', 'description_en'],
+  DocumentTypes: ['type_id', 'name', 'description', 'tracks_progress', 'workflow_version_id', 'active', 'sort_order', 'created_at', 'updated_at', 'handover_mode', 'name_en', 'description_en', 'request_enabled'],
   WorkflowVersions: ['workflow_version_id', 'name', 'version', 'active', 'created_at', 'created_by', 'name_en'],
   WorkflowSteps: ['step_id', 'workflow_version_id', 'step_order', 'name', 'status_label', 'created_at', 'name_en', 'status_label_en'],
-  Documents: ['document_id', 'document_code', 'student_id', 'student_email', 'student_name', 'class_name', 'type_id', 'type_name', 'workflow_version_id', 'current_step_id', 'current_step_order', 'status', 'storage_status', 'submitted_at', 'expected_at', 'updated_at', 'updated_by', 'public_note', 'internal_note', 'version', 'active'],
+  Documents: ['document_id', 'document_code', 'student_id', 'student_email', 'student_name', 'class_name', 'type_id', 'type_name', 'workflow_version_id', 'current_step_id', 'current_step_order', 'status', 'storage_status', 'submitted_at', 'expected_at', 'updated_at', 'updated_by', 'public_note', 'internal_note', 'version', 'active', 'request_id'],
   DocumentEvents: ['event_id', 'document_id', 'event_type', 'from_step_id', 'to_step_id', 'status', 'public_note', 'internal_note', 'created_at', 'created_by'],
+  DocumentRequests: ['request_id', 'request_code', 'student_id', 'student_email', 'student_name', 'class_name', 'type_id', 'type_name', 'purpose', 'copy_count', 'student_note', 'status', 'expected_at', 'public_note', 'internal_note', 'document_id', 'created_at', 'updated_at', 'updated_by', 'version', 'request_token'],
+  DocumentRequestEvents: ['event_id', 'request_id', 'event_type', 'from_status', 'to_status', 'public_note', 'internal_note', 'created_at', 'created_by', 'action_token'],
   Transactions: ['transaction_id', 'transaction_code', 'student_id', 'student_email', 'student_name', 'class_name', 'transaction_type', 'status', 'student_note', 'request_token', 'created_at', 'updated_at', 'reviewed_by'],
   TransactionItems: ['item_id', 'transaction_id', 'type_id', 'type_name', 'document_id', 'related_document_id', 'status', 'admin_note', 'created_at', 'reviewed_at', 'reviewed_by'],
   ServiceSessions: ['session_id', 'student_id', 'student_email', 'student_name', 'class_name', 'document_id', 'recording_type', 'started_at', 'ended_at', 'duration_minutes', 'topic', 'result', 'staff_email', 'note', 'status', 'created_at', 'updated_at'],
-  Notifications: ['notification_id', 'student_email', 'document_id', 'title', 'message', 'read', 'created_at', 'created_by', 'i18n_json'],
+  Notifications: ['notification_id', 'student_email', 'document_id', 'title', 'message', 'read', 'created_at', 'created_by', 'i18n_json', 'request_id'],
   EmailQueue: ['email_id', 'recipient', 'subject', 'body', 'status', 'attempts', 'last_error', 'created_at', 'sent_at'],
   AuditLog: ['audit_id', 'action', 'entity_type', 'entity_id', 'actor_email', 'detail_json', 'created_at']
 });
 
 const CACHE_TTL_SECONDS = 300;
 const INIT_CACHE_TTL_SECONDS = 21600;
-const INIT_VERSION_KEY = 'SCHEMA_INIT_V4';
+const INIT_VERSION_KEY = 'SCHEMA_INIT_V5';
 const CACHED_SHEETS = Object.freeze({
   Settings: true,
   Admins: true,
@@ -85,6 +89,7 @@ function getBootstrap() {
     identity: identity,
     profile: null,
     types: types.map(publicType_),
+    requestTypes: types.filter(function(row) { return toBoolean_(row.request_enabled) && ['RECEIVE', 'BOTH'].indexOf(normalizeHandoverMode_(row.handover_mode || 'BOTH')) !== -1; }).map(publicType_),
     serverTime: iso_(new Date())
   };
 
@@ -209,8 +214,10 @@ function getAdminDashboard_() {
   const docs = readTable_(APP.SHEETS.DOCUMENTS).filter(function(row) { return toBoolean_(row.active); });
   const txs = readTable_(APP.SHEETS.TRANSACTIONS);
   const services = readTable_(APP.SHEETS.SERVICES);
+  const requests = readTable_(APP.SHEETS.REQUESTS);
   return {
     pendingTransactions: txs.filter(function(row) { return ['PENDING', 'PARTIAL'].indexOf(String(row.status)) !== -1; }).length,
+    openDocumentRequests: requests.filter(function(row) { return OPEN_DOCUMENT_REQUEST_STATUSES_.indexOf(String(row.status)) !== -1; }).length,
     storedDocuments: docs.filter(function(row) { return String(row.storage_status) === 'AT_OFFICE'; }).length,
     processing: docs.filter(function(row) { return ['Đã hoàn thành', 'Đã bàn giao', 'Đã hủy'].indexOf(String(row.status)) === -1; }).length,
     supplement: docs.filter(function(row) { return String(row.status) === 'Yêu cầu bổ sung'; }).length,
@@ -237,6 +244,10 @@ function saveDocumentType(payload) {
   const typeId = existing ? existing.type_id : ('type_' + shortId_());
   const tracksProgress = toBoolean_(payload.tracksProgress);
   const handoverMode = normalizeHandoverMode_(payload.handoverMode || (existing && existing.handover_mode) || 'SUBMIT');
+  const requestEnabled = payload.requestEnabled === undefined ? toBoolean_(existing && existing.request_enabled) : toBoolean_(payload.requestEnabled);
+  if (requestEnabled && ['RECEIVE', 'BOTH'].indexOf(handoverMode) === -1) {
+    throw new Error('VALIDATION|Chỉ loại hồ sơ có hình thức nhận được sinh viên yêu cầu cấp.');
+  }
   const workflows = readTable_(APP.SHEETS.WORKFLOW_VERSIONS).filter(function(row) { return toBoolean_(row.active); });
   const defaultWorkflow = workflows.length ? workflows[0].workflow_version_id : '';
   const requestedWorkflow = sanitizeId_(payload.workflowVersionId);
@@ -253,7 +264,8 @@ function saveDocumentType(payload) {
     updated_at: now,
     handover_mode: handoverMode,
     name_en: sanitizeText_(payload.nameEn, 160) || (existing && existing.name_en) || '',
-    description_en: sanitizeText_(payload.descriptionEn, 500) || (existing && existing.description_en) || ''
+    description_en: sanitizeText_(payload.descriptionEn, 500) || (existing && existing.description_en) || '',
+    request_enabled: requestEnabled
   };
   if (existing) updateRow_(APP.SHEETS.TYPES, existing._row, record);
   else appendRecord_(APP.SHEETS.TYPES, record);
@@ -274,7 +286,8 @@ function deleteDocumentType(typeId) {
 
     const documentCount = readTable_(APP.SHEETS.DOCUMENTS).filter(function(row) { return row.type_id === typeId; }).length;
     const transactionItemCount = readTable_(APP.SHEETS.ITEMS).filter(function(row) { return row.type_id === typeId; }).length;
-    if (documentCount || transactionItemCount) {
+    const requestCount = readTable_(APP.SHEETS.REQUESTS).filter(function(row) { return row.type_id === typeId; }).length;
+    if (documentCount || transactionItemCount || requestCount) {
       throw new Error('IN_USE|Loại đã có hồ sơ hoặc yêu cầu nên không thể xoá. Chọn “Ngừng sử dụng” để giữ lịch sử.');
     }
 
@@ -284,6 +297,279 @@ function deleteDocumentType(typeId) {
   } finally {
     lock.releaseLock();
   }
+}
+
+const OPEN_DOCUMENT_REQUEST_STATUSES_ = Object.freeze(['PENDING', 'PROCESSING', 'READY']);
+const DOCUMENT_REQUEST_STATUS_LABELS_ = Object.freeze({
+  PENDING: 'Chờ tiếp nhận', PROCESSING: 'Đang xử lý', READY: 'Chờ nhận',
+  COMPLETED: 'Đã nhận', REJECTED: 'Từ chối', CANCELLED: 'Đã hủy'
+});
+
+function createDocumentRequest(payload) {
+  const identity = assertStudent_();
+  const profile = requireProfile_(identity.email);
+  payload = payload || {};
+  const typeId = sanitizeId_(payload.typeId);
+  const purpose = sanitizeText_(payload.purpose, 1000);
+  const copyCount = Number(payload.copyCount);
+  const studentNote = sanitizeText_(payload.note, 1000);
+  const requestToken = sanitizeId_(payload.requestToken);
+  if (!typeId) throw new Error('VALIDATION|Chọn loại hồ sơ cần yêu cầu.');
+  if (!purpose) throw new Error('VALIDATION|Nhập mục đích sử dụng hồ sơ.');
+  if (!Number.isInteger(copyCount) || copyCount < 1 || copyCount > 20) throw new Error('VALIDATION|Số bản phải từ 1 đến 20.');
+  if (!requestToken) throw new Error('VALIDATION|Mã gửi yêu cầu không hợp lệ. Tải lại trang rồi thử lại.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const prior = findBy_(APP.SHEETS.REQUESTS, 'request_token', requestToken);
+    if (prior) {
+      if (normalizeEmail_(prior.student_email) !== identity.email) throw new Error('ACCESS_DENIED|Mã yêu cầu này không thuộc tài khoản của bạn.');
+      return publicDocumentRequest_(prior, false);
+    }
+    const type = readTable_(APP.SHEETS.TYPES).find(function(row) {
+      return row.type_id === typeId && toBoolean_(row.active) && toBoolean_(row.request_enabled) && ['RECEIVE', 'BOTH'].indexOf(normalizeHandoverMode_(row.handover_mode || 'BOTH')) !== -1;
+    });
+    if (!type) throw new Error('VALIDATION|Loại hồ sơ không được phép yêu cầu hoặc đã ngừng sử dụng.');
+    const duplicate = readTable_(APP.SHEETS.REQUESTS).find(function(row) {
+      return normalizeEmail_(row.student_email) === identity.email && row.type_id === typeId && OPEN_DOCUMENT_REQUEST_STATUSES_.indexOf(String(row.status)) !== -1;
+    });
+    if (duplicate) throw new Error('DUPLICATE_REQUEST|Bạn đã có yêu cầu ' + duplicate.request_code + ' cho loại hồ sơ này và yêu cầu vẫn đang mở.');
+    const now = new Date();
+    const requestId = 'dreq_' + shortId_();
+    const request = {
+      request_id: requestId, request_code: makeCode_('YC'), student_id: profile.student_id,
+      student_email: identity.email, student_name: profile.full_name, class_name: profile.class_name,
+      type_id: type.type_id, type_name: type.name, purpose: purpose, copy_count: copyCount,
+      student_note: studentNote, status: 'PENDING', expected_at: '', public_note: '', internal_note: '',
+      document_id: '', created_at: now, updated_at: now, updated_by: identity.email, version: 1,
+      request_token: requestToken
+    };
+    appendRecord_(APP.SHEETS.REQUESTS, request);
+    appendDocumentRequestEvent_(request, '', 'PENDING', '', '', identity.email, 'create_' + requestToken);
+    audit_('CREATE_DOCUMENT_REQUEST', 'DocumentRequest', requestId, identity.email, { typeId: typeId, copyCount: copyCount });
+    notify_(identity.email, '', 'Đã gửi yêu cầu cấp hồ sơ', 'Yêu cầu ' + request.request_code + ' đã được gửi và đang chờ tiếp nhận.', identity.email, false, null, requestId);
+    return publicDocumentRequest_(request, false);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function listMyDocumentRequests(filters) {
+  const identity = assertStudent_();
+  return listDocumentRequests_(filters || {}, identity.email, false);
+}
+
+function listDocumentRequests(filters) {
+  assertAdmin_();
+  return listDocumentRequests_(filters || {}, '', true);
+}
+
+function listDocumentRequests_(filters, ownerEmail, adminView) {
+  filters = filters || {};
+  const query = normalizeSearch_(filters.query);
+  const typeId = sanitizeId_(filters.typeId);
+  const status = String(filters.status || '').trim().toUpperCase();
+  const from = parseDateInput_(filters.from);
+  const to = parseDateInput_(filters.to);
+  if (to) to.setHours(23, 59, 59, 999);
+  const exactStudentEmail = adminView ? normalizeEmail_(filters.studentEmail) : '';
+  let page = Math.max(1, Math.floor(Number(filters.page) || 1));
+  const pageSize = Math.max(1, Math.min(100, Math.floor(Number(filters.pageSize) || 25)));
+  const requests = readTable_(APP.SHEETS.REQUESTS).filter(function(row) {
+    if (ownerEmail && normalizeEmail_(row.student_email) !== ownerEmail) return false;
+    if (exactStudentEmail && normalizeEmail_(row.student_email) !== exactStudentEmail) return false;
+    if (typeId && row.type_id !== typeId) return false;
+    if (status === 'OPEN' && OPEN_DOCUMENT_REQUEST_STATUSES_.indexOf(String(row.status)) === -1) return false;
+    if (status && status !== 'OPEN' && String(row.status) !== status) return false;
+    const created = dateValue_(row.created_at);
+    if (from && created < from) return false;
+    if (to && created > to) return false;
+    if (query && ![row.request_code, row.student_id, row.student_email, row.student_name, row.class_name, row.type_name]
+      .some(function(value) { return normalizeSearch_(value).indexOf(query) !== -1; })) return false;
+    return true;
+  }).sort(sortDesc_('created_at'));
+  const total = requests.length;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  page = Math.min(page, pages);
+  return { items: requests.slice((page - 1) * pageSize, page * pageSize).map(function(row) { return publicDocumentRequest_(row, adminView); }), total: total, page: page, pageSize: pageSize, pages: pages };
+}
+
+function getDocumentRequestDetail(requestId) {
+  const identity = getIdentity_();
+  const request = findBy_(APP.SHEETS.REQUESTS, 'request_id', sanitizeId_(requestId));
+  if (!request) throw new Error('NOT_FOUND|Không tìm thấy yêu cầu cấp hồ sơ.');
+  const adminView = identity.role === 'ADMIN';
+  if (!adminView && normalizeEmail_(request.student_email) !== identity.email) throw new Error('ACCESS_DENIED|Bạn không có quyền xem yêu cầu này.');
+  const result = publicDocumentRequest_(request, adminView);
+  result.events = readTable_(APP.SHEETS.REQUEST_EVENTS).filter(function(row) { return row.request_id === request.request_id; })
+    .sort(sortAsc_('created_at')).map(function(row) { return publicDocumentRequestEvent_(row, adminView); });
+  return result;
+}
+
+function updateDocumentRequest(payload) {
+  payload = payload || {};
+  const identity = getIdentity_();
+  const requestId = sanitizeId_(payload.requestId);
+  const action = String(payload.action || '').trim().toUpperCase();
+  const actionToken = sanitizeId_(payload.actionToken);
+  if (!requestId || !actionToken) throw new Error('VALIDATION|Yêu cầu hoặc mã thao tác không hợp lệ.');
+  if (identity.role === 'STUDENT' && action !== 'CANCEL') throw new Error('ADMIN_ONLY|Thao tác này chỉ dành cho quản trị viên.');
+  if (identity.role === 'ADMIN' && ['ACCEPT', 'READY', 'COMPLETE', 'REJECT', 'CANCEL', 'UPDATE'].indexOf(action) === -1) throw new Error('VALIDATION|Thao tác yêu cầu không hợp lệ.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const priorEvent = readTable_(APP.SHEETS.REQUEST_EVENTS).find(function(row) { return row.action_token === actionToken; });
+    if (priorEvent) {
+      const priorRequest = findBy_(APP.SHEETS.REQUESTS, 'request_id', priorEvent.request_id);
+      if (!priorRequest || priorRequest.request_id !== requestId) throw new Error('ACCESS_DENIED|Mã thao tác đã được dùng cho yêu cầu khác.');
+      if (identity.role !== 'ADMIN' && normalizeEmail_(priorRequest.student_email) !== identity.email) throw new Error('ACCESS_DENIED|Bạn không có quyền xem yêu cầu này.');
+      return publicDocumentRequest_(priorRequest, identity.role === 'ADMIN');
+    }
+    const request = findBy_(APP.SHEETS.REQUESTS, 'request_id', requestId);
+    if (!request) throw new Error('NOT_FOUND|Không tìm thấy yêu cầu cấp hồ sơ.');
+    const adminView = identity.role === 'ADMIN';
+    if (!adminView && normalizeEmail_(request.student_email) !== identity.email) throw new Error('ACCESS_DENIED|Bạn không có quyền sửa yêu cầu này.');
+    if (payload.version != null && Number(payload.version) !== Number(request.version || 0)) throw new Error('VERSION_CONFLICT|Yêu cầu vừa được cập nhật. Tải lại để xem trạng thái mới.');
+    const result = transitionDocumentRequest_(request, action, payload, identity, actionToken);
+    return publicDocumentRequest_(result, adminView);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function batchUpdateDocumentRequests(payload) {
+  const admin = assertAdmin_();
+  payload = payload || {};
+  const action = String(payload.action || '').trim().toUpperCase();
+  if (['ACCEPT', 'READY'].indexOf(action) === -1) throw new Error('VALIDATION|Chọn tiếp nhận hoặc chuyển chờ nhận.');
+  const ids = Array.isArray(payload.requestIds) ? payload.requestIds.map(sanitizeId_).filter(Boolean) : [];
+  const uniqueIds = ids.filter(function(id, index) { return ids.indexOf(id) === index; });
+  if (!uniqueIds.length || uniqueIds.length > 20) throw new Error('VALIDATION|Chọn từ 1 đến 20 yêu cầu.');
+  const versions = payload.versions || {};
+  const batchToken = sanitizeId_(payload.actionToken);
+  if (!batchToken || batchToken.length > 95) throw new Error('VALIDATION|Mã thao tác hàng loạt không hợp lệ.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const rows = uniqueIds.map(function(id, index) {
+      const row = findBy_(APP.SHEETS.REQUESTS, 'request_id', id);
+      if (!row) throw new Error('NOT_FOUND|Không tìm thấy một trong các yêu cầu đã chọn.');
+      const expected = action === 'ACCEPT' ? 'PENDING' : 'PROCESSING';
+      const actionToken = batchToken + '_' + index;
+      const prior = readTable_(APP.SHEETS.REQUEST_EVENTS).find(function(event) { return event.action_token === actionToken && event.request_id === row.request_id; });
+      const target = action === 'ACCEPT' ? 'PROCESSING' : 'READY';
+      if (prior && String(row.status) === target) return { row: row, done: true };
+      if (String(row.status) !== expected) throw new Error('VERSION_CONFLICT|Một yêu cầu đã đổi trạng thái. Tải lại danh sách rồi thử lại.');
+      if (versions[id] != null && Number(versions[id]) !== Number(row.version || 0)) throw new Error('VERSION_CONFLICT|Một yêu cầu vừa được cập nhật. Tải lại danh sách rồi thử lại.');
+      return { row: row, done: false };
+    });
+    const output = rows.map(function(entry, index) {
+      const actionToken = batchToken + '_' + index;
+      return publicDocumentRequest_(entry.done ? entry.row : transitionDocumentRequest_(entry.row, action, payload, admin, actionToken), true);
+    });
+    audit_('BATCH_UPDATE_DOCUMENT_REQUESTS', 'DocumentRequest', uniqueIds.join(','), admin.email, { action: action, count: output.length });
+    return { items: output, updated: output.length };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function transitionDocumentRequest_(request, action, payload, actor, actionToken) {
+  const isAdmin = actor.role === 'ADMIN';
+  const current = String(request.status);
+  const now = new Date();
+  const publicNote = sanitizeText_(payload.publicNote, 1500);
+  const internalNote = isAdmin ? sanitizeText_(payload.internalNote, 1500) : '';
+  const messageBody = sanitizeNotificationBody_(payload.messageBody);
+  const expectedAt = parseDateInput_(payload.expectedAt);
+  let next = current;
+  if (action === 'CANCEL') {
+    if (OPEN_DOCUMENT_REQUEST_STATUSES_.indexOf(current) === -1) throw new Error('VALIDATION|Chỉ có thể hủy yêu cầu đang mở.');
+    if (!isAdmin && current !== 'PENDING') throw new Error('VALIDATION|Sinh viên chỉ có thể hủy yêu cầu đang chờ tiếp nhận.');
+    if (isAdmin && !publicNote) throw new Error('VALIDATION|Nhập lý do hủy để sinh viên biết.');
+    next = 'CANCELLED';
+  } else if (action === 'ACCEPT' && isAdmin && current === 'PENDING') next = 'PROCESSING';
+  else if (action === 'READY' && isAdmin && current === 'PROCESSING') next = 'READY';
+  else if (action === 'COMPLETE' && isAdmin && current === 'READY') next = 'COMPLETED';
+  else if (action === 'REJECT' && isAdmin && ['PENDING', 'PROCESSING'].indexOf(current) !== -1) {
+    if (!publicNote) throw new Error('VALIDATION|Nhập lý do từ chối.');
+    next = 'REJECTED';
+  } else if (action === 'UPDATE' && isAdmin && OPEN_DOCUMENT_REQUEST_STATUSES_.indexOf(current) !== -1) {
+    if (!publicNote && !internalNote && !expectedAt) throw new Error('VALIDATION|Nhập nội dung cập nhật hoặc ngày dự kiến.');
+  } else throw new Error('VALIDATION|Thao tác không phù hợp với trạng thái hiện tại của yêu cầu.');
+
+  const patch = { status: next, updated_at: now, updated_by: actor.email, version: Number(request.version || 0) + 1 };
+  if (expectedAt) patch.expected_at = expectedAt;
+  if (publicNote) patch.public_note = publicNote;
+  if (internalNote) patch.internal_note = internalNote;
+  let document = request.document_id ? findBy_(APP.SHEETS.DOCUMENTS, 'document_id', request.document_id) : null;
+  if (next === 'READY' && !document) {
+    const type = findBy_(APP.SHEETS.TYPES, 'type_id', request.type_id);
+    if (!type) throw new Error('DATA_ERROR|Không tìm thấy loại hồ sơ của yêu cầu.');
+    const documentId = 'doc_request_' + request.request_id;
+    document = findBy_(APP.SHEETS.DOCUMENTS, 'document_id', documentId);
+    if (!document) {
+      document = {
+        document_id: documentId, document_code: makeCode_('HS'), student_id: request.student_id,
+        student_email: request.student_email, student_name: request.student_name, class_name: request.class_name,
+        type_id: request.type_id, type_name: request.type_name, workflow_version_id: '', current_step_id: '',
+        current_step_order: 0, status: 'Chờ sinh viên đến nhận', storage_status: 'AT_OFFICE',
+        submitted_at: now, expected_at: expectedAt || request.expected_at || '', updated_at: now,
+        updated_by: actor.email, public_note: publicNote || 'Hồ sơ đã được chuẩn bị và đang chờ sinh viên đến nhận.',
+        internal_note: '', version: 1, active: true, request_id: request.request_id
+      };
+      appendRecord_(APP.SHEETS.DOCUMENTS, document);
+      appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_req_ready_' + request.request_id, document_id: documentId, event_type: 'REQUEST_READY', from_step_id: '', to_step_id: '', status: document.status, public_note: document.public_note, internal_note: '', created_at: now, created_by: actor.email });
+    }
+    patch.document_id = document.document_id;
+  }
+  if (action === 'COMPLETE') {
+    if (!document) throw new Error('DATA_ERROR|Yêu cầu chưa có hồ sơ sẵn sàng để bàn giao.');
+    handOverDocument_(document.document_id, actor.email, publicNote, 'evt_req_handover_' + request.request_id, true);
+  }
+  if (action === 'UPDATE' && document) {
+    updateRow_(APP.SHEETS.DOCUMENTS, document._row, {
+      expected_at: expectedAt || document.expected_at,
+      public_note: publicNote || document.public_note,
+      internal_note: internalNote || document.internal_note,
+      updated_at: now, updated_by: actor.email, version: Number(document.version || 0) + 1
+    });
+    appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_req_update_' + actionToken, document_id: document.document_id, event_type: 'REQUEST_UPDATED', from_step_id: '', to_step_id: '', status: document.status, public_note: publicNote, internal_note: internalNote, created_at: now, created_by: actor.email });
+  }
+  updateRow_(APP.SHEETS.REQUESTS, request._row, patch);
+  if (document && next === 'CANCELLED' && toBoolean_(document.active)) {
+    rejectPendingPickupTransactions_(document, actor.email, publicNote || 'Yêu cầu cấp hồ sơ đã bị hủy.');
+    updateRow_(APP.SHEETS.DOCUMENTS, document._row, { status: 'Đã hủy', active: false, public_note: publicNote || 'Yêu cầu cấp hồ sơ đã bị hủy.', updated_at: now, updated_by: actor.email, version: Number(document.version || 0) + 1 });
+    appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_req_cancel_' + actionToken, document_id: document.document_id, event_type: 'REQUEST_CANCELLED', from_step_id: '', to_step_id: '', status: 'Đã hủy', public_note: publicNote, internal_note: '', created_at: now, created_by: actor.email });
+  }
+  const updated = Object.assign({}, request, patch);
+  if (document && !patch.document_id) updated.document_id = document.document_id;
+  appendDocumentRequestEvent_(updated, current, next, publicNote, internalNote, actor.email, actionToken);
+  const labels = DOCUMENT_REQUEST_STATUS_LABELS_;
+  let message = messageBody || publicNote || ('Yêu cầu ' + request.request_code + ' đã chuyển sang trạng thái: ' + labels[next] + '.');
+  if (!publicNote && !messageBody && action === 'ACCEPT') message = 'Văn phòng đã tiếp nhận yêu cầu ' + request.request_code + ' và đang xử lý.';
+  if (!publicNote && !messageBody && action === 'READY') message = 'Hồ sơ ' + request.type_name + ' đã sẵn sàng. Sinh viên vui lòng đến văn phòng để nhận.';
+  if (!publicNote && !messageBody && action === 'COMPLETE') message = 'Hồ sơ ' + request.type_name + ' đã được bàn giao.';
+  notify_(request.student_email, document ? document.document_id : '', request.type_name, message, actor.email, isAdmin && toBoolean_(payload.sendEmail), null, request.request_id);
+  audit_('UPDATE_DOCUMENT_REQUEST', 'DocumentRequest', request.request_id, actor.email, { action: action, from: current, to: next });
+  return updated;
+}
+
+function appendDocumentRequestEvent_(request, fromStatus, toStatus, publicNote, internalNote, actorEmail, actionToken) {
+  appendRecord_(APP.SHEETS.REQUEST_EVENTS, { event_id: 'reqevt_' + shortId_(), request_id: request.request_id, event_type: toStatus === fromStatus ? 'UPDATED' : 'STATUS_CHANGED', from_status: fromStatus || '', to_status: toStatus, public_note: publicNote || '', internal_note: internalNote || '', created_at: new Date(), created_by: actorEmail, action_token: actionToken });
+}
+
+function publicDocumentRequest_(row, adminView) {
+  const names = notificationTypeNames_(row.type_id, row.type_name);
+  const result = { requestId: row.request_id, code: row.request_code, studentId: row.student_id, studentEmail: row.student_email, studentName: row.student_name, className: row.class_name, typeId: row.type_id, typeName: row.type_name, typeNameEn: names.en, purpose: row.purpose || '', copyCount: Number(row.copy_count || 1), note: row.student_note || '', status: row.status, statusLabel: DOCUMENT_REQUEST_STATUS_LABELS_[row.status] || row.status, expectedAt: iso_(row.expected_at), publicNote: row.public_note || '', documentId: row.document_id || '', createdAt: iso_(row.created_at), updatedAt: iso_(row.updated_at), updatedBy: row.updated_by || '', version: Number(row.version || 0) };
+  if (adminView) result.internalNote = row.internal_note || '';
+  return result;
+}
+
+function publicDocumentRequestEvent_(row, adminView) {
+  const result = { eventId: row.event_id, type: row.event_type, fromStatus: row.from_status || '', toStatus: row.to_status, createdAt: iso_(row.created_at), createdBy: row.created_by || '', publicNote: row.public_note || '' };
+  if (adminView) result.internalNote = row.internal_note || '';
+  return result;
 }
 
 function createTransaction(payload) {
@@ -311,6 +597,7 @@ function createTransaction(payload) {
       if (transactionType === 'SUBMIT' || (transactionType === 'RECEIVE' && item.typeId && !item.documentId)) {
         const type = types.find(function(row) { return row.type_id === item.typeId && toBoolean_(row.active); });
         if (!type) throw new Error('VALIDATION|Có loại hồ sơ không hợp lệ hoặc đã ngừng sử dụng.');
+        if (transactionType === 'RECEIVE' && toBoolean_(type.request_enabled)) throw new Error('VALIDATION|Loại hồ sơ này cần được yêu cầu cấp và chuẩn bị trước khi sinh viên đăng ký nhận.');
         if (!typeAllowsTransaction_(type, transactionType)) {
           throw new Error('VALIDATION|Loại hồ sơ ' + type.name + ' không áp dụng cho hình thức này.');
         }
@@ -597,7 +884,7 @@ function createDirectPickupDocument_(transaction, item, adminEmail, now, note) {
   return document;
 }
 
-function handOverDocument_(documentId, adminEmail, note, eventId) {
+function handOverDocument_(documentId, adminEmail, note, eventId, skipRequestSync) {
   const document = findBy_(APP.SHEETS.DOCUMENTS, 'document_id', documentId);
   if (!document) throw new Error('NOT_FOUND|Không tìm thấy hồ sơ.');
   eventId = eventId || ('evt_handover_' + shortId_());
@@ -609,6 +896,8 @@ function handOverDocument_(documentId, adminEmail, note, eventId) {
         updated_by: adminEmail, public_note: existingEvent.public_note || note || 'Hồ sơ đã được bàn giao cho sinh viên.', version: Number(document.version || 0) + 1
       });
     }
+    completePendingPickupTransactions_(document, adminEmail);
+    if (!skipRequestSync) syncDocumentRequestFromDocument_(document, 'Đã bàn giao', note, adminEmail);
     return document;
   }
   if (String(document.status) !== 'Chờ sinh viên đến nhận') {
@@ -624,7 +913,51 @@ function handOverDocument_(documentId, adminEmail, note, eventId) {
     status: 'Đã bàn giao', storage_status: 'HANDED_OVER', updated_at: now,
     updated_by: adminEmail, public_note: note || 'Hồ sơ đã được bàn giao cho sinh viên.', version: Number(document.version || 0) + 1
   });
+  completePendingPickupTransactions_(document, adminEmail);
+  if (!skipRequestSync) syncDocumentRequestFromDocument_(document, 'Đã bàn giao', note, adminEmail);
   return document;
+}
+
+function completePendingPickupTransactions_(document, adminEmail) {
+  updatePendingPickupTransactions_(document, adminEmail, 'APPROVED', 'Hồ sơ đã được bàn giao.');
+}
+
+function rejectPendingPickupTransactions_(document, adminEmail, note) {
+  updatePendingPickupTransactions_(document, adminEmail, 'REJECTED', note || 'Yêu cầu cấp hồ sơ đã bị hủy.');
+}
+
+function updatePendingPickupTransactions_(document, adminEmail, status, note) {
+  if (!document || !document.request_id) return;
+  const matching = readTable_(APP.SHEETS.ITEMS).filter(function(item) {
+    if (item.document_id !== document.document_id || String(item.status) !== 'PENDING') return false;
+    const transaction = findBy_(APP.SHEETS.TRANSACTIONS, 'transaction_id', item.transaction_id);
+    return transaction && transaction.transaction_type === 'RECEIVE' && ['PENDING', 'PARTIAL'].indexOf(String(transaction.status)) !== -1;
+  });
+  const transactionIds = [];
+  const now = new Date();
+  matching.forEach(function(item) {
+    updateRow_(APP.SHEETS.ITEMS, item._row, { status: status, document_id: document.document_id, reviewed_at: now, reviewed_by: adminEmail, admin_note: note });
+    if (transactionIds.indexOf(item.transaction_id) === -1) transactionIds.push(item.transaction_id);
+  });
+  transactionIds.forEach(function(id) { refreshTransactionStatus_(id, adminEmail); });
+}
+
+function syncDocumentRequestFromDocument_(document, documentStatus, note, actorEmail) {
+  if (!document || !document.request_id) return;
+  const request = findBy_(APP.SHEETS.REQUESTS, 'request_id', document.request_id);
+  if (!request || !OPEN_DOCUMENT_REQUEST_STATUSES_.includes(String(request.status))) return;
+  const next = documentStatus === 'Đã bàn giao' ? 'COMPLETED' : (documentStatus === 'Đã hủy' ? 'CANCELLED' : '');
+  if (!next) return;
+  const actionToken = 'doc_' + document.document_id + '_' + next;
+  if (readTable_(APP.SHEETS.REQUEST_EVENTS).some(function(row) { return row.action_token === actionToken; })) return;
+  const from = String(request.status);
+  const now = new Date();
+  const publicNote = sanitizeText_(note, 1500) || (next === 'COMPLETED' ? 'Hồ sơ đã được bàn giao tại văn phòng.' : 'Hồ sơ liên kết đã bị hủy.');
+  updateRow_(APP.SHEETS.REQUESTS, request._row, { status: next, public_note: publicNote, updated_at: now, updated_by: actorEmail, version: Number(request.version || 0) + 1 });
+  const updated = Object.assign({}, request, { status: next, public_note: publicNote });
+  appendDocumentRequestEvent_(updated, from, next, publicNote, '', actorEmail, actionToken);
+  notify_(request.student_email, document.document_id, request.type_name, publicNote, actorEmail, false, null, request.request_id);
+  audit_('SYNC_DOCUMENT_REQUEST', 'DocumentRequest', request.request_id, actorEmail, { documentId: document.document_id, status: next });
 }
 
 function getMyDocuments() {
@@ -722,6 +1055,10 @@ function batchUpdateDocuments(payload) {
     const now = new Date();
     ids.forEach(function(id) {
       const document = findBy_(APP.SHEETS.DOCUMENTS, 'document_id', id);
+      if (document && document.request_id && toBoolean_(document.active)) throw new Error('VALIDATION|Cập nhật hồ sơ được cấp từ mục Yêu cầu sinh viên để giữ đồng bộ trạng thái.');
+    });
+    ids.forEach(function(id) {
+      const document = findBy_(APP.SHEETS.DOCUMENTS, 'document_id', id);
       if (!document || !toBoolean_(document.active)) return;
       updateRow_(APP.SHEETS.DOCUMENTS, document._row, { status: status, public_note: note || document.public_note, storage_status: status === 'Đã bàn giao' ? 'HANDED_OVER' : document.storage_status, updated_at: now, updated_by: admin.email, version: Number(document.version || 0) + 1 });
       appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_' + shortId_(), document_id: id, event_type: 'BATCH_UPDATED', from_step_id: document.current_step_id, to_step_id: document.current_step_id, status: status, public_note: note, internal_note: '', created_at: now, created_by: admin.email });
@@ -745,6 +1082,7 @@ function updateDocumentProgress(payload) {
   try {
     const document = findBy_(APP.SHEETS.DOCUMENTS, 'document_id', documentId);
     if (!document) throw new Error('NOT_FOUND|Không tìm thấy hồ sơ.');
+    if (document.request_id) throw new Error('VALIDATION|Cập nhật hồ sơ được cấp từ mục Yêu cầu sinh viên để giữ đồng bộ trạng thái.');
     if (payload.version != null && Number(payload.version) !== Number(document.version || 0)) {
       throw new Error('VERSION_CONFLICT|Hồ sơ vừa được người khác cập nhật. Tải lại để xem bản mới.');
     }
@@ -793,6 +1131,7 @@ function cancelDocument(payload) {
   payload = payload || {};
   const document = findBy_(APP.SHEETS.DOCUMENTS, 'document_id', sanitizeId_(payload.documentId));
   if (!document) throw new Error('NOT_FOUND|Không tìm thấy hồ sơ.');
+  if (document.request_id) throw new Error('VALIDATION|Hủy hồ sơ được cấp từ mục Yêu cầu sinh viên để giữ đồng bộ trạng thái.');
   const reason = sanitizeText_(payload.reason, 1000);
   if (!reason) throw new Error('VALIDATION|Nhập lý do hủy hồ sơ.');
   const messageBody = sanitizeNotificationBody_(payload.messageBody);
@@ -806,6 +1145,7 @@ function cancelDocument(payload) {
     customMessage: !!messageBody
   });
   audit_('CANCEL_DOCUMENT', 'Document', document.document_id, admin.email, { reason: reason });
+  syncDocumentRequestFromDocument_(document, 'Đã hủy', reason, admin.email);
   return { ok: true };
 }
 
@@ -972,6 +1312,7 @@ function getReport(filters) {
   }
   const allTransactions = readTable_(APP.SHEETS.TRANSACTIONS);
   const transactions = allTransactions.filter(function(row) { return within(row.created_at); });
+  const documentRequests = readTable_(APP.SHEETS.REQUESTS).filter(function(row) { return within(row.created_at); });
   const allItems = readTable_(APP.SHEETS.ITEMS);
   const approvedItems = allItems.filter(function(row) { return String(row.status) === 'APPROVED' && within(row.reviewed_at); });
   const transactionById = {};
@@ -1007,6 +1348,9 @@ function getReport(filters) {
     submittedRequestCount: transactions.filter(function(row) { return row.transaction_type === 'SUBMIT'; }).length,
     receivedRequestCount: transactions.filter(function(row) { return row.transaction_type === 'RECEIVE'; }).length,
     pendingRequestCount: transactions.filter(function(row) { return ['PENDING', 'PARTIAL'].indexOf(String(row.status)) !== -1; }).length,
+    documentRequestCount: documentRequests.length,
+    openDocumentRequestCount: documentRequests.filter(function(row) { return OPEN_DOCUMENT_REQUEST_STATUSES_.indexOf(String(row.status)) !== -1; }).length,
+    readyDocumentRequestCount: documentRequests.filter(function(row) { return String(row.status) === 'READY'; }).length,
     storedDocuments: activeDocuments.filter(function(row) { return String(row.storage_status) === 'AT_OFFICE'; }).length,
     processingDocuments: activeDocuments.filter(function(row) { return ['Đã hoàn thành', 'Đã bàn giao', 'Đã hủy'].indexOf(String(row.status)) === -1; }).length,
     supplementDocuments: activeDocuments.filter(function(row) { return String(row.status) === 'Yêu cầu bổ sung'; }).length,
@@ -1027,6 +1371,7 @@ function exportReportCsv(filters) {
     transactionCount: 'Yêu cầu có giao nhận được xác nhận', approvedItemCount: 'Số giấy tờ được xác nhận', submittedCount: 'Giấy tờ đã nộp',
     receivedCount: 'Giấy tờ đã nhận', requestCount: 'Tổng yêu cầu đã gửi', submittedRequestCount: 'Yêu cầu nộp đã gửi',
     receivedRequestCount: 'Yêu cầu nhận đã gửi', pendingRequestCount: 'Yêu cầu còn chờ xác nhận', storedDocuments: 'Hồ sơ đang lưu giữ', processingDocuments: 'Hồ sơ đang xử lý',
+    documentRequestCount: 'Yêu cầu cấp hồ sơ', openDocumentRequestCount: 'Yêu cầu cấp hồ sơ đang mở', readyDocumentRequestCount: 'Yêu cầu cấp hồ sơ chờ nhận',
     supplementDocuments: 'Hồ sơ cần bổ sung', overdueDocuments: 'Hồ sơ quá hạn', completedDocuments: 'Hồ sơ hoàn thành',
     waitingPickup: 'Hồ sơ chờ nhận', averageProcessingDays: 'Thời gian xử lý trung bình (ngày)', serviceCount: 'Lượt tiếp sinh viên',
     serviceMinutes: 'Tổng thời gian tiếp (phút)', averageServiceMinutes: 'Thời lượng tiếp trung bình (phút)'
@@ -1076,8 +1421,8 @@ function setupSystem() {
   const admin = assertAdmin_();
   const spreadsheet = getSpreadsheet_();
   PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', spreadsheet.getId());
-  audit_('SETUP_SYSTEM', 'System', spreadsheet.getId(), admin.email, { schemaVersion: 4 });
-  return { ok: true, spreadsheetId: spreadsheet.getId(), spreadsheetUrl: spreadsheet.getUrl(), webAppUrl: ScriptApp.getService().getUrl() };
+  audit_('SETUP_SYSTEM', 'System', spreadsheet.getId(), admin.email, { schemaVersion: 5 });
+  return { ok: true, schemaVersion: 5, spreadsheetId: spreadsheet.getId(), spreadsheetUrl: spreadsheet.getUrl(), webAppUrl: ScriptApp.getService().getUrl() };
 }
 
 function isSystemInitializedFast_(expectedState) {
@@ -1111,7 +1456,7 @@ function markSystemInitialized_(spreadsheetId, stateValue) {
     if (typeof PropertiesService !== 'undefined') {
       PropertiesService.getScriptProperties().setProperties({
         SPREADSHEET_ID: spreadsheetId,
-        SCHEMA_INIT_V4: stateValue
+      SCHEMA_INIT_V5: stateValue
       });
     }
     if (typeof CacheService !== 'undefined') {
@@ -1122,7 +1467,7 @@ function markSystemInitialized_(spreadsheetId, stateValue) {
 
 function ensureSystemInitialized_(force) {
   const configuredId = getConfiguredSpreadsheetId_();
-  const expectedState = configuredId ? (configuredId + ':v4') : '';
+  const expectedState = configuredId ? (configuredId + ':v5') : '';
   if (!force && isSystemInitializedFast_(expectedState)) return;
 
   const lock = LockService.getScriptLock();
@@ -1130,7 +1475,7 @@ function ensureSystemInitialized_(force) {
   try {
     if (!force && isSystemInitializedFast_(expectedState)) return;
     const spreadsheet = getSpreadsheet_();
-    const actualState = spreadsheet.getId() + ':v4';
+    const actualState = spreadsheet.getId() + ':v5';
     if (!force && isSystemInitializedFast_(actualState)) return;
 
     Object.keys(HEADERS).forEach(function(name) {
@@ -1168,6 +1513,7 @@ function ensureSheetSchema_(sheet, name) {
 function migrateSystemData_() {
   readTable_(APP.SHEETS.TYPES).forEach(function(row) {
     if (!row.handover_mode) updateRow_(APP.SHEETS.TYPES, row._row, { handover_mode: 'BOTH' });
+    if (row.request_enabled === '' || row.request_enabled == null) updateRow_(APP.SHEETS.TYPES, row._row, { request_enabled: false });
   });
   const appNameRow = findBy_(APP.SHEETS.SETTINGS, 'key', 'APP_NAME');
   if (appNameRow && ['Hệ thống Giao nhận Hồ sơ Sinh viên', 'Giao nhận hồ sơ'].indexOf(String(appNameRow.value)) !== -1) {
@@ -1175,9 +1521,9 @@ function migrateSystemData_() {
   }
   const version = findBy_(APP.SHEETS.SETTINGS, 'key', 'SCHEMA_VERSION');
   if (version) {
-    if (String(version.value) !== '4') updateRow_(APP.SHEETS.SETTINGS, version._row, { value: '4', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
+    if (String(version.value) !== '5') updateRow_(APP.SHEETS.SETTINGS, version._row, { value: '5', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
   } else {
-    appendRecord_(APP.SHEETS.SETTINGS, { key: 'SCHEMA_VERSION', value: '4', description: 'Phiên bản cấu trúc dữ liệu', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
+    appendRecord_(APP.SHEETS.SETTINGS, { key: 'SCHEMA_VERSION', value: '5', description: 'Phiên bản cấu trúc dữ liệu', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
   }
 }
 
@@ -1193,7 +1539,7 @@ function healthCheck() {
 
 function ensureDefaultSettings_() {
   const now = new Date();
-  [['APP_NAME', APP.NAME, 'Tên hiển thị của ứng dụng'], ['OFFICE_NAME', 'Văn phòng Khoa', 'Tên đơn vị vận hành'], ['TIMEZONE', APP.TIMEZONE, 'Múi giờ vận hành'], ['SCHEMA_VERSION', '4', 'Phiên bản cấu trúc dữ liệu']].forEach(function(row) {
+  [['APP_NAME', APP.NAME, 'Tên hiển thị của ứng dụng'], ['OFFICE_NAME', 'Văn phòng Khoa', 'Tên đơn vị vận hành'], ['TIMEZONE', APP.TIMEZONE, 'Múi giờ vận hành'], ['SCHEMA_VERSION', '5', 'Phiên bản cấu trúc dữ liệu']].forEach(function(row) {
     if (!findBy_(APP.SHEETS.SETTINGS, 'key', row[0])) {
       appendRecord_(APP.SHEETS.SETTINGS, { key: row[0], value: row[1], description: row[2], updated_at: now, updated_by: APP.DEFAULT_ADMIN });
     }
@@ -1239,7 +1585,7 @@ function getSheet_(name) {
 }
 
 function getScriptCacheKey_(name) {
-  return 'TABLE_V2_' + (getConfiguredSpreadsheetId_() || 'default') + '_' + name;
+  return 'TABLE_V3_' + (getConfiguredSpreadsheetId_() || 'default') + '_' + name;
 }
 
 function clearScriptCacheForSheet_(name) {
@@ -1476,8 +1822,8 @@ function serviceNotificationContent_(topic, result, customTitle, customMessage) 
   };
 }
 
-function notify_(recipient, documentId, title, message, actor, sendEmail, i18n) {
-  const notification = { notification_id: 'ntf_' + shortId_(), student_email: normalizeEmail_(recipient), document_id: documentId || '', title: sanitizeNotificationTitle_(title) || 'Thông báo', message: sanitizeNotificationBody_(message), read: false, created_at: new Date(), created_by: actor, i18n_json: i18n ? JSON.stringify(i18n) : '' };
+function notify_(recipient, documentId, title, message, actor, sendEmail, i18n, requestId) {
+  const notification = { notification_id: 'ntf_' + shortId_(), student_email: normalizeEmail_(recipient), document_id: documentId || '', request_id: requestId || '', title: sanitizeNotificationTitle_(title) || 'Thông báo', message: sanitizeNotificationBody_(message), read: false, created_at: new Date(), created_by: actor, i18n_json: i18n ? JSON.stringify(i18n) : '' };
   appendRecord_(APP.SHEETS.NOTIFICATIONS, notification);
   if (sendEmail) queueAndSendEmail_(recipient, notification.title, notification.message);
 }
@@ -1531,16 +1877,17 @@ function styleDataSheet_(sheet, columnCount) {
 }
 
 function publicStudent_(row) { return { studentId: row.student_id, email: row.email, fullName: row.full_name || '', className: row.class_name || '', active: toBoolean_(row.active), updatedAt: iso_(row.updated_at) }; }
-function publicType_(row) { return { typeId: row.type_id, name: row.name, nameEn: row.name_en || '', description: row.description || '', descriptionEn: row.description_en || '', tracksProgress: toBoolean_(row.tracks_progress), workflowVersionId: row.workflow_version_id || '', active: toBoolean_(row.active), sortOrder: Number(row.sort_order || 0), handoverMode: normalizeHandoverMode_(row.handover_mode || 'BOTH') }; }
+function publicType_(row) { return { typeId: row.type_id, name: row.name, nameEn: row.name_en || '', description: row.description || '', descriptionEn: row.description_en || '', tracksProgress: toBoolean_(row.tracks_progress), workflowVersionId: row.workflow_version_id || '', active: toBoolean_(row.active), requestEnabled: toBoolean_(row.request_enabled), sortOrder: Number(row.sort_order || 0), handoverMode: normalizeHandoverMode_(row.handover_mode || 'BOTH') }; }
 function publicDocument_(row) { const step = row.workflow_version_id ? getWorkflowSteps_(row.workflow_version_id).find(function(item) { return item.status_label === row.status; }) : null; const names = notificationTypeNames_(row.type_id, row.type_name); return { documentId: row.document_id, code: row.document_code, typeId: row.type_id, typeName: row.type_name, typeNameEn: names.en, status: row.status, statusEn: step && step.status_label_en ? step.status_label_en : '', storageStatus: row.storage_status, submittedAt: iso_(row.submitted_at), expectedAt: iso_(row.expected_at), updatedAt: iso_(row.updated_at), publicNote: row.public_note || '', currentStepOrder: Number(row.current_step_order || 0), version: Number(row.version || 0) }; }
-function publicDocumentAdmin_(row) { const result = publicDocument_(row); result.studentId = row.student_id; result.studentEmail = row.student_email; result.studentName = row.student_name; result.className = row.class_name; result.internalNote = row.internal_note || ''; result.workflowVersionId = row.workflow_version_id || ''; result.currentStepId = row.current_step_id || ''; return result; }
+function publicDocumentAdmin_(row) { const result = publicDocument_(row); result.studentId = row.student_id; result.studentEmail = row.student_email; result.studentName = row.student_name; result.className = row.class_name; result.internalNote = row.internal_note || ''; result.workflowVersionId = row.workflow_version_id || ''; result.currentStepId = row.current_step_id || ''; result.requestId = row.request_id || ''; return result; }
 function publicEvent_(row, adminView) { const result = { eventId: row.event_id, type: row.event_type, status: row.status, publicNote: row.public_note || '', createdAt: iso_(row.created_at), createdBy: row.created_by || '', toStepId: row.to_step_id || '' }; if (adminView) result.internalNote = row.internal_note || ''; return result; }
 function publicService_(row) { return { sessionId: row.session_id, studentId: row.student_id, studentEmail: row.student_email, studentName: row.student_name, className: row.class_name, documentId: row.document_id || '', recordingType: row.recording_type, startedAt: iso_(row.started_at), endedAt: iso_(row.ended_at), durationMinutes: Number(row.duration_minutes || 0), topic: row.topic || '', result: row.result || '', staffEmail: row.staff_email, note: row.note || '', status: row.status }; }
-function publicNotification_(row) { let i18n = {}; try { i18n = row.i18n_json ? JSON.parse(row.i18n_json) : {}; } catch (error) {} return { notificationId: row.notification_id, documentId: row.document_id || '', title: row.title, message: row.message, i18n: i18n, read: toBoolean_(row.read), createdAt: iso_(row.created_at) }; }
+function publicNotification_(row) { let i18n = {}; try { i18n = row.i18n_json ? JSON.parse(row.i18n_json) : {}; } catch (error) {} return { notificationId: row.notification_id, documentId: row.document_id || '', requestId: row.request_id || '', title: row.title, message: row.message, i18n: i18n, read: toBoolean_(row.read), createdAt: iso_(row.created_at) }; }
 
 function isStudentEmail_(email) { return new RegExp('^[^@\\s]+@' + APP.STUDENT_DOMAIN.replace(/\./g, '\\.') + '$', 'i').test(normalizeEmail_(email)); }
 function extractStudentId_(email) { const local = normalizeEmail_(email).split('@')[0]; return /^\d{5,20}$/.test(local) ? local : ''; }
 function normalizeEmail_(value) { return String(value || '').trim().toLowerCase(); }
+function normalizeSearch_(value) { return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').trim().toLowerCase(); }
 function sanitizeText_(value, maxLength) { return String(value == null ? '' : value).replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLength || 1000); }
 function sanitizeMessageText_(value, maxLength) {
   const text = String(value == null ? '' : value).replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, ' ').trim();

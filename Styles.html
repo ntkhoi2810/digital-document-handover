@@ -786,6 +786,12 @@ button.list-item:hover .row-arrow,button.document-card:hover .row-arrow{stroke:v
 .toolbar select{max-width:230px}
 .toolbar-push{margin-left:auto}
 .student-toolbar input[type="search"]{max-width:none}
+.request-toolbar{align-items:center;justify-content:space-between}
+.request-toolbar .page-note{margin:0}
+.request-filter-toolbar input[type="date"]{max-width:165px}
+.request-pagination{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:16px;color:var(--ink-2);font-size:13.5px}
+.request-public-note{padding:10px 12px;border-left:3px solid var(--primary);border-radius:8px;background:var(--primary-soft)}
+#document-requests-table .data-table{min-width:930px}
 .history-link{margin-top:18px}
 .grid{display:grid;gap:24px}
 .grid.two-col{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1311,6 +1317,9 @@ details .check-option{margin-top:12px!important;padding:12px 14px}
 
   .toolbar{align-items:stretch;flex-direction:column}
   .toolbar input[type="search"],.toolbar select{max-width:none}
+  .request-toolbar{align-items:stretch}
+  .request-toolbar .button{align-self:flex-start}
+  .request-filter-toolbar input[type="date"]{max-width:none}
   .toolbar-push{margin-left:0}
   .button,input,select{min-height:44px}
   .button.small{min-height:38px}

@@ -39,7 +39,7 @@ assert.equal(helpers.sanitizeId_("../bad"), "");
 assert.equal(helpers.sanitizeText_("  Xin\n chào  ", 20), "Xin chào");
 assert.equal(helpers.toBoolean_("TRUE"), true);
 assert.match(code, /handover_mode/, "Missing handover mode schema");
-assert.match(code, /SCHEMA_VERSION[^\n]*4/, "Missing schema version 4 migration");
+assert.match(code, /SCHEMA_VERSION[^\n]*5/, "Missing schema version 5 migration");
 assert.match(code, /i18n_json/, "Notification translation metadata must be stored");
 assert.match(code, /function\s+ensureDefaultSettings_\s*\(/, "Missing default settings initialization");
 assert.doesNotMatch(code, /function\s+seedIfEmpty_\s*\(/, "Runtime must not recreate sample catalog data");

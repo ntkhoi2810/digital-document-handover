@@ -16,15 +16,17 @@ const schemas = {
   Settings: ["key", "value", "description", "updated_at", "updated_by"],
   Admins: ["email", "name", "role", "active", "created_at", "updated_at"],
   Students: ["student_id", "email", "full_name", "class_name", "active", "created_at", "updated_at", "updated_by"],
-  DocumentTypes: ["type_id", "name", "description", "tracks_progress", "workflow_version_id", "active", "sort_order", "created_at", "updated_at", "handover_mode"],
+  DocumentTypes: ["type_id", "name", "description", "tracks_progress", "workflow_version_id", "active", "sort_order", "created_at", "updated_at", "handover_mode", "name_en", "description_en", "request_enabled"],
   WorkflowVersions: ["workflow_version_id", "name", "version", "active", "created_at", "created_by"],
   WorkflowSteps: ["step_id", "workflow_version_id", "step_order", "name", "status_label", "created_at"],
-  Documents: ["document_id", "document_code", "student_id", "student_email", "student_name", "class_name", "type_id", "type_name", "workflow_version_id", "current_step_id", "current_step_order", "status", "storage_status", "submitted_at", "expected_at", "updated_at", "updated_by", "public_note", "internal_note", "version", "active"],
+  Documents: ["document_id", "document_code", "student_id", "student_email", "student_name", "class_name", "type_id", "type_name", "workflow_version_id", "current_step_id", "current_step_order", "status", "storage_status", "submitted_at", "expected_at", "updated_at", "updated_by", "public_note", "internal_note", "version", "active", "request_id"],
   DocumentEvents: ["event_id", "document_id", "event_type", "from_step_id", "to_step_id", "status", "public_note", "internal_note", "created_at", "created_by"],
+  DocumentRequests: ["request_id", "request_code", "student_id", "student_email", "student_name", "class_name", "type_id", "type_name", "purpose", "copy_count", "student_note", "status", "expected_at", "public_note", "internal_note", "document_id", "created_at", "updated_at", "updated_by", "version", "request_token"],
+  DocumentRequestEvents: ["event_id", "request_id", "event_type", "from_status", "to_status", "public_note", "internal_note", "created_at", "created_by", "action_token"],
   Transactions: ["transaction_id", "transaction_code", "student_id", "student_email", "student_name", "class_name", "transaction_type", "status", "student_note", "request_token", "created_at", "updated_at", "reviewed_by"],
   TransactionItems: ["item_id", "transaction_id", "type_id", "type_name", "document_id", "related_document_id", "status", "admin_note", "created_at", "reviewed_at", "reviewed_by"],
   ServiceSessions: ["session_id", "student_id", "student_email", "student_name", "class_name", "document_id", "recording_type", "started_at", "ended_at", "duration_minutes", "topic", "result", "staff_email", "note", "status", "created_at", "updated_at"],
-  Notifications: ["notification_id", "student_email", "document_id", "title", "message", "read", "created_at", "created_by"],
+  Notifications: ["notification_id", "student_email", "document_id", "title", "message", "read", "created_at", "created_by", "i18n_json", "request_id"],
   EmailQueue: ["email_id", "recipient", "subject", "body", "status", "attempts", "last_error", "created_at", "sent_at"],
   AuditLog: ["audit_id", "action", "entity_type", "entity_id", "actor_email", "detail_json", "created_at"],
 };
@@ -35,7 +37,7 @@ const seed = {
     ["OFFICE_NAME", "Văn phòng Khoa", "Tên đơn vị vận hành", "", ""],
     ["QR_PATH", "?view=transaction", "Đường dẫn gắn vào mã QR in tại quầy", "", ""],
     ["TIMEZONE", "Asia/Ho_Chi_Minh", "Múi giờ vận hành", "", ""],
-    ["SCHEMA_VERSION", "2", "Phiên bản cấu trúc dữ liệu", "", ""],
+    ["SCHEMA_VERSION", "5", "Phiên bản cấu trúc dữ liệu", "", ""],
   ],
   Admins: [["nguyenthaikhoi@tdtu.edu.vn", "Nguyễn Thái Khôi", "SUPER_ADMIN", true, "", ""]],
   DocumentTypes: [
@@ -101,7 +103,9 @@ function styleSheet(sheet, headers, rowCount) {
 
 for (const [name, headers] of Object.entries(schemas)) {
   const sheet = workbook.worksheets.add(name);
-  const rows = seed[name] || [];
+  const rows = (seed[name] || []).map(row => Array.from({ length: headers.length }, (_, index) =>
+    index < row.length ? row[index] : (name === "DocumentTypes" && headers[index] === "request_enabled" ? false : "")
+  ));
   sheet.getRangeByIndexes(0, 0, 1, headers.length).values = [headers];
   if (rows.length) sheet.getRangeByIndexes(1, 0, rows.length, headers.length).values = rows;
   styleSheet(sheet, headers, rows.length + 1);
@@ -111,10 +115,10 @@ workbook.recalculate();
 await fs.mkdir(outputDir, { recursive: true });
 const check = await workbook.inspect({
   kind: "table",
-  range: "DocumentTypes!A1:J16",
+  range: "DocumentTypes!A1:M16",
   include: "values,formulas",
   tableMaxRows: 16,
-  tableMaxCols: 10,
+  tableMaxCols: 13,
 });
 console.log(check.ndjson);
 const errors = await workbook.inspect({
@@ -124,7 +128,7 @@ const errors = await workbook.inspect({
   summary: "final formula error scan",
 });
 console.log(errors.ndjson);
-const preview = await workbook.render({ sheetName: "DocumentTypes", range: "A1:J16", scale: 1.5, format: "png" });
+const preview = await workbook.render({ sheetName: "DocumentTypes", range: "A1:M16", scale: 1.5, format: "png" });
 await fs.writeFile(previewPath, new Uint8Array(await preview.arrayBuffer()));
 const output = await SpreadsheetFile.exportXlsx(workbook);
 await output.save(outputPath);

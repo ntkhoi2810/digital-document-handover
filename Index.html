@@ -33,6 +33,7 @@
       <nav id="student-nav" class="nav-list" aria-label="Điều hướng sinh viên">
         <button data-view="student-home" class="nav-item active"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Trang chủ</span></button>
         <button data-view="student-transaction" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h13l-3-3M17 17H4l3 3"/></svg><span>Nộp &amp; nhận</span></button>
+        <button data-view="student-requests" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Yêu cầu cấp hồ sơ</span></button>
         <button data-view="student-documents" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5"/></svg><span>Hồ sơ của tôi</span></button>
         <button data-view="student-history" class="nav-item nav-history"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Lịch sử</span></button>
         <button data-view="student-notifications" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 20a2 2 0 0 0 4 0"/></svg><span>Thông báo</span><b id="notice-badge" class="badge hidden">0</b></button>
@@ -42,6 +43,7 @@
       <nav id="admin-nav" class="nav-list hidden" aria-label="Điều hướng quản trị">
         <button data-view="admin-home" class="nav-item active"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Tổng quan</span></button>
         <button data-view="admin-pending" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Chờ xác nhận</span><b id="pending-badge" class="badge hidden">0</b></button>
+        <button data-view="admin-requests" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Yêu cầu sinh viên</span><b id="request-badge" class="badge hidden">0</b></button>
         <button data-view="admin-documents" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4"/></svg><span>Hồ sơ</span></button>
         <button data-view="admin-catalog" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Danh mục</span></button>
         <button data-view="admin-service" class="nav-item"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Tiếp sinh viên</span></button>
@@ -81,6 +83,7 @@
         <div id="student-kpis" class="kpi-grid"></div>
         <article class="section-block"><div class="section-head"><h2>Hồ sơ gần đây</h2><button class="link-button" data-go="student-documents">Xem tất cả</button></div><div id="recent-documents" class="list"></div></article>
         <article class="panel home-action"><div><h2>Nộp hoặc nhận giấy tờ</h2><p>Chọn giấy tờ rồi gửi yêu cầu. Yêu cầu hoàn tất khi cán bộ xác nhận tại quầy.</p></div><button class="button primary" data-go="student-transaction">Tạo yêu cầu</button></article>
+        <article class="panel home-action"><div><h2>Yêu cầu cấp hồ sơ</h2><p>Đăng ký giấy xác nhận hoặc giấy tờ khác từ danh mục văn phòng.</p></div><button class="button primary" data-go="student-requests">Mở yêu cầu cấp hồ sơ</button></article>
       </section>
 
       <section id="student-transaction" class="view">
@@ -91,6 +94,11 @@
           <label for="transaction-note">Ghi chú</label><textarea id="transaction-note" rows="3" maxlength="1000" placeholder="Không bắt buộc"></textarea>
           <div class="form-actions transaction-footer"><span id="transaction-selection">Chọn ít nhất một giấy tờ.</span><button id="transaction-submit" type="submit" class="button primary" disabled>Gửi yêu cầu (0)</button></div>
         </form>
+      </section>
+
+      <section id="student-requests" class="view">
+        <div class="toolbar request-toolbar"><p class="page-note">Yêu cầu cấp hoặc chuẩn bị giấy tờ. Văn phòng sẽ thông báo khi hồ sơ sẵn sàng.</p><button id="new-document-request" class="button primary">Tạo yêu cầu</button></div>
+        <div id="my-document-requests" class="cards-list"></div><div id="student-request-pagination" class="request-pagination"></div>
       </section>
 
       <section id="student-documents" class="view"><div class="toolbar student-toolbar"><input id="my-document-search" type="search" placeholder="Tìm theo mã hoặc tên hồ sơ"></div><div id="my-documents" class="cards-list"></div><button class="link-button history-link" data-go="student-history">Lịch sử yêu cầu</button></section>
@@ -104,6 +112,11 @@
         <article class="panel home-action"><div><h2>Quản lý &amp; cập nhật tiến độ hồ sơ</h2><p>Tra cứu, thêm hồ sơ trực tiếp tại văn phòng hoặc cập nhật trạng thái hàng loạt.</p></div><button class="button primary" data-go="admin-documents">Quản lý hồ sơ</button></article>
       </section>
       <section id="admin-pending" class="view"><div class="toolbar"><input id="pending-search" type="search" placeholder="Tìm theo MSSV, họ tên hoặc mã yêu cầu"></div><div id="pending-transactions" class="cards-list pending-list"></div></section>
+      <section id="admin-requests" class="view">
+        <div class="toolbar request-filter-toolbar"><input id="request-search" type="search" placeholder="MSSV, họ tên, email hoặc mã yêu cầu"><select id="request-type-filter"><option value="">Tất cả loại hồ sơ</option></select><select id="request-status-filter"><option value="OPEN">Đang mở</option><option value="">Tất cả trạng thái</option><option value="PENDING">Chờ tiếp nhận</option><option value="PROCESSING">Đang xử lý</option><option value="READY">Chờ nhận</option><option value="COMPLETED">Đã nhận</option><option value="REJECTED">Từ chối</option><option value="CANCELLED">Đã hủy</option></select><input id="request-from" type="date" aria-label="Từ ngày"><input id="request-to" type="date" aria-label="Đến ngày"><button id="search-document-requests" class="button">Tìm kiếm</button></div>
+        <div class="bulk-actions hidden" id="request-bulk-actions"><span id="request-selection-count">Đã chọn 0 yêu cầu</span><button id="request-batch-accept" class="bulk-button">Tiếp nhận đã chọn</button><button id="request-batch-ready" class="bulk-button">Chuyển chờ nhận</button><button id="request-clear-selection" class="bulk-button">Bỏ chọn</button></div>
+        <div id="document-requests-table" class="table-wrap"></div><div id="request-pagination" class="request-pagination"></div>
+      </section>
       <section id="admin-documents" class="view">
         <div class="toolbar admin-document-toolbar"><input id="admin-document-search" type="search" placeholder="MSSV, họ tên, email, mã hồ sơ"><select id="admin-document-status"><option value="">Tất cả trạng thái</option><option value="Đã tiếp nhận">Đã tiếp nhận</option><option value="Đang kiểm tra hồ sơ">Đang kiểm tra hồ sơ</option><option value="Yêu cầu bổ sung">Yêu cầu bổ sung</option><option value="Đang xử lý">Đang xử lý</option><option value="Đang trình duyệt">Đang trình duyệt</option><option value="Chờ phê duyệt">Chờ phê duyệt</option><option value="Đã hoàn thành">Đã hoàn thành</option><option value="Chờ sinh viên đến nhận">Chờ sinh viên đến nhận</option><option value="Đã bàn giao">Đã bàn giao</option><option value="Đã hủy">Đã hủy</option></select><button id="search-admin-documents" class="button">Tìm kiếm</button><button id="new-manual-document" class="button primary toolbar-push">Thêm hồ sơ</button></div>
         <div id="document-bulk-actions" class="bulk-actions hidden"><span id="document-selection-count">Đã chọn 0 hồ sơ</span><button id="batch-documents" class="bulk-button">Cập nhật trạng thái</button><button id="clear-document-selection" class="bulk-button">Bỏ chọn</button></div>
