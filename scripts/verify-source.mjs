@@ -50,7 +50,9 @@ assert.doesNotMatch(index, /·/, "Index.html must not contain middle dot separat
 assert.doesNotMatch(scriptsHtml, /·/, "Scripts.html must not contain middle dot separators");
 assert.match(styles, /\.meta-tag/, "Missing catalog meta-tag styling");
 assert.match(styles, /\.kpi\.kpi-act/, "Missing semantic KPI color styling");
-assert.match(index, /<select id="language-toggle" class="language-select"/, "Missing visible language selector");
+assert.match(index, /id="language-trigger" class="language-trigger"/, "Missing visible language selector");
+assert.match(index, /id="language-menu" class="language-menu hidden" role="listbox"/, "Missing accessible language options menu");
+assert.match(scriptsHtml, /function\s+openLanguageMenu\(/, "Missing keyboard-accessible language menu behavior");
 assert.match(scriptsHtml, /requestWaiting/, "Missing bilingual system notification translation");
 assert.match(scriptsHtml, /data-i18n-vi/, "Dynamic catalog labels must retain both languages");
 

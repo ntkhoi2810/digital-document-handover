@@ -63,7 +63,16 @@
       <header class="page-head">
         <button id="mobile-menu" class="icon-button" aria-label="Mở menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
         <div class="page-heading"><h1 id="page-title">Trang chủ</h1><p id="page-subtitle"></p></div>
-        <label class="language-switcher"><span class="visually-hidden">Ngôn ngữ</span><select id="language-toggle" class="language-select" aria-label="Ngôn ngữ"><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label>
+        <div class="language-switcher" id="language-picker">
+          <button id="language-trigger" class="language-trigger" type="button" role="combobox" aria-label="Ngôn ngữ" aria-haspopup="listbox" aria-expanded="false" aria-controls="language-menu">
+            <span id="language-current">Tiếng Việt</span>
+            <svg class="language-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg>
+          </button>
+          <div id="language-menu" class="language-menu hidden" role="listbox" aria-label="Ngôn ngữ" tabindex="-1">
+            <button class="language-option" type="button" role="option" id="language-option-vi" data-language="vi" aria-selected="true" tabindex="-1"><span>Tiếng Việt</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></button>
+            <button class="language-option" type="button" role="option" id="language-option-en" data-language="en" aria-selected="false" tabindex="-1"><span>English</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></button>
+          </div>
+        </div>
       </header>
       <div id="alert" class="alert hidden"></div>
 

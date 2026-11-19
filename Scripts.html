@@ -107,10 +107,42 @@
       element.textContent=element.dataset.datePrefix ? `${element.dataset.datePrefix} - ${fmtDate(value)}` : (element.dataset.dateKind==='day'?fmtDay(value):fmtDate(value));
     });
     document.querySelectorAll('*').forEach(translateElementAttributes);
-    const selector = $('#language-toggle');
-    if (selector) selector.value = state.language;
+    syncLanguagePicker();
     const locale = state.language === 'en' ? 'en-US' : 'vi-VN';
     document.querySelectorAll('.kpi strong').forEach(el => { const value = Number(el.textContent.replace(/[^0-9.-]/g,'')); if (Number.isFinite(value)) el.textContent = value.toLocaleString(locale); });
+  }
+  function syncLanguagePicker() {
+    const current = $('#language-current');
+    if (current) current.textContent = state.language === 'en' ? 'English' : 'Tiếng Việt';
+    $$('.language-option').forEach(option => {
+      const selected = option.dataset.language === state.language;
+      option.setAttribute('aria-selected', String(selected));
+      option.classList.toggle('selected', selected);
+    });
+  }
+  function openLanguageMenu(last = false) {
+    const trigger = $('#language-trigger');
+    const menu = $('#language-menu');
+    if (!trigger || !menu || !menu.classList.contains('hidden')) return;
+    menu.classList.remove('hidden');
+    trigger.setAttribute('aria-expanded', 'true');
+    const options = $$('.language-option', menu);
+    const index = last ? options.length - 1 : Math.max(0, options.findIndex(option => option.dataset.language === state.language));
+    options[index]?.focus();
+  }
+  function closeLanguageMenu(restoreFocus = false) {
+    const trigger = $('#language-trigger');
+    const menu = $('#language-menu');
+    if (!trigger || !menu || menu.classList.contains('hidden')) return;
+    menu.classList.add('hidden');
+    trigger.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) trigger.focus();
+  }
+  function chooseLanguage(language) {
+    state.language = language === 'en' ? 'en' : 'vi';
+    localStorage.setItem('ddh-language', state.language);
+    applyLanguage();
+    closeLanguageMenu(true);
   }
   new MutationObserver(records => records.forEach(record => {
     if (record.type === 'characterData') translateNode(record.target);
@@ -271,13 +303,37 @@
   }
 
   function bindGlobalEvents() {
-    $('#language-toggle')?.addEventListener('change', event => { state.language = event.target.value === 'en' ? 'en' : 'vi'; localStorage.setItem('ddh-language', state.language); applyLanguage(); });
+    const languageTrigger = $('#language-trigger');
+    const languageMenu = $('#language-menu');
+    languageTrigger?.addEventListener('click', () => languageMenu?.classList.contains('hidden') ? openLanguageMenu() : closeLanguageMenu());
+    languageTrigger?.addEventListener('keydown', event => {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); openLanguageMenu(event.key === 'ArrowUp'); }
+    });
+    languageMenu?.addEventListener('click', event => {
+      const option = event.target.closest('.language-option');
+      if (option) chooseLanguage(option.dataset.language);
+    });
+    languageMenu?.addEventListener('keydown', event => {
+      const options = $$('.language-option', languageMenu);
+      const index = options.indexOf(document.activeElement);
+      let next = index;
+      if (event.key === 'ArrowDown') next = (index + 1) % options.length;
+      else if (event.key === 'ArrowUp') next = (index - 1 + options.length) % options.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = options.length - 1;
+      else if (event.key === 'Escape') { event.preventDefault(); closeLanguageMenu(true); return; }
+      else return;
+      event.preventDefault();
+      options[next]?.focus();
+    });
     document.addEventListener('click', event => {
+      if (!$('#language-picker')?.contains(event.target)) closeLanguageMenu();
       const nav = event.target.closest('[data-view]'); if (nav) navigate(nav.dataset.view);
       const go = event.target.closest('[data-go]'); if (go) navigate(go.dataset.go);
       const sidebar = $('.sidebar');
       if (sidebar && sidebar.classList.contains('open') && !event.target.closest('.sidebar') && !event.target.closest('#mobile-menu')) sidebar.classList.remove('open');
     });
+    document.addEventListener('focusin', event => { if (!$('#language-picker')?.contains(event.target)) closeLanguageMenu(); });
     window.addEventListener('resize', syncSegmented);
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && !$('#modal').classList.contains('hidden')) closeModal();
