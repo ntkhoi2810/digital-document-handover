@@ -34,14 +34,14 @@ const HEADERS = Object.freeze({
   Transactions: ['transaction_id', 'transaction_code', 'student_id', 'student_email', 'student_name', 'class_name', 'transaction_type', 'status', 'student_note', 'request_token', 'created_at', 'updated_at', 'reviewed_by'],
   TransactionItems: ['item_id', 'transaction_id', 'type_id', 'type_name', 'document_id', 'related_document_id', 'status', 'admin_note', 'created_at', 'reviewed_at', 'reviewed_by'],
   ServiceSessions: ['session_id', 'student_id', 'student_email', 'student_name', 'class_name', 'document_id', 'recording_type', 'started_at', 'ended_at', 'duration_minutes', 'topic', 'result', 'staff_email', 'note', 'status', 'created_at', 'updated_at'],
-  Notifications: ['notification_id', 'student_email', 'document_id', 'title', 'message', 'read', 'created_at', 'created_by'],
+  Notifications: ['notification_id', 'student_email', 'document_id', 'title', 'message', 'read', 'created_at', 'created_by', 'i18n_json'],
   EmailQueue: ['email_id', 'recipient', 'subject', 'body', 'status', 'attempts', 'last_error', 'created_at', 'sent_at'],
   AuditLog: ['audit_id', 'action', 'entity_type', 'entity_id', 'actor_email', 'detail_json', 'created_at']
 });
 
 const CACHE_TTL_SECONDS = 300;
 const INIT_CACHE_TTL_SECONDS = 21600;
-const INIT_VERSION_KEY = 'SCHEMA_INIT_V3';
+const INIT_VERSION_KEY = 'SCHEMA_INIT_V4';
 const CACHED_SHEETS = Object.freeze({
   Settings: true,
   Admins: true,
@@ -372,7 +372,9 @@ function createTransaction(payload) {
       });
     });
     audit_('CREATE_TRANSACTION', 'Transaction', transactionId, identity.email, { type: transactionType, itemCount: normalizedItems.length });
-    notify_(identity.email, '', 'Đã gửi yêu cầu', 'Yêu cầu ' + transaction.transaction_code + ' đang chờ cán bộ xác nhận.', identity.email, false);
+    notify_(identity.email, '', 'Đã gửi yêu cầu', 'Yêu cầu ' + transaction.transaction_code + ' đang chờ cán bộ xác nhận.', identity.email, false, {
+      titleKey: 'requestSentTitle', messageKey: 'requestWaiting', params: { code: transaction.transaction_code }
+    });
     return getTransactionResult_(transactionId, identity.email, false);
   } finally {
     lock.releaseLock();
@@ -479,8 +481,14 @@ function processTransactionItem_(transaction, item, decision, note, selectedDocu
     reviewed_at: now, reviewed_by: adminEmail
   });
   const title = decision === 'APPROVE' ? 'Yêu cầu đã được xác nhận' : 'Có giấy tờ chưa được xác nhận';
+  const names = notificationTypeNames_(item.type_id, item.type_name);
   const message = item.type_name + (note ? ': ' + note : (decision === 'APPROVE' ? ' đã xác nhận tại quầy.' : ' chưa được xác nhận.'));
-  notify_(transaction.student_email, documentId || item.related_document_id, title, message, adminEmail, sendEmail);
+  const i18n = {
+    titleKey: decision === 'APPROVE' ? 'requestConfirmedTitle' : 'requestRejectedTitle',
+    messageKey: note ? 'documentReviewNote' : (decision === 'APPROVE' ? 'documentConfirmed' : 'documentNotConfirmed'),
+    params: { nameVi: names.vi, nameEn: names.en, note: note }
+  };
+  notify_(transaction.student_email, documentId || item.related_document_id, title, message, adminEmail, sendEmail, i18n);
 }
 
 function createDocumentFromItem_(transaction, item, adminEmail, now) {
@@ -635,11 +643,16 @@ function getDocumentDetail(documentId) {
   result.steps = steps.map(function(step) {
     const order = Number(step.step_order || 0);
     return {
-      stepId: step.step_id, order: order, name: step.name, statusLabel: step.status_label,
+      stepId: step.step_id, order: order, name: step.name, nameEn: step.name_en || '', statusLabel: step.status_label, statusLabelEn: step.status_label_en || '',
       state: order < Number(document.current_step_order || 0) ? 'DONE' : order === Number(document.current_step_order || 0) ? 'CURRENT' : 'UPCOMING'
     };
   });
-  result.events = events.map(function(event) { return publicEvent_(event, identity.role === 'ADMIN'); });
+  result.events = events.map(function(event) {
+    const publicEvent = publicEvent_(event, identity.role === 'ADMIN');
+    const step = steps.find(function(item) { return item.step_id === event.to_step_id || item.status_label === event.status; });
+    if (step) publicEvent.statusEn = step.status_label_en || '';
+    return publicEvent;
+  });
   if (identity.role === 'ADMIN') result.internalNote = document.internal_note || '';
   return result;
 }
@@ -683,7 +696,12 @@ function createManualDocument(payload) {
   appendRecord_(APP.SHEETS.DOCUMENTS, document);
   appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_' + shortId_(), document_id: document.document_id, event_type: 'MANUAL_CREATED', from_step_id: '', to_step_id: document.current_step_id, status: status, public_note: document.public_note, internal_note: document.internal_note, created_at: now, created_by: admin.email });
   audit_('CREATE_MANUAL_DOCUMENT', 'Document', document.document_id, admin.email, { studentId: student.student_id, typeId: type.type_id });
-  notify_(student.email, document.document_id, 'Văn phòng đã nhận hồ sơ', document.type_name + ': ' + status, admin.email, toBoolean_(payload.sendEmail));
+  const names = notificationTypeNames_(type.type_id, document.type_name);
+  const translatedStatus = notificationStatus_(status, type.workflow_version_id);
+  notify_(student.email, document.document_id, 'Văn phòng đã nhận hồ sơ', document.type_name + ': ' + status, admin.email, toBoolean_(payload.sendEmail), {
+    titleKey: 'officeReceivedTitle', messageKey: 'documentStatus',
+    params: { nameVi: names.vi, nameEn: names.en, statusVi: translatedStatus.vi, statusEn: translatedStatus.en }
+  });
   return publicDocumentAdmin_(document);
 }
 
@@ -704,7 +722,11 @@ function batchUpdateDocuments(payload) {
       if (!document || !toBoolean_(document.active)) return;
       updateRow_(APP.SHEETS.DOCUMENTS, document._row, { status: status, public_note: note || document.public_note, storage_status: status === 'Đã bàn giao' ? 'HANDED_OVER' : document.storage_status, updated_at: now, updated_by: admin.email, version: Number(document.version || 0) + 1 });
       appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_' + shortId_(), document_id: id, event_type: 'BATCH_UPDATED', from_step_id: document.current_step_id, to_step_id: document.current_step_id, status: status, public_note: note, internal_note: '', created_at: now, created_by: admin.email });
-      notify_(document.student_email, id, 'Cập nhật hồ sơ ' + document.document_code, note || ('Trạng thái mới: ' + status), admin.email, toBoolean_(payload.sendEmail));
+      const translatedStatus = notificationStatus_(status, document.workflow_version_id);
+      notify_(document.student_email, id, 'Cập nhật hồ sơ ' + document.document_code, note || ('Trạng thái mới: ' + status), admin.email, toBoolean_(payload.sendEmail), {
+        titleKey: 'documentUpdatedTitle', messageKey: note ? 'customNote' : 'newDocumentStatus',
+        params: { code: document.document_code, note: note, statusVi: translatedStatus.vi, statusEn: translatedStatus.en }
+      });
     });
     audit_('BATCH_UPDATE_DOCUMENTS', 'Document', ids.join(','), admin.email, { count: ids.length, status: status });
     return { ok: true, updated: ids.length };
@@ -750,8 +772,12 @@ function updateDocumentProgress(payload) {
       from_step_id: document.current_step_id, to_step_id: step ? step.step_id : document.current_step_id,
       status: status, public_note: publicNote, internal_note: internalNote, created_at: now, created_by: admin.email
     });
+    const translatedStatus = notificationStatus_(status, document.workflow_version_id);
     notify_(document.student_email, documentId, 'Cập nhật hồ sơ ' + document.document_code,
-      publicNote || ('Trạng thái mới: ' + status), admin.email, toBoolean_(payload.sendEmail));
+      publicNote || ('Trạng thái mới: ' + status), admin.email, toBoolean_(payload.sendEmail), {
+        titleKey: 'documentUpdatedTitle', messageKey: publicNote ? 'customNote' : 'newDocumentStatus',
+        params: { code: document.document_code, note: publicNote, statusVi: translatedStatus.vi, statusEn: translatedStatus.en }
+      });
     audit_('UPDATE_DOCUMENT_PROGRESS', 'Document', documentId, admin.email, { status: status, stepId: step ? step.step_id : '' });
     return getDocumentDetail(documentId);
   } finally {
@@ -769,7 +795,9 @@ function cancelDocument(payload) {
   const now = new Date();
   updateRow_(APP.SHEETS.DOCUMENTS, document._row, { status: 'Đã hủy', active: false, public_note: reason, updated_at: now, updated_by: admin.email, version: Number(document.version || 0) + 1 });
   appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_' + shortId_(), document_id: document.document_id, event_type: 'CANCELLED', from_step_id: document.current_step_id, to_step_id: document.current_step_id, status: 'Đã hủy', public_note: reason, internal_note: '', created_at: now, created_by: admin.email });
-  notify_(document.student_email, document.document_id, 'Hồ sơ đã hủy', reason, admin.email, toBoolean_(payload.sendEmail));
+  notify_(document.student_email, document.document_id, 'Hồ sơ đã hủy', reason, admin.email, toBoolean_(payload.sendEmail), {
+    titleKey: 'documentCancelledTitle', messageKey: 'customNote', params: { note: reason }
+  });
   audit_('CANCEL_DOCUMENT', 'Document', document.document_id, admin.email, { reason: reason });
   return { ok: true };
 }
@@ -1033,7 +1061,7 @@ function setupSystem() {
   const admin = assertAdmin_();
   const spreadsheet = getSpreadsheet_();
   PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', spreadsheet.getId());
-  audit_('SETUP_SYSTEM', 'System', spreadsheet.getId(), admin.email, { schemaVersion: 3 });
+  audit_('SETUP_SYSTEM', 'System', spreadsheet.getId(), admin.email, { schemaVersion: 4 });
   return { ok: true, spreadsheetId: spreadsheet.getId(), spreadsheetUrl: spreadsheet.getUrl(), webAppUrl: ScriptApp.getService().getUrl() };
 }
 
@@ -1068,7 +1096,7 @@ function markSystemInitialized_(spreadsheetId, stateValue) {
     if (typeof PropertiesService !== 'undefined') {
       PropertiesService.getScriptProperties().setProperties({
         SPREADSHEET_ID: spreadsheetId,
-        SCHEMA_INIT_V2: stateValue
+        SCHEMA_INIT_V4: stateValue
       });
     }
     if (typeof CacheService !== 'undefined') {
@@ -1079,7 +1107,7 @@ function markSystemInitialized_(spreadsheetId, stateValue) {
 
 function ensureSystemInitialized_(force) {
   const configuredId = getConfiguredSpreadsheetId_();
-  const expectedState = configuredId ? (configuredId + ':v3') : '';
+  const expectedState = configuredId ? (configuredId + ':v4') : '';
   if (!force && isSystemInitializedFast_(expectedState)) return;
 
   const lock = LockService.getScriptLock();
@@ -1087,7 +1115,7 @@ function ensureSystemInitialized_(force) {
   try {
     if (!force && isSystemInitializedFast_(expectedState)) return;
     const spreadsheet = getSpreadsheet_();
-    const actualState = spreadsheet.getId() + ':v3';
+    const actualState = spreadsheet.getId() + ':v4';
     if (!force && isSystemInitializedFast_(actualState)) return;
 
     Object.keys(HEADERS).forEach(function(name) {
@@ -1132,9 +1160,9 @@ function migrateSystemData_() {
   }
   const version = findBy_(APP.SHEETS.SETTINGS, 'key', 'SCHEMA_VERSION');
   if (version) {
-    if (String(version.value) !== '3') updateRow_(APP.SHEETS.SETTINGS, version._row, { value: '3', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
+    if (String(version.value) !== '4') updateRow_(APP.SHEETS.SETTINGS, version._row, { value: '4', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
   } else {
-    appendRecord_(APP.SHEETS.SETTINGS, { key: 'SCHEMA_VERSION', value: '3', description: 'Phiên bản cấu trúc dữ liệu', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
+    appendRecord_(APP.SHEETS.SETTINGS, { key: 'SCHEMA_VERSION', value: '4', description: 'Phiên bản cấu trúc dữ liệu', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
   }
 }
 
@@ -1150,7 +1178,7 @@ function healthCheck() {
 
 function ensureDefaultSettings_() {
   const now = new Date();
-  [['APP_NAME', APP.NAME, 'Tên hiển thị của ứng dụng'], ['OFFICE_NAME', 'Văn phòng Khoa', 'Tên đơn vị vận hành'], ['TIMEZONE', APP.TIMEZONE, 'Múi giờ vận hành'], ['SCHEMA_VERSION', '3', 'Phiên bản cấu trúc dữ liệu']].forEach(function(row) {
+  [['APP_NAME', APP.NAME, 'Tên hiển thị của ứng dụng'], ['OFFICE_NAME', 'Văn phòng Khoa', 'Tên đơn vị vận hành'], ['TIMEZONE', APP.TIMEZONE, 'Múi giờ vận hành'], ['SCHEMA_VERSION', '4', 'Phiên bản cấu trúc dữ liệu']].forEach(function(row) {
     if (!findBy_(APP.SHEETS.SETTINGS, 'key', row[0])) {
       appendRecord_(APP.SHEETS.SETTINGS, { key: row[0], value: row[1], description: row[2], updated_at: now, updated_by: APP.DEFAULT_ADMIN });
     }
@@ -1340,7 +1368,7 @@ function buildTransactionResults_(transactions, ownerEmail, adminView) {
       type: transaction.transaction_type, status: transaction.status, note: transaction.student_note || '',
       createdAt: iso_(transaction.created_at), updatedAt: iso_(transaction.updated_at),
       items: items.map(function(item) {
-        const result = { itemId: item.item_id, typeId: item.type_id, typeName: item.type_name, documentId: item.document_id || '', relatedDocumentId: item.related_document_id || '', status: item.status, adminNote: item.admin_note || '', reviewedAt: iso_(item.reviewed_at), reviewedBy: item.reviewed_by || '' };
+        const result = { itemId: item.item_id, typeId: item.type_id, typeName: item.type_name, typeNameEn: notificationTypeNames_(item.type_id, item.type_name).en, documentId: item.document_id || '', relatedDocumentId: item.related_document_id || '', status: item.status, adminNote: item.admin_note || '', reviewedAt: iso_(item.reviewed_at), reviewedBy: item.reviewed_by || '' };
         if (adminView && transaction.transaction_type === 'RECEIVE' && !item.document_id && String(item.status) === 'PENDING') {
           result.pickupCandidates = waitingDocsByKey[studentEmailKey + '|' + item.type_id] || [];
         }
@@ -1367,8 +1395,19 @@ function touchDocument_(documentId, adminEmail, publicNote) {
   updateRow_(APP.SHEETS.DOCUMENTS, document._row, { updated_at: new Date(), updated_by: adminEmail, public_note: publicNote || document.public_note, version: Number(document.version || 0) + 1 });
 }
 
-function notify_(recipient, documentId, title, message, actor, sendEmail) {
-  const notification = { notification_id: 'ntf_' + shortId_(), student_email: normalizeEmail_(recipient), document_id: documentId || '', title: sanitizeText_(title, 200), message: sanitizeText_(message, 2000), read: false, created_at: new Date(), created_by: actor };
+function notificationTypeNames_(typeId, fallback) {
+  const type = typeId ? findBy_(APP.SHEETS.TYPES, 'type_id', typeId) : null;
+  const vi = type && type.name ? type.name : (fallback || '');
+  return { vi: vi, en: type && type.name_en ? type.name_en : vi };
+}
+
+function notificationStatus_(status, workflowId) {
+  const step = workflowId ? getWorkflowSteps_(workflowId).find(function(item) { return item.status_label === status; }) : null;
+  return { vi: status || '', en: step && step.status_label_en ? step.status_label_en : (status || '') };
+}
+
+function notify_(recipient, documentId, title, message, actor, sendEmail, i18n) {
+  const notification = { notification_id: 'ntf_' + shortId_(), student_email: normalizeEmail_(recipient), document_id: documentId || '', title: sanitizeText_(title, 200), message: sanitizeText_(message, 2000), read: false, created_at: new Date(), created_by: actor, i18n_json: i18n ? JSON.stringify(i18n) : '' };
   appendRecord_(APP.SHEETS.NOTIFICATIONS, notification);
   if (sendEmail) queueAndSendEmail_(recipient, title, message);
 }
@@ -1423,11 +1462,11 @@ function styleDataSheet_(sheet, columnCount) {
 
 function publicStudent_(row) { return { studentId: row.student_id, email: row.email, fullName: row.full_name || '', className: row.class_name || '', active: toBoolean_(row.active), updatedAt: iso_(row.updated_at) }; }
 function publicType_(row) { return { typeId: row.type_id, name: row.name, nameEn: row.name_en || '', description: row.description || '', descriptionEn: row.description_en || '', tracksProgress: toBoolean_(row.tracks_progress), workflowVersionId: row.workflow_version_id || '', active: toBoolean_(row.active), sortOrder: Number(row.sort_order || 0), handoverMode: normalizeHandoverMode_(row.handover_mode || 'BOTH') }; }
-function publicDocument_(row) { return { documentId: row.document_id, code: row.document_code, typeId: row.type_id, typeName: row.type_name, status: row.status, storageStatus: row.storage_status, submittedAt: iso_(row.submitted_at), expectedAt: iso_(row.expected_at), updatedAt: iso_(row.updated_at), publicNote: row.public_note || '', currentStepOrder: Number(row.current_step_order || 0), version: Number(row.version || 0) }; }
+function publicDocument_(row) { const step = row.workflow_version_id ? getWorkflowSteps_(row.workflow_version_id).find(function(item) { return item.status_label === row.status; }) : null; const names = notificationTypeNames_(row.type_id, row.type_name); return { documentId: row.document_id, code: row.document_code, typeId: row.type_id, typeName: row.type_name, typeNameEn: names.en, status: row.status, statusEn: step && step.status_label_en ? step.status_label_en : '', storageStatus: row.storage_status, submittedAt: iso_(row.submitted_at), expectedAt: iso_(row.expected_at), updatedAt: iso_(row.updated_at), publicNote: row.public_note || '', currentStepOrder: Number(row.current_step_order || 0), version: Number(row.version || 0) }; }
 function publicDocumentAdmin_(row) { const result = publicDocument_(row); result.studentId = row.student_id; result.studentEmail = row.student_email; result.studentName = row.student_name; result.className = row.class_name; result.internalNote = row.internal_note || ''; result.workflowVersionId = row.workflow_version_id || ''; result.currentStepId = row.current_step_id || ''; return result; }
 function publicEvent_(row, adminView) { const result = { eventId: row.event_id, type: row.event_type, status: row.status, publicNote: row.public_note || '', createdAt: iso_(row.created_at), createdBy: row.created_by || '', toStepId: row.to_step_id || '' }; if (adminView) result.internalNote = row.internal_note || ''; return result; }
 function publicService_(row) { return { sessionId: row.session_id, studentId: row.student_id, studentEmail: row.student_email, studentName: row.student_name, className: row.class_name, documentId: row.document_id || '', recordingType: row.recording_type, startedAt: iso_(row.started_at), endedAt: iso_(row.ended_at), durationMinutes: Number(row.duration_minutes || 0), topic: row.topic || '', result: row.result || '', staffEmail: row.staff_email, note: row.note || '', status: row.status }; }
-function publicNotification_(row) { return { notificationId: row.notification_id, documentId: row.document_id || '', title: row.title, message: row.message, read: toBoolean_(row.read), createdAt: iso_(row.created_at) }; }
+function publicNotification_(row) { let i18n = {}; try { i18n = row.i18n_json ? JSON.parse(row.i18n_json) : {}; } catch (error) {} return { notificationId: row.notification_id, documentId: row.document_id || '', title: row.title, message: row.message, i18n: i18n, read: toBoolean_(row.read), createdAt: iso_(row.created_at) }; }
 
 function isStudentEmail_(email) { return new RegExp('^[^@\\s]+@' + APP.STUDENT_DOMAIN.replace(/\./g, '\\.') + '$', 'i').test(normalizeEmail_(email)); }
 function extractStudentId_(email) { const local = normalizeEmail_(email).split('@')[0]; return /^\d{5,20}$/.test(local) ? local : ''; }

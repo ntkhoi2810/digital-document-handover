@@ -5,33 +5,175 @@
   const translations = {
     'Đang đăng nhập…':'Signing in…','Sổ giao nhận hồ sơ':'Document Submission & Collection','Văn phòng Khoa':'Faculty Office','Trang chủ':'Home','Nộp & nhận':'Submit & Collect','Hồ sơ của tôi':'My Documents','Lịch sử':'History','Thông báo':'Notifications','Tài khoản':'Account','Tổng quan':'Overview','Chờ xác nhận':'Pending Review','Hồ sơ':'Documents','Danh mục':'Catalog','Tiếp sinh viên':'Student Service','Sinh viên':'Students','Báo cáo':'Reports','Cài đặt':'Settings','Đang tải':'Loading','Mở menu':'Open menu','Tạo yêu cầu':'Create Request','Lịch sử yêu cầu':'Request History','MSSV lấy từ email trường, không sửa được.':'Student ID is taken from your university email and cannot be changed.','Chỉ xác nhận khi đã đối chiếu sinh viên và giấy tờ thực tế.':'Confirm only after verifying the student and physical documents.','Hồ sơ gần đây':'Recent Documents','Xem tất cả':'View All','Nộp hoặc nhận giấy tờ':'Submit or Collect Documents','Chọn giấy tờ rồi gửi yêu cầu. Yêu cầu hoàn tất khi cán bộ xác nhận tại quầy.':'Select documents and submit a request. Staff will confirm it at the counter.','Nhập họ tên và lớp trước khi gửi yêu cầu.':'Enter your name and class before submitting a request.','Cập nhật':'Update','Nộp hồ sơ':'Document Submission','Nhận hồ sơ':'Document Collection','Bổ sung giấy tờ':'Submit Supplementary Documents','Loại yêu cầu':'Request type','Ghi chú':'Note','Không bắt buộc':'Optional','Chọn ít nhất một giấy tờ.':'Select at least one document.','Gửi yêu cầu':'Submit Request','Tìm theo mã hoặc tên hồ sơ':'Search by code or document name','Email TDTU':'TDTU Email','Mã số sinh viên':'Student ID','Họ và tên':'Full Name','Lớp':'Class','Lưu':'Save','Quản lý & cập nhật tiến độ hồ sơ':'Manage Documents and Track Progress','Tra cứu, thêm hồ sơ trực tiếp tại văn phòng hoặc cập nhật trạng thái hàng loạt.':'Search, add documents at the office, or update multiple statuses.','Quản lý hồ sơ':'Manage Documents','Mở danh sách':'Open List','Tìm theo MSSV, họ tên hoặc mã yêu cầu':'Search by student ID, name, or request code','Tất cả trạng thái':'All statuses','Tìm kiếm':'Search','Thêm hồ sơ':'Add Document','Đã chọn 0 hồ sơ':'0 documents selected','Cập nhật trạng thái':'Update Status','Bỏ chọn':'Clear Selection','Danh mục hồ sơ':'Document Catalog','Thêm loại':'Add Type','Quy trình xử lý':'Workflows','Tạo quy trình':'Create Workflow','Ghi nhận trực tiếp':'Live Session','Ghi nhận thủ công':'Manual Entry','Bắt đầu':'Start','Kết thúc':'End','Nội dung trao đổi':'Discussion','Kết quả xử lý':'Outcome','Lưu buổi tiếp':'Save Session','Lịch sử tiếp sinh viên':'Student Service History','Tìm sinh viên hoặc nội dung':'Search students or topics','Email hoặc MSSV':'Email or Student ID','MSSV, họ tên, lớp hoặc email':'Student ID, name, class, or email','Từ ngày':'From','Đến ngày':'To','Xem báo cáo':'View Report','Xuất CSV':'Export CSV','Cài đặt ứng dụng':'Application Settings','Tên ứng dụng':'Application Name','Tên văn phòng':'Office Name','Kiểm tra hệ thống':'System Check','Chạy kiểm tra':'Run Check','Đang xử lý…':'Processing…','Đang xác nhận…':'Confirming…','Đã hoàn thành':'Completed','Đã bàn giao':'Handed Over','Đã tiếp nhận':'Received','Đang kiểm tra hồ sơ':'Under Document Review','Yêu cầu bổ sung':'Supplement Required','Đang xử lý':'Processing','Đang trình duyệt':'Under Review','Chờ phê duyệt':'Awaiting Approval','Chờ sinh viên đến nhận':'Ready for Collection','Đã hủy':'Cancelled','Chưa có hồ sơ.':'No documents yet.','Chưa có yêu cầu nào.':'No requests yet.','Chưa có thông báo nào.':'No notifications yet.','Không có dữ liệu.':'No data.','Không có yêu cầu nào đang chờ.':'No requests are pending.','Loại hồ sơ':'Document Type','Hình thức':'Handling','Sinh viên nộp':'Student submits','Sinh viên nhận':'Student collects','Cả nộp và nhận':'Submission and collection','Kiểu theo dõi':'Tracking','Chỉ ghi nhận giao nhận':'Record handover only','Có tiến độ xử lý':'Track processing progress','Tùy chọn nâng cao':'Advanced Options','Mô tả':'Description','Quy trình':'Workflow','Dùng quy trình chuẩn':'Use standard workflow','Thứ tự':'Order','Đang sử dụng':'Active','Ngừng sử dụng':'Inactive','Lưu loại hồ sơ':'Save Document Type','Phiên bản':'Version','Các bước xử lý':'Workflow Steps','Tên bước':'Step name','Nhãn trạng thái':'Status label','Thêm bước':'Add Step','Xác nhận':'Confirm','Từ chối':'Reject','Đã đọc':'Read','Xem hồ sơ':'View Document','Ghi nhận':'Recorded','Dự kiến xong':'Expected completion','Tiến độ':'Progress','Không vào được':'Unable to open','Đăng nhập bằng tài khoản TDTU rồi tải lại trang.':'Sign in with your TDTU account and reload the page.','Tải lại':'Reload','Student':'Student'
   };
+  Object.assign(translations, {
+    'MSSV, họ tên, email, mã hồ sơ':'Student ID, name, email, or document code','Tìm theo MSSV, họ tên, mã hồ sơ hoặc mã yêu cầu':'Search by student ID, name, document code, or request code','Tìm theo MSSV, họ tên hoặc mã yêu cầu':'Search by student ID, name, or request code','Tìm theo mã hoặc tên hồ sơ':'Search by code or document name','Tìm sinh viên hoặc nội dung':'Search students or topics','MSSV, họ tên, lớp hoặc email':'Student ID, name, class, or email','MSSV, họ tên, email, mã hồ sơ':'Student ID, name, email, or document code','Tên loại hồ sơ (tiếng Anh)':'Document type name (English)','Mô tả (tiếng Anh)':'Description (English)','Tên quy trình (tiếng Anh)':'Workflow name (English)','Tên bước (tiếng Anh)':'Step name (English)','Nhãn trạng thái (tiếng Anh)':'Status label (English)','Email hoặc MSSV sinh viên':'Student email or ID','Chọn hồ sơ cụ thể':'Select a specific document','Loại hồ sơ':'Document type','Giữ nguyên bước hiện tại':'Keep current step','Đang làm':'In progress','Yêu cầu đã được xác nhận':'Request confirmed','Đã xác nhận':'Confirmed','Tải lại':'Reload','Thông tin hệ thống':'System information','Phiên bản cấu trúc dữ liệu':'Data schema version','Điều hướng sinh viên':'Student navigation','Điều hướng quản trị':'Administrator navigation','Đóng':'Close'
+  });
+  Object.assign(translations, {
+    'Tên loại hồ sơ không được để trống.':'Document type name is required.','Mã loại hồ sơ không hợp lệ.':'Invalid document type ID.','Không tìm thấy loại hồ sơ cần xoá.':'Document type to delete was not found.','Loại đã có hồ sơ hoặc yêu cầu nên không thể xoá. Chọn “Ngừng sử dụng” để giữ lịch sử.':'This type has documents or requests and cannot be deleted. Choose “Inactive” to preserve its history.','Hình thức yêu cầu không hợp lệ.':'Invalid request type.','Chọn từ 1 đến 20 giấy tờ.':'Select between 1 and 20 documents.','Có loại hồ sơ không hợp lệ hoặc đã ngừng sử dụng.':'A document type is invalid or inactive.','Không tìm thấy hồ sơ thuộc tài khoản sinh viên này.':'No document was found for this student account.','Danh sách có giấy tờ bị chọn trùng.':'The selection contains duplicate documents.','Quyết định duyệt không hợp lệ.':'Invalid review decision.','Ghi lý do từ chối.':'Enter a reason for rejecting the request.','Không tìm thấy yêu cầu tương ứng.':'The matching request was not found.','Chỉ có thể xác nhận các giấy tờ trong cùng một yêu cầu.':'You can only confirm documents from the same request.','Hồ sơ được chọn không còn phù hợp để bàn giao.':'The selected document is no longer available for handover.','Không thể hoàn tất yêu cầu này.':'This request could not be completed.','Nhập họ tên và lớp trong mục Tài khoản trước khi gửi yêu cầu.':'Enter your name and class under Account before submitting a request.','Dữ liệu hệ thống không hợp lệ.':'Invalid system data.','Vui lòng thử lại.':'Please try again.'
+  });
+  Object.assign(translations, {
+    'Đang lưu giữ':'Stored','Cần bổ sung':'Needs Supplementation','Chờ đến nhận':'Awaiting Collection','Còn chờ xác nhận':'Awaiting Confirmation','Yêu cầu đã gửi':'Requests Submitted','Giấy tờ đã nộp':'Documents Submitted','Giấy tờ đã nhận':'Documents Collected','Giấy tờ xác nhận':'Documents Confirmed','Đã xác nhận một phần':'Partially Confirmed','Hoàn tất':'Completed','Bị từ chối':'Rejected','Ngôn ngữ':'Language',
+    'Chọn tất cả':'Select All','Ghi chú và email':'Notes and Email','Gửi email cho sinh viên':'Send email to student','Thông báo trong ứng dụng luôn được gửi.':'An in-app notification is always sent.','Chọn hồ sơ cụ thể':'Select a specific document','Xác nhận giấy tờ':'Confirm Document','Từ chối giấy tờ':'Reject Document','Xác nhận sau khi đã đối chiếu sinh viên và giấy tờ thực tế tại quầy.':'Confirm only after verifying the student and physical documents at the counter.','Ghi lý do để sinh viên biết cần làm gì.':'Provide a reason so the student knows what to do next.','Chọn hồ sơ cụ thể cho mục có nhiều hồ sơ.':'Select a specific document for an item with multiple matches.','Không có yêu cầu nào khớp.':'No matching requests.','Không có hồ sơ nào khớp.':'No matching documents.','Chưa có giấy tờ nào để chọn.':'No documents available to select.','Chưa có loại hồ sơ.':'No document types yet.','Chưa có quy trình.':'No workflows yet.','Không tìm thấy loại hồ sơ.':'Document type not found.','Chỉ xóa được loại chưa có hồ sơ hay yêu cầu nào. Nếu đã dùng, chọn “Ngừng sử dụng” để giữ lịch sử.':'Only document types without documents or requests can be deleted. If it has been used, choose “Inactive” to preserve its history.','Xóa':'Delete','Xóa loại hồ sơ':'Delete Document Type','Hủy':'Cancel','Sửa':'Edit','Chỉnh sửa':'Edit','Thêm':'Add','Thêm loại hồ sơ':'Add Document Type','Chỉnh sửa loại hồ sơ':'Edit Document Type','Thêm hồ sơ tại văn phòng':'Add Document at Office','Trạng thái ban đầu':'Initial Status','Ngày dự kiến':'Expected Date','Phản hồi công khai':'Public Note','Ghi chú nội bộ':'Internal Note','Trạng thái mới':'New Status','Cập nhật hàng loạt':'Update Selected Documents','Bước xử lý':'Processing Step','Ngày hoàn thành dự kiến':'Expected Completion Date','Lưu cập nhật':'Save Changes','Bắt đầu tiếp sinh viên':'Start Student Service','Kết thúc buổi tiếp sinh viên':'End Student Service Session','Kết thúc buổi tiếp':'End Student Service Session','Thời gian':'Time','Thời lượng':'Duration','Nội dung':'Topic','Kết quả':'Outcome','Cán bộ':'Staff','MSSV':'Student ID','Chưa xác định':'Not identified','Đã lưu.':'Saved.','Đã tạo hồ sơ.':'Document created.','Đã cập nhật các hồ sơ đã chọn.':'Selected documents updated.','Đã cập nhật tiến độ hồ sơ.':'Document progress updated.','Đã lưu loại hồ sơ.':'Document type saved.','Đã xóa loại hồ sơ.':'Document type deleted.','Đã tạo quy trình.':'Workflow created.','Đã lưu buổi tiếp.':'Session saved.','Đã lưu buổi tiếp sinh viên.':'Student service session saved.','Đã cập nhật yêu cầu.':'Request updated.','Đang xóa…':'Deleting…','Tạo phiên bản quy trình':'Create Workflow Version','Quy trình mới không ảnh hưởng hồ sơ đang xử lý.':'A new workflow does not affect documents already in progress.',
+    'Chưa nhận ra tài khoản Google. Đăng xuất tài khoản cá nhân rồi đăng nhập bằng tài khoản TDTU.':'Could not identify your Google account. Sign out of your personal account, then sign in with your TDTU account.','Chỉ sinh viên (@student.tdtu.edu.vn) và quản trị viên được cấp quyền mới vào được.':'Only students (@student.tdtu.edu.vn) and authorized administrators can access this application.','Chức năng này chỉ dành cho sinh viên.':'This feature is available to students only.','Tài khoản này không có quyền quản trị.':'This account does not have administrator access.','Nhập họ và tên.':'Enter your full name.','Nhập lớp.':'Enter your class.','Email không có MSSV dạng số. Liên hệ quản trị viên để được gán MSSV.':'The email address does not contain a numeric student ID. Contact an administrator to have one assigned.','Chọn từ 1 đến 100 hồ sơ để cập nhật.':'Select between 1 and 100 documents to update.','Chọn trạng thái mới.':'Select a new status.','Hồ sơ vừa được người khác cập nhật. Tải lại để xem bản mới.':'This document was updated by someone else. Reload to see the latest version.','Nhập lý do hủy hồ sơ.':'Enter a reason for cancelling the document.','Quy trình phải có tên và ít nhất một bước.':'A workflow must have a name and at least one step.','Tên bước xử lý không được để trống.':'Step name is required.','Không tìm thấy phiên tiếp sinh viên đang chạy.':'No active student service session was found.','Nhập nội dung trao đổi và kết quả xử lý.':'Enter the discussion topic and outcome.','Thời gian tiếp sinh viên không hợp lệ.':'Invalid student service session time.','Không tìm thấy thông báo.':'Notification not found.','Không tìm thấy email.':'Email not found.','Chưa cấu hình Google Sheets cho ứng dụng.':'Google Sheets has not been configured for this application.','Không tìm thấy sinh viên. Sinh viên cần đăng nhập và hoàn thiện tài khoản trước.':'Student not found. The student must sign in and complete their profile first.'
+  });
   const originalText = new WeakMap();
+  const originalAttributes = new WeakMap();
+  const translatedAttributes = ['placeholder', 'aria-label', 'title'];
+  function translateText(value, language = state.language) {
+    const source = String(value || '');
+    const trimmed = source.trim();
+    let translated = language === 'en' ? translations[trimmed] : null;
+    if (!translated && language === 'vi') {
+      const englishKey = Object.keys(translations).find(key => translations[key] === trimmed);
+      if (englishKey) translated = englishKey;
+    }
+    let match;
+    if (!translated && language === 'en') {
+      match = trimmed.match(/^Chào\s+(.+)$/); if (match) translated = 'Hello ' + match[1];
+      match = !translated && trimmed.match(/^Đã chọn (\d+) giấy tờ\.$/); if (match) translated = `${match[1]} documents selected.`;
+      match = !translated && trimmed.match(/^Đã chọn (\d+) hồ sơ$/); if (match) translated = `${match[1]} documents selected`;
+      match = !translated && trimmed.match(/^Gửi yêu cầu \((\d+)\)$/); if (match) translated = `Submit Request (${match[1]})`;
+      match = !translated && trimmed.match(/^Xác nhận \((\d+)\)$/); if (match) translated = `Confirm (${match[1]})`;
+      match = !translated && trimmed.match(/^(\d+) mục$/); if (match) translated = `${match[1]} items`;
+      match = !translated && trimmed.match(/^(\d+) giấy tờ chờ đối chiếu$/); if (match) translated = `${match[1]} documents awaiting review`;
+      match = !translated && trimmed.match(/^Bạn có (\d+) hồ sơ cần bổ sung\.$/); if (match) translated = `You have ${match[1]} documents requiring supplementation.`;
+      match = !translated && trimmed.match(/^Bước (\d+)\/(\d+)$/); if (match) translated = `Step ${match[1]} of ${match[2]}`;
+      match = !translated && trimmed.match(/^Đã gửi yêu cầu (.+)\. Cán bộ sẽ xác nhận khi bạn đến quầy\.$/); if (match) translated = `Request ${match[1]} submitted. Staff will confirm it when you arrive at the counter.`;
+      match = !translated && trimmed.match(/^Yêu cầu (.+) đang chờ cán bộ xác nhận\.$/); if (match) translated = `Request ${match[1]} is awaiting staff confirmation.`;
+      match = !translated && trimmed.match(/^Đã xác nhận (\d+) giấy tờ\.$/); if (match) translated = `${match[1]} documents confirmed.`;
+      match = !translated && trimmed.match(/^Cập nhật hồ sơ (.+)$/); if (match) translated = `Document ${match[1]} updated`;
+      match = !translated && trimmed.match(/^Trạng thái mới: (.+)$/); if (match) translated = `New status: ${translations[match[1]] || match[1]}`;
+      match = !translated && trimmed.match(/^(Ghi nhận|Cập nhật) (.+)$/); if (match) translated = `${match[1] === 'Ghi nhận' ? 'Recorded' : 'Updated'} ${match[2]}`;
+      match = !translated && trimmed.match(/^Tìm theo (.+)$/); if (match) translated = 'Search by ' + match[1];
+      match = !translated && trimmed.match(/^Chọn (.+)$/); if (match) translated = 'Select ' + match[1];
+    } else if (!translated && language === 'vi') {
+      match = trimmed.match(/^Hello\s+(.+)$/); if (match) translated = 'Chào ' + match[1];
+      match = !translated && trimmed.match(/^(\d+) documents selected\.?$/); if (match) translated = `${match[1]} giấy tờ đã chọn.`;
+      match = !translated && trimmed.match(/^Submit Request \((\d+)\)$/); if (match) translated = `Gửi yêu cầu (${match[1]})`;
+      match = !translated && trimmed.match(/^Confirm \((\d+)\)$/); if (match) translated = `Xác nhận (${match[1]})`;
+      match = !translated && trimmed.match(/^(\d+) items$/); if (match) translated = `${match[1]} mục`;
+      match = !translated && trimmed.match(/^(\d+) documents awaiting review$/); if (match) translated = `${match[1]} giấy tờ chờ đối chiếu`;
+      match = !translated && trimmed.match(/^You have (\d+) documents requiring supplementation\.$/); if (match) translated = `Bạn có ${match[1]} hồ sơ cần bổ sung.`;
+      match = !translated && trimmed.match(/^Step (\d+) of (\d+)$/); if (match) translated = `Bước ${match[1]}/${match[2]}`;
+      match = !translated && trimmed.match(/^Document (.+) updated$/); if (match) translated = `Cập nhật hồ sơ ${match[1]}`;
+      match = !translated && trimmed.match(/^Request (.+) is awaiting staff confirmation\.$/); if (match) translated = `Yêu cầu ${match[1]} đang chờ cán bộ xác nhận.`;
+      match = !translated && trimmed.match(/^New status: (.+)$/); if (match) translated = `Trạng thái mới: ${match[1]}`;
+      match = !translated && trimmed.match(/^(Recorded|Updated) (.+)$/); if (match) translated = `${match[1] === 'Recorded' ? 'Ghi nhận' : 'Cập nhật'} ${match[2]}`;
+      match = !translated && trimmed.match(/^Search by (.+)$/); if (match) translated = 'Tìm theo ' + match[1];
+      match = !translated && trimmed.match(/^Select (.+)$/); if (match) translated = 'Chọn ' + match[1];
+    }
+    if (!translated && language === 'en') {
+      match = trimmed.match(/^Mục (.+) đã được xử lý với kết quả khác\.$/); if (match) translated = `Item ${match[1]} has already been processed with a different result.`;
+      match = !translated && trimmed.match(/^Có nhiều hồ sơ (.+) đang chờ nhận\. Chọn đúng hồ sơ\.$/); if (match) translated = `Multiple ${match[1]} documents are awaiting collection. Choose the correct document.`;
+      match = !translated && trimmed.match(/^Hồ sơ (.+) (chưa sẵn sàng bàn giao|không còn ở trạng thái chờ nhận)\.$/); if (match) translated = `Document ${match[1]} ${match[2] === 'chưa sẵn sàng bàn giao' ? 'is not ready for handover' : 'is no longer awaiting collection'}.`;
+      match = !translated && trimmed.match(/^Không tìm thấy mục yêu cầu (.+)\.$/); if (match) translated = `Request item ${match[1]} was not found.`;
+      match = !translated && trimmed.match(/^Loại hồ sơ (.+) không áp dụng cho hình thức này\.$/); if (match) translated = `Document type ${match[1]} is not available for this request type.`;
+      match = !translated && trimmed.match(/^Sai cấu trúc cột tại tab (.+)\.$/); if (match) translated = `Invalid column structure in sheet ${match[1]}.`;
+      match = !translated && trimmed.match(/^Không tìm thấy tab dữ liệu (.+)\.$/); if (match) translated = `Data sheet ${match[1]} was not found.`;
+      match = !translated && trimmed.match(/^Sẽ bàn giao hồ sơ (.+)$/); if (match) translated = `Document to be handed over: ${match[1]}`;
+      match = !translated && trimmed.match(/^Student ID: (.+) - Class: (.+)$/); if (match) translated = `MSSV: ${match[1]} - Lớp: ${match[2]}`;
+    }
+    if (!translated) return source;
+    return source.replace(trimmed, translated);
+  }
   function translateNode(node) {
-    if (node.nodeType !== Node.TEXT_NODE || !node.nodeValue.trim()) return;
+    if (node.nodeType !== Node.TEXT_NODE || !node.nodeValue.trim() || node.parentElement?.closest('[data-i18n-vi], [data-no-translate]')) return;
     if (!originalText.has(node)) originalText.set(node, node.nodeValue);
-    const source = originalText.get(node).trim();
-    const translated = state.language === 'en' && translations[source] ? originalText.get(node).replace(source, translations[source]) : originalText.get(node);
+    const original = originalText.get(node);
+    const translated = translateText(original);
     if (node.nodeValue !== translated) node.nodeValue = translated;
+  }
+  function translateElementAttributes(element) {
+    let originals = originalAttributes.get(element);
+    if (!originals) { originals = {}; originalAttributes.set(element, originals); }
+    translatedAttributes.forEach(name => {
+      if (!element.hasAttribute(name)) return;
+      if (!(name in originals)) originals[name] = element.getAttribute(name);
+      const translated = translateText(originals[name]);
+      if (element.getAttribute(name) !== translated) element.setAttribute(name, translated);
+    });
   }
   function applyLanguage() {
     document.documentElement.lang = state.language;
     document.title = state.language === 'en' ? 'Document Submission & Collection - TDTU' : 'Sổ giao nhận hồ sơ - TDTU';
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) translateNode(walker.currentNode);
-    const button = $('#language-toggle');
-    if (button) { button.textContent = state.language === 'vi' ? 'EN' : 'VI'; button.setAttribute('aria-label', state.language === 'vi' ? 'Switch to English' : 'Chuyển sang tiếng Việt'); }
+    document.querySelectorAll('[data-i18n-vi]').forEach(element => {
+      const text = state.language === 'en' ? (element.dataset.i18nEn || element.dataset.i18nVi) : element.dataset.i18nVi;
+      if (element.textContent !== text) element.textContent = text;
+    });
+    document.querySelectorAll('[data-date-value]').forEach(element => {
+      const value=element.dataset.dateValue;
+      element.textContent=element.dataset.datePrefix ? `${element.dataset.datePrefix} - ${fmtDate(value)}` : (element.dataset.dateKind==='day'?fmtDay(value):fmtDate(value));
+    });
+    document.querySelectorAll('*').forEach(translateElementAttributes);
+    const selector = $('#language-toggle');
+    if (selector) selector.value = state.language;
     const locale = state.language === 'en' ? 'en-US' : 'vi-VN';
     document.querySelectorAll('.kpi strong').forEach(el => { const value = Number(el.textContent.replace(/[^0-9.-]/g,'')); if (Number.isFinite(value)) el.textContent = value.toLocaleString(locale); });
   }
-  new MutationObserver(records => records.forEach(record => { if (record.type === 'characterData') translateNode(record.target); else record.addedNodes.forEach(node => { if (node.nodeType === Node.TEXT_NODE) translateNode(node); else if (node.nodeType === Node.ELEMENT_NODE) { const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT); while (walker.nextNode()) translateNode(walker.currentNode); } }); })).observe(document.body, {subtree:true,childList:true,characterData:true});
+  new MutationObserver(records => records.forEach(record => {
+    if (record.type === 'characterData') translateNode(record.target);
+    else if (record.type === 'attributes') translateElementAttributes(record.target);
+    else record.addedNodes.forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE) translateNode(node);
+      else if (node.nodeType === Node.ELEMENT_NODE) {
+        const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT); while (walker.nextNode()) translateNode(walker.currentNode);
+        if (node.matches('[data-i18n-vi]')) { const text = state.language === 'en' ? (node.dataset.i18nEn || node.dataset.i18nVi) : node.dataset.i18nVi; node.textContent = text; }
+        translateElementAttributes(node); node.querySelectorAll('*').forEach(translateElementAttributes);
+      }
+    });
+  })).observe(document.body, {subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:translatedAttributes});
+  const localizedHtml = (vi, en, tag = 'span') => `<${tag} data-i18n-vi="${escapeHtml(vi || '')}" data-i18n-en="${escapeHtml(en || '')}">${escapeHtml(state.language === 'en' && en ? en : (vi || ''))}</${tag}>`;
+  const localizedOption = (vi, en, value, selected = false) => `<option value="${escapeHtml(value)}" ${selected ? 'selected' : ''} data-i18n-vi="${escapeHtml(vi || '')}" data-i18n-en="${escapeHtml(en || '')}">${escapeHtml(state.language === 'en' && en ? en : (vi || ''))}</option>`;
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-  const localized = (vi, en) => state.language === 'en' && en ? en : (vi || '');
+  const messageTranslations = {
+    requestSentTitle:{vi:'Đã gửi yêu cầu',en:'Request submitted'},
+    requestWaiting:{vi:'Yêu cầu {{code}} đang chờ cán bộ xác nhận.',en:'Request {{code}} is awaiting staff confirmation.'},
+    requestConfirmedTitle:{vi:'Yêu cầu đã được xác nhận',en:'Request confirmed'},
+    requestRejectedTitle:{vi:'Có giấy tờ chưa được xác nhận',en:'Some documents were not confirmed'},
+    documentConfirmed:{vi:'{{nameVi}} đã xác nhận tại quầy.',en:'{{nameEn}} was confirmed at the counter.'},
+    documentNotConfirmed:{vi:'{{nameVi}} chưa được xác nhận.',en:'{{nameEn}} was not confirmed.'},
+    documentReviewNote:{vi:'{{nameVi}}: {{note}}',en:'{{nameEn}}: {{note}}'},
+    officeReceivedTitle:{vi:'Văn phòng đã nhận hồ sơ',en:'The office received the document'},
+    documentStatus:{vi:'{{nameVi}}: {{statusVi}}',en:'{{nameEn}}: {{statusEn}}'},
+    documentUpdatedTitle:{vi:'Cập nhật hồ sơ {{code}}',en:'Document {{code}} updated'},
+    customNote:{vi:'{{note}}',en:'{{note}}'},
+    newDocumentStatus:{vi:'Trạng thái mới: {{statusVi}}',en:'New status: {{statusEn}}'},
+    documentCancelledTitle:{vi:'Hồ sơ đã hủy',en:'Document cancelled'}
+  };
+  function notificationText(item, field, language = state.language) {
+    const metadata = item.i18n || {};
+    const key = field === 'title' ? metadata.titleKey : metadata.messageKey;
+    const entry = messageTranslations[key];
+    if (!entry) {
+      const source=String(item[field]||''); const translated=translateText(source,language);
+      if (translated!==source || field!=='message') return translated;
+      const split=source.indexOf(': '); if (split<1) return source;
+      const type=[...(state.boot?.types||[]),...state.types].find(value=>value.name===source.slice(0,split));
+      if (!type) return source;
+      const suffix=source.slice(split+2); const status=translations[suffix] ? (language==='en'?translations[suffix]:suffix) : suffix;
+      const typeName=language==='en' ? (type.nameEn||type.name) : type.name;
+      return `${typeName}: ${status}`;
+    }
+    const template = language === 'en' ? entry.en : entry.vi;
+    return template.replace(/\{\{([^}]+)\}\}/g, (_, name) => {
+      const params=metadata.params || {}; let value=params[name];
+      if (name === 'statusEn' && value === params.statusVi) value=translations[params.statusVi] || value;
+      return String(value ?? '');
+    });
+  }
   const fmtDate = value => value ? new Intl.DateTimeFormat(state.language === 'en' ? 'en-US' : 'vi-VN', {dateStyle:'short', timeStyle:'short', timeZone:'Asia/Ho_Chi_Minh'}).format(new Date(value)) : '—';
   const fmtDay = value => value ? new Intl.DateTimeFormat(state.language === 'en' ? 'en-US' : 'vi-VN', {dateStyle:'short', timeZone:'Asia/Ho_Chi_Minh'}).format(new Date(value)) : '—';
-  const displayTypeName = (id, fallback) => { const type = (state.boot?.types || state.types).find(item => item.typeId === id); return localized(type?.name || fallback, type?.nameEn); };
-  const displayStatus = value => localized(value, translations[value]);
+  const dateHtml = (value, dayOnly = false) => value ? `<time data-date-value="${escapeHtml(value)}" data-date-kind="${dayOnly?'day':'datetime'}">${escapeHtml(dayOnly?fmtDay(value):fmtDate(value))}</time>` : '—';
+  const dateOption = (prefix, value, id) => `<option value="${escapeHtml(id)}" data-date-value="${escapeHtml(value)}" data-date-prefix="${escapeHtml(prefix)}">${escapeHtml(prefix)} - ${escapeHtml(fmtDate(value))}</option>`;
+  const typeNamePair = (id, fallback, fallbackEn) => { const type = [...(state.boot?.types || []), ...state.types].find(item => item.typeId === id); const vi = type?.name || fallback || ''; return {vi, en:type?.nameEn || fallbackEn || vi}; };
+  const statusHtml = (value, english) => {
+    const vi = translations[value] ? value : (Object.keys(translations).find(key => translations[key] === value) || value);
+    return localizedHtml(vi, english || translations[vi] || value);
+  };
   const typeLabel = value => ({SUBMIT:'Nộp hồ sơ', RECEIVE:'Nhận hồ sơ', SUPPLEMENT:'Bổ sung giấy tờ'})[value] || value;
   const statusLabel = value => ({PENDING:'Chờ xác nhận', PARTIAL:'Đã xác nhận một phần', COMPLETED:'Hoàn tất', REJECTED:'Bị từ chối', APPROVED:'Đã xác nhận'})[value] || value;
   const statusClass = value =>
@@ -54,7 +196,7 @@
     const raw = String(error && error.message ? error.message : error || 'Có lỗi xảy ra.');
     const clean = raw.replace(/^Exception:\s*/i, '');
     const parts = clean.split('|');
-    const err = new Error(parts.length > 1 ? parts.slice(1).join('|') : clean);
+    const err = new Error(translateText(parts.length > 1 ? parts.slice(1).join('|') : clean));
     err.code = parts.length > 1 ? parts[0] : 'ERROR';
     return err;
   }
@@ -62,7 +204,7 @@
   function setBusy(button, busy, label = 'Đang xử lý…') {
     if (!button) return;
     if (busy) { button.dataset.original = button.textContent; button.textContent = label; button.disabled = true; }
-    else { button.textContent = button.dataset.original || button.textContent; button.disabled = false; }
+    else { button.textContent = translateText(button.dataset.original || button.textContent); button.disabled = false; }
   }
 
   function toast(message, error = false) {
@@ -129,7 +271,7 @@
   }
 
   function bindGlobalEvents() {
-    $('#language-toggle')?.addEventListener('click', () => { state.language = state.language === 'vi' ? 'en' : 'vi'; localStorage.setItem('ddh-language', state.language); applyLanguage(); });
+    $('#language-toggle')?.addEventListener('change', event => { state.language = event.target.value === 'en' ? 'en' : 'vi'; localStorage.setItem('ddh-language', state.language); applyLanguage(); });
     document.addEventListener('click', event => {
       const nav = event.target.closest('[data-view]'); if (nav) navigate(nav.dataset.view);
       const go = event.target.closest('[data-go]'); if (go) navigate(go.dataset.go);
@@ -237,7 +379,7 @@
       pendingBadge.classList.toggle('hidden', !data.pendingTransactions);
     }
   }
-  const kpis = items => items.map(item => `<div class="kpi${item[2] ? ' ' + item[2] : ''}"><div class="kpi-head"><span>${escapeHtml(item[0])}</span><i class="kpi-dot" aria-hidden="true"></i></div><strong>${Number(item[1] || 0).toLocaleString('vi-VN')}</strong></div>`).join('');
+  const kpis = items => items.map(item => `<div class="kpi${item[2] ? ' ' + item[2] : ''}"><div class="kpi-head"><span>${escapeHtml(item[0])}</span><i class="kpi-dot" aria-hidden="true"></i></div><strong>${Number(item[1] || 0).toLocaleString(state.language==='en'?'en-US':'vi-VN')}</strong></div>`).join('');
 
   function renderProfile() {
     const {identity, profile} = state.boot;
@@ -263,8 +405,8 @@
     const fullName = state.boot.profile?.fullName?.trim() || '';
     const firstName = fullName ? fullName.split(/\s+/).at(-1) : 'bạn';
     $('#page-title').textContent = `Chào ${firstName}`;
-    $('#student-home-note').innerHTML = dashboard.supplement > 0 ? `<span>Bạn có ${Number(dashboard.supplement).toLocaleString('vi-VN')} hồ sơ cần bổ sung.</span><button class="link-button" data-go="student-documents">Xem hồ sơ</button>` : '';
-    $('#recent-documents').innerHTML = documents.slice(0,5).map(doc => `<button class="list-item" onclick="window.app.openDocument('${doc.documentId}')"><div><strong>${escapeHtml(displayTypeName(doc.typeId,doc.typeName))}</strong><small><span class="list-code">${escapeHtml(doc.code)}</span><span>Cập nhật ${fmtDate(doc.updatedAt)}</span></small></div><div class="list-item-end"><span class="status ${statusClass(doc.status)}">${escapeHtml(displayStatus(doc.status))}</span>${rowArrowSvg}</div></button>`).join('') || '<div class="empty">Chưa có hồ sơ.</div>';
+    $('#student-home-note').innerHTML = dashboard.supplement > 0 ? `<span>${escapeHtml(state.language === 'en' ? `You have ${Number(dashboard.supplement).toLocaleString('en-US')} documents requiring supplementation.` : `Bạn có ${Number(dashboard.supplement).toLocaleString('vi-VN')} hồ sơ cần bổ sung.`)}</span><button class="link-button" data-go="student-documents">Xem hồ sơ</button>` : '';
+    $('#recent-documents').innerHTML = documents.slice(0,5).map(doc => { const name=typeNamePair(doc.typeId,doc.typeName,doc.typeNameEn); return `<button class="list-item" onclick="window.app.openDocument('${doc.documentId}')"><div><strong>${localizedHtml(name.vi,name.en)}</strong><small><span class="list-code">${escapeHtml(doc.code)}</span><span>${localizedHtml('Cập nhật','Updated')} ${dateHtml(doc.updatedAt)}</span></small></div><div class="list-item-end"><span class="status ${statusClass(doc.status)}">${statusHtml(doc.status,doc.statusEn)}</span>${rowArrowSvg}</div></button>`; }).join('') || '<div class="empty">Chưa có hồ sơ.</div>';
   }
 
   async function loadStudentHome() {
@@ -278,10 +420,9 @@
   function renderTransactionOptionList() {
     const type = $('input[name="transactionType"]:checked')?.value || 'SUBMIT';
     let options = [];
-    if (type === 'SUBMIT') options = state.boot.types.filter(item => ['SUBMIT','BOTH'].includes(item.handoverMode)).map(item => ({id:item.typeId, name:item.name, description:item.description, field:'typeId'}));
-    else if (type === 'RECEIVE') options = state.boot.types.filter(item => ['RECEIVE','BOTH'].includes(item.handoverMode)).map(item => ({id:item.typeId, name:item.name, description:item.description, field:'typeId'}));
-    else options = state.documents.filter(doc => !['Đã bàn giao','Đã hủy'].includes(doc.status)).map(doc => ({id:doc.documentId, name:doc.typeName, description:`${doc.code} - ${doc.status}`, field:'documentId'}));
-    $('#transaction-options').innerHTML = options.map(item => `<label class="check-option"><input type="checkbox" value="${escapeHtml(item.id)}" data-field="${item.field}"><span><strong>${escapeHtml(item.name)}</strong>${item.description?`<small>${escapeHtml(item.description)}</small>`:''}</span></label>`).join('') || '<div class="empty">Chưa có giấy tờ nào để chọn.</div>';
+    if (type === 'SUBMIT' || type === 'RECEIVE') options = state.boot.types.filter(item => item.handoverMode === 'BOTH' || item.handoverMode === type).map(item => ({id:item.typeId, ...item, field:'typeId'}));
+    else options = state.documents.filter(doc => !['Đã bàn giao','Đã hủy'].includes(doc.status)).map(doc => ({id:doc.documentId, ...doc, description:`${doc.code} - ${doc.status}`, field:'documentId'}));
+    $('#transaction-options').innerHTML = options.map(item => { const typeName=typeNamePair(item.typeId,item.name||item.typeName); const descriptionVi=item.description||(item.code?`${item.code} - ${item.status}`:''); const descriptionEn=item.descriptionEn||(item.code?`${item.code} - ${translations[item.status]||item.status}`:descriptionVi); return `<label class="check-option"><input type="checkbox" value="${escapeHtml(item.id)}" data-field="${item.field}"><span><strong>${localizedHtml(typeName.vi,typeName.en)}</strong>${descriptionVi?`<small>${localizedHtml(descriptionVi,descriptionEn)}</small>`:''}</span></label>`; }).join('') || '<div class="empty">Chưa có giấy tờ nào để chọn.</div>';
     updateTransactionSelection();
   }
 
@@ -327,7 +468,8 @@
     $('#my-documents').innerHTML = docs.map(doc => documentCard(doc)).join('') || '<div class="empty">Không có hồ sơ nào khớp.</div>';
   }
   function documentCard(doc) {
-    return `<button type="button" class="document-card" onclick="window.app.openDocument('${doc.documentId}')"><div class="document-head"><div><h3>${escapeHtml(doc.typeName)}</h3><div class="document-meta"><span class="document-code">${escapeHtml(doc.code)}</span><span>Ghi nhận ${fmtDay(doc.submittedAt)}</span><span>Cập nhật ${fmtDate(doc.updatedAt)}</span></div></div><div class="list-item-end"><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span>${rowArrowSvg}</div></div>${doc.publicNote?`<p>${escapeHtml(doc.publicNote)}</p>`:''}</button>`;
+    const name = typeNamePair(doc.typeId, doc.typeName,doc.typeNameEn);
+    return `<button type="button" class="document-card" onclick="window.app.openDocument('${doc.documentId}')"><div class="document-head"><div><h3>${localizedHtml(name.vi,name.en)}</h3><div class="document-meta"><span class="document-code">${escapeHtml(doc.code)}</span><span>${localizedHtml('Ghi nhận','Recorded')} ${dateHtml(doc.submittedAt,true)}</span><span>${localizedHtml('Cập nhật','Updated')} ${dateHtml(doc.updatedAt)}</span></div></div><div class="list-item-end"><span class="status ${statusClass(doc.status)}">${statusHtml(doc.status,doc.statusEn)}</span>${rowArrowSvg}</div></div>${doc.publicNote?`<p data-no-translate>${escapeHtml(doc.publicNote)}</p>`:''}</button>`;
   }
 
   async function loadMyTransactions() {
@@ -336,8 +478,9 @@
   }
 
   function transactionCard(tx, admin = false) {
-    const items = tx.items.map(item => `<div class="transaction-item"><div><strong>${escapeHtml(displayTypeName(item.typeId,item.typeName))}</strong>${item.adminNote?`<small>${escapeHtml(item.adminNote)}</small>`:''}</div><span class="status ${statusClass(item.status)}">${escapeHtml(displayStatus(statusLabel(item.status)))}</span></div>`).join('');
-    return `<article class="transaction-card"><div class="transaction-head"><div><h3>${escapeHtml(typeLabel(tx.type))}</h3><div class="transaction-meta">${admin?`<span>${escapeHtml(tx.studentName)} - MSSV: ${escapeHtml(tx.studentId)}</span>`:''}<span class="transaction-code">${escapeHtml(tx.code)}</span><span>${fmtDate(tx.createdAt)}</span><span>${tx.items.length} mục</span></div></div><span class="status ${statusClass(tx.status)}">${escapeHtml(displayStatus(statusLabel(tx.status)))}</span></div>${tx.note?`<p>${escapeHtml(tx.note)}</p>`:''}<div class="transaction-items">${items}</div></article>`;
+    const items = tx.items.map(item => { const name = typeNamePair(item.typeId,item.typeName,item.typeNameEn); const status=statusLabel(item.status); return `<div class="transaction-item"><div><strong>${localizedHtml(name.vi,name.en)}</strong>${item.adminNote?`<small data-no-translate>${escapeHtml(item.adminNote)}</small>`:''}</div><span class="status ${statusClass(item.status)}">${statusHtml(status)}</span></div>`; }).join('');
+    const txStatus=statusLabel(tx.status);
+    return `<article class="transaction-card"><div class="transaction-head"><div><h3>${localizedHtml(typeLabel(tx.type),({SUBMIT:'Document Submission',RECEIVE:'Document Collection',SUPPLEMENT:'Submit Supplementary Documents'})[tx.type])}</h3><div class="transaction-meta">${admin?`<span data-no-translate>${escapeHtml(tx.studentName)} - MSSV: ${escapeHtml(tx.studentId)}</span>`:''}<span class="transaction-code">${escapeHtml(tx.code)}</span>${dateHtml(tx.createdAt)}<span>${localizedHtml(`${tx.items.length} mục`,`${tx.items.length} items`)}</span></div></div><span class="status ${statusClass(tx.status)}">${statusHtml(txStatus)}</span></div>${tx.note?`<p data-no-translate>${escapeHtml(tx.note)}</p>`:''}<div class="transaction-items">${items}</div></article>`;
   }
 
   async function loadNotifications() {
@@ -345,7 +488,7 @@
     const unread = state.notifications.filter(item => !item.read).length;
     $('#notice-badge').textContent = unread;
     $('#notice-badge').classList.toggle('hidden', !unread);
-    $('#my-notifications').innerHTML = state.notifications.map(item => `<article class="notification-card ${item.read?'read':'unread'}"><div class="document-head"><div><h3 class="notification-title">${escapeHtml(item.title)}</h3><div class="document-meta"><span>${fmtDate(item.createdAt)}</span></div></div></div><p>${escapeHtml(item.message)}</p><div class="notification-actions">${item.documentId?`<button class="link-button" onclick="window.app.openDocument('${item.documentId}')">Xem hồ sơ</button>`:''}${item.read?'':`<button class="link-button" onclick="window.app.readNotification('${item.notificationId}')">Đã đọc</button>`}</div></article>`).join('') || '<div class="empty">Chưa có thông báo nào.</div>';
+    $('#my-notifications').innerHTML = state.notifications.map(item => `<article class="notification-card ${item.read?'read':'unread'}"><div class="document-head"><div><h3 class="notification-title">${localizedHtml(notificationText(item,'title','vi'),notificationText(item,'title','en'))}</h3><div class="document-meta">${dateHtml(item.createdAt)}</div></div></div><p>${localizedHtml(notificationText(item,'message','vi'),notificationText(item,'message','en'))}</p><div class="notification-actions">${item.documentId?`<button class="link-button" onclick="window.app.openDocument('${item.documentId}')">Xem hồ sơ</button>`:''}${item.read?'':`<button class="link-button" onclick="window.app.readNotification('${item.notificationId}')">Đã đọc</button>`}</div></article>`).join('') || '<div class="empty">Chưa có thông báo nào.</div>';
   }
 
   async function openDocument(documentId) {
@@ -358,9 +501,10 @@
       const timeline = doc.steps.length ? doc.steps.map(step => {
         const event = [...doc.events].reverse().find(evt => evt.toStepId === step.stepId);
         const attention = step.state === 'CURRENT' && doc.status === 'Yêu cầu bổ sung' ? ' attention' : '';
-        return `<div class="timeline-step ${step.state.toLowerCase()}${attention}"><strong>${escapeHtml(step.name)}</strong><small>${event ? fmtDate(event.createdAt) : (step.state==='CURRENT'?'Đang làm':'')}</small>${event?.publicNote?`<div class="timeline-note">${escapeHtml(event.publicNote)}</div>`:''}</div>`;
-      }).join('') : doc.events.map(evt => `<div class="timeline-step done"><strong>${escapeHtml(evt.status)}</strong><small>${fmtDate(evt.createdAt)}</small>${evt.publicNote?`<div class="timeline-note">${escapeHtml(evt.publicNote)}</div>`:''}</div>`).join('');
-      openModal(`<h2 class="detail-title">${escapeHtml(doc.typeName)}</h2><div class="detail-meta"><code>${escapeHtml(doc.code)}</code><span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span></div><div class="detail-facts"><div><small>Ghi nhận</small><strong>${fmtDay(doc.submittedAt)}</strong></div><div><small>Dự kiến xong</small><strong>${fmtDay(doc.expectedAt)}</strong></div></div><div class="detail-section-head"><span>Tiến độ</span><span>Bước ${stepNumber}/${total}</span></div><div class="timeline">${timeline}</div><p class="detail-updated">Cập nhật ${fmtDate(doc.updatedAt)}</p>`);
+        return `<div class="timeline-step ${step.state.toLowerCase()}${attention}"><strong>${localizedHtml(step.name,step.nameEn)}</strong><small>${event ? dateHtml(event.createdAt) : (step.state==='CURRENT'?localizedHtml('Đang làm','In progress'):'')}</small>${event?.publicNote?`<div class="timeline-note" data-no-translate>${escapeHtml(event.publicNote)}</div>`:''}</div>`;
+      }).join('') : doc.events.map(evt => `<div class="timeline-step done"><strong>${statusHtml(evt.status,evt.statusEn)}</strong><small>${dateHtml(evt.createdAt)}</small>${evt.publicNote?`<div class="timeline-note" data-no-translate>${escapeHtml(evt.publicNote)}</div>`:''}</div>`).join('');
+      const documentName=typeNamePair(doc.typeId,doc.typeName,doc.typeNameEn);
+      openModal(`<h2 class="detail-title">${localizedHtml(documentName.vi,documentName.en)}</h2><div class="detail-meta"><code>${escapeHtml(doc.code)}</code><span class="status ${statusClass(doc.status)}">${statusHtml(doc.status,doc.statusEn)}</span></div><div class="detail-facts"><div><small>Ghi nhận</small><strong>${dateHtml(doc.submittedAt,true)}</strong></div><div><small>Dự kiến xong</small><strong>${dateHtml(doc.expectedAt,true)}</strong></div></div><div class="detail-section-head"><span>Tiến độ</span><span>${localizedHtml(`Bước ${stepNumber}/${total}`,`Step ${stepNumber} of ${total}`)}</span></div><div class="timeline">${timeline}</div><p class="detail-updated">${localizedHtml('Cập nhật','Updated')} ${dateHtml(doc.updatedAt)}</p>`);
     } catch (error) { showAlert(error.message); }
   }
 
@@ -368,7 +512,7 @@
 
   function renderAdminHomeView(dashboard, pending) {
     renderAdminKpis(dashboard);
-    $('#admin-recent-pending').innerHTML = pending.slice(0,5).map(tx => `<button class="list-item" data-go="admin-pending"><div><strong>${escapeHtml(tx.studentName)} - ${escapeHtml(typeLabel(tx.type))}</strong><small><span class="list-code">${escapeHtml(tx.code)}</span><span>${fmtDate(tx.createdAt)}</span></small></div><div class="list-item-end"><span class="pill-count">${tx.items.filter(x=>x.status==='PENDING').length} mục</span>${rowArrowSvg}</div></button>`).join('') || '<div class="empty">Không có yêu cầu nào đang chờ.</div>';
+    $('#admin-recent-pending').innerHTML = pending.slice(0,5).map(tx => `<button class="list-item" data-go="admin-pending"><div><strong><span data-no-translate>${escapeHtml(tx.studentName)}</span> - ${localizedHtml(typeLabel(tx.type),({SUBMIT:'Document Submission',RECEIVE:'Document Collection',SUPPLEMENT:'Submit Supplementary Documents'})[tx.type])}</strong><small><span class="list-code">${escapeHtml(tx.code)}</span>${dateHtml(tx.createdAt)}</small></div><div class="list-item-end"><span class="pill-count">${localizedHtml(`${tx.items.filter(x=>x.status==='PENDING').length} mục`,`${tx.items.filter(x=>x.status==='PENDING').length} items`)}</span>${rowArrowSvg}</div></button>`).join('') || '<div class="empty">Không có yêu cầu nào đang chờ.</div>';
   }
 
   async function loadAdminHome() {
@@ -400,11 +544,13 @@
   function adminTransactionCard(tx) {
     const items = tx.items.map(item => {
       const candidates = item.pickupCandidates || [];
-      const candidateSelect = candidates.length > 1 ? `<select class="pickup-document-select" data-item-id="${escapeHtml(item.itemId)}"><option value="">Chọn hồ sơ cụ thể</option>${candidates.map(doc=>`<option value="${escapeHtml(doc.documentId)}">${escapeHtml(doc.code)} - ${fmtDate(doc.updatedAt)}</option>`).join('')}</select>` : candidates.length === 1 ? `<small>Sẽ bàn giao hồ sơ ${escapeHtml(candidates[0].code)}</small>` : '';
-      return `<div class="transaction-item"><div class="review-item-main">${item.status==='PENDING'?`<input class="pending-item-select" type="checkbox" data-transaction-id="${escapeHtml(tx.transactionId)}" value="${escapeHtml(item.itemId)}" aria-label="Chọn ${escapeHtml(item.typeName)}" onchange="window.app.updatePendingSelection('${escapeHtml(tx.transactionId)}')">`:''}<div><strong>${escapeHtml(item.typeName)}</strong>${candidateSelect}${item.adminNote?`<small>${escapeHtml(item.adminNote)}</small>`:''}</div></div>${item.status==='PENDING'?`<button class="link-button danger" onclick="window.app.reviewItem('${item.itemId}','REJECT')">Từ chối</button>`:`<span class="status ${statusClass(item.status)}">${escapeHtml(statusLabel(item.status))}</span>`}</div>`;
+      const candidateSelect = candidates.length > 1 ? `<select class="pickup-document-select" data-item-id="${escapeHtml(item.itemId)}"><option value="">Chọn hồ sơ cụ thể</option>${candidates.map(doc=>dateOption(doc.code,doc.updatedAt,doc.documentId)).join('')}</select>` : candidates.length === 1 ? `<small>Sẽ bàn giao hồ sơ ${escapeHtml(candidates[0].code)}</small>` : '';
+      const typeName=typeNamePair(item.typeId,item.typeName,item.typeNameEn);
+      const itemStatus=statusLabel(item.status);
+      return `<div class="transaction-item"><div class="review-item-main">${item.status==='PENDING'?`<input class="pending-item-select" type="checkbox" data-transaction-id="${escapeHtml(tx.transactionId)}" value="${escapeHtml(item.itemId)}" aria-label="Chọn ${escapeHtml(typeName.vi)}" onchange="window.app.updatePendingSelection('${escapeHtml(tx.transactionId)}')">`:''}<div><strong>${localizedHtml(typeName.vi,typeName.en)}</strong>${candidateSelect}${item.adminNote?`<small>${escapeHtml(item.adminNote)}</small>`:''}</div></div>${item.status==='PENDING'?`<button class="link-button danger" onclick="window.app.reviewItem('${item.itemId}','REJECT')">Từ chối</button>`:`<span class="status ${statusClass(item.status)}">${statusHtml(itemStatus)}</span>`}</div>`;
     }).join('');
     const pendingCount = tx.items.filter(item => item.status === 'PENDING').length;
-    return `<article class="transaction-card"><div class="transaction-head"><div><h3>${escapeHtml(tx.studentName)}</h3><div class="transaction-meta"><span>MSSV: ${escapeHtml(tx.studentId)} - Lớp: ${escapeHtml(tx.className)}</span><span>${fmtDate(tx.createdAt)}</span><span>${escapeHtml(typeLabel(tx.type))}</span><span class="transaction-code">${escapeHtml(tx.code)}</span></div></div><span class="status ${statusClass(tx.status)}">${escapeHtml(statusLabel(tx.status))}</span></div>${tx.note?`<p>${escapeHtml(tx.note)}</p>`:''}${pendingCount?`<div class="select-all-row"><span>${pendingCount} giấy tờ chờ đối chiếu</span><button class="link-button" onclick="window.app.selectAllPending('${escapeHtml(tx.transactionId)}')">Chọn tất cả</button></div>`:''}<div class="transaction-items">${items}</div>${pendingCount?`<details><summary>Ghi chú và email</summary><label>Ghi chú</label><textarea id="review-note-${escapeHtml(tx.transactionId)}" rows="2"></textarea><label class="check-option"><input id="review-email-${escapeHtml(tx.transactionId)}" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label></details><div class="form-actions"><button id="approve-${escapeHtml(tx.transactionId)}" class="button primary" onclick="window.app.approveTransaction('${escapeHtml(tx.transactionId)}',this)" disabled>Xác nhận (0)</button></div>`:''}</article>`;
+    return `<article class="transaction-card"><div class="transaction-head"><div><h3 data-no-translate>${escapeHtml(tx.studentName)}</h3><div class="transaction-meta"><span>${localizedHtml(`MSSV: ${tx.studentId} - Lớp: ${tx.className}`,`Student ID: ${tx.studentId} - Class: ${tx.className}`)}</span>${dateHtml(tx.createdAt)}<span>${localizedHtml(typeLabel(tx.type),({SUBMIT:'Document Submission',RECEIVE:'Document Collection',SUPPLEMENT:'Submit Supplementary Documents'})[tx.type])}</span><span class="transaction-code">${escapeHtml(tx.code)}</span></div></div><span class="status ${statusClass(tx.status)}">${statusHtml(statusLabel(tx.status))}</span></div>${tx.note?`<p data-no-translate>${escapeHtml(tx.note)}</p>`:''}${pendingCount?`<div class="select-all-row"><span>${localizedHtml(`${pendingCount} giấy tờ chờ đối chiếu`,`${pendingCount} documents awaiting review`)}</span><button class="link-button" onclick="window.app.selectAllPending('${escapeHtml(tx.transactionId)}')">Chọn tất cả</button></div>`:''}<div class="transaction-items">${items}</div>${pendingCount?`<details><summary>Ghi chú và email</summary><label>Ghi chú</label><textarea id="review-note-${escapeHtml(tx.transactionId)}" rows="2"></textarea><label class="check-option"><input id="review-email-${escapeHtml(tx.transactionId)}" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label></details><div class="form-actions"><button id="approve-${escapeHtml(tx.transactionId)}" class="button primary" onclick="window.app.approveTransaction('${escapeHtml(tx.transactionId)}',this)" disabled>Xác nhận (0)</button></div>`:''}</article>`;
   }
 
   function updatePendingSelection(transactionId) {
@@ -450,7 +596,7 @@
 
   async function loadAdminDocuments() {
     state.adminDocuments = await api('listDocuments',{query:$('#admin-document-search').value,status:$('#admin-document-status').value});
-    $('#admin-documents-table').innerHTML = table(['','Mã hồ sơ','Sinh viên','Loại hồ sơ','Trạng thái','Cập nhật',''], state.adminDocuments.map(doc => [`<input class="document-select" type="checkbox" value="${escapeHtml(doc.documentId)}">`,`<span class="code">${escapeHtml(doc.code)}</span>`,`<strong>${escapeHtml(doc.studentName)}</strong><small>MSSV: ${escapeHtml(doc.studentId)} - Lớp: ${escapeHtml(doc.className)}</small>`,escapeHtml(doc.typeName),`<span class="status ${statusClass(doc.status)}">${escapeHtml(doc.status)}</span>`,fmtDate(doc.updatedAt),`<button class="link-button" onclick="window.app.editDocument('${doc.documentId}')">Cập nhật</button>`]));
+    $('#admin-documents-table').innerHTML = table(['','Mã hồ sơ','Sinh viên','Loại hồ sơ','Trạng thái','Cập nhật',''], state.adminDocuments.map(doc => {const name=typeNamePair(doc.typeId,doc.typeName,doc.typeNameEn);return [`<input class="document-select" type="checkbox" value="${escapeHtml(doc.documentId)}">`,`<span class="code">${escapeHtml(doc.code)}</span>`,`<strong>${escapeHtml(doc.studentName)}</strong><small>${localizedHtml(`MSSV: ${doc.studentId} - Lớp: ${doc.className}`,`Student ID: ${doc.studentId} - Class: ${doc.className}`)}</small>`,localizedHtml(name.vi,name.en),`<span class="status ${statusClass(doc.status)}">${statusHtml(doc.status,doc.statusEn)}</span>`,dateHtml(doc.updatedAt),`<button class="link-button" onclick="window.app.editDocument('${doc.documentId}')">Cập nhật</button>`]}));
     updateDocumentBulkActions();
   }
 
@@ -461,14 +607,15 @@
   }
 
   function showManualDocumentForm(){
-    const options=state.boot.types.map(type=>`<option value="${escapeHtml(type.typeId)}">${escapeHtml(type.name)}</option>`).join('');
-    openModal(`<h2>Thêm hồ sơ tại văn phòng</h2><form id="manual-document-form"><label>Email hoặc MSSV sinh viên</label><input id="manual-document-student" required><label>Loại hồ sơ</label><select id="manual-document-type" required>${options}</select><label>Trạng thái ban đầu</label><select id="manual-document-status"><option>Đã tiếp nhận</option><option>Chờ sinh viên đến nhận</option><option>Đang xử lý</option></select><label>Ngày dự kiến</label><input id="manual-document-expected" type="date"><label>Phản hồi công khai</label><textarea id="manual-document-note"></textarea><label class="check-option"><input id="manual-document-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Tạo hồ sơ</button></div></form>`);
+    const options=state.boot.types.map(type=>{const name=typeNamePair(type.typeId,type.name);return localizedOption(name.vi,name.en,type.typeId);}).join('');
+    const initialStatuses=['Đã tiếp nhận','Chờ sinh viên đến nhận','Đang xử lý'].map(s=>localizedOption(s,translations[s],s)).join('');
+    openModal(`<h2>Thêm hồ sơ tại văn phòng</h2><form id="manual-document-form"><label>Email hoặc MSSV sinh viên</label><input id="manual-document-student" required><label>Loại hồ sơ</label><select id="manual-document-type" required>${options}</select><label>Trạng thái ban đầu</label><select id="manual-document-status">${initialStatuses}</select><label>Ngày dự kiến</label><input id="manual-document-expected" type="date"><label>Phản hồi công khai</label><textarea id="manual-document-note"></textarea><label class="check-option"><input id="manual-document-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Tạo hồ sơ</button></div></form>`);
     $('#manual-document-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{const value=$('#manual-document-student').value.trim();const student=value.includes('@')?{studentEmail:value}:{studentId:value};await api('createManualDocument',{...student,typeId:$('#manual-document-type').value,status:$('#manual-document-status').value,expectedAt:$('#manual-document-expected').value,publicNote:$('#manual-document-note').value,sendEmail:$('#manual-document-email').checked});closeModal();toast('Đã tạo hồ sơ.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
   }
 
   function showBatchDocumentForm(){
     const ids=$$('.document-select:checked').map(input=>input.value);if(!ids.length){toast('Chọn ít nhất một hồ sơ.',true);return;}
-    const statuses=['Đang kiểm tra hồ sơ','Yêu cầu bổ sung','Đang xử lý','Đang trình duyệt','Chờ phê duyệt','Đã hoàn thành','Chờ sinh viên đến nhận'].map(s=>`<option>${s}</option>`).join('');
+    const statuses=['Đang kiểm tra hồ sơ','Yêu cầu bổ sung','Đang xử lý','Đang trình duyệt','Chờ phê duyệt','Đã hoàn thành','Chờ sinh viên đến nhận'].map(s=>localizedOption(s,translations[s],s)).join('');
     openModal(`<h2>Cập nhật ${ids.length} hồ sơ</h2><form id="batch-document-form"><label>Trạng thái mới</label><select id="batch-status">${statuses}</select><label>Phản hồi công khai</label><textarea id="batch-note"></textarea><label class="check-option"><input id="batch-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Cập nhật hàng loạt</button></div></form>`);
     $('#batch-document-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('batchUpdateDocuments',{documentIds:ids,status:$('#batch-status').value,publicNote:$('#batch-note').value,sendEmail:$('#batch-email').checked});closeModal();toast('Đã cập nhật các hồ sơ đã chọn.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
   }
@@ -478,9 +625,10 @@
       const [doc, workflows] = await Promise.all([api('getDocumentDetail',documentId), state.workflows.length?Promise.resolve(state.workflows):api('listWorkflows')]);
       state.workflows=workflows;
       const workflow=workflows.find(w=>w.workflowVersionId===state.adminDocuments.find(x=>x.documentId===documentId)?.workflowVersionId);
-      const steps=(workflow?.steps||doc.steps||[]).map(step=>`<option value="${escapeHtml(step.stepId)}" ${step.stepId===state.adminDocuments.find(x=>x.documentId===documentId)?.currentStepId?'selected':''}>${escapeHtml(step.order+'. '+step.name)}</option>`).join('');
-      const statuses=['Đã tiếp nhận','Đang kiểm tra hồ sơ','Yêu cầu bổ sung','Đang xử lý','Đang trình duyệt','Chờ phê duyệt','Đã hoàn thành','Chờ sinh viên đến nhận','Đã bàn giao'].map(s=>`<option ${s===doc.status?'selected':''}>${s}</option>`).join('');
-      openModal(`<h2>Cập nhật ${escapeHtml(doc.code)}</h2><p>${escapeHtml(doc.typeName)}</p><form id="document-update-form"><label>Bước xử lý</label><select id="doc-step"><option value="">Giữ nguyên bước hiện tại</option>${steps}</select><label>Trạng thái</label><select id="doc-status">${statuses}</select><label>Ngày hoàn thành dự kiến</label><input id="doc-expected" type="date" value="${doc.expectedAt?doc.expectedAt.slice(0,10):''}"><label>Phản hồi công khai</label><textarea id="doc-public-note" rows="3">${escapeHtml(doc.publicNote||'')}</textarea><label>Ghi chú nội bộ</label><textarea id="doc-internal-note" rows="3">${escapeHtml(doc.internalNote||'')}</textarea><label class="check-option"><input id="doc-send-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Lưu cập nhật</button></div></form>`);
+      const steps=(workflow?.steps||doc.steps||[]).map(step=>localizedOption(step.order+'. '+step.name,step.order+'. '+(step.nameEn||step.name),step.stepId,step.stepId===state.adminDocuments.find(x=>x.documentId===documentId)?.currentStepId)).join('');
+      const statuses=['Đã tiếp nhận','Đang kiểm tra hồ sơ','Yêu cầu bổ sung','Đang xử lý','Đang trình duyệt','Chờ phê duyệt','Đã hoàn thành','Chờ sinh viên đến nhận','Đã bàn giao'].map(s=>localizedOption(s,translations[s],s,s===doc.status)).join('');
+      const docTypeName=typeNamePair(doc.typeId,doc.typeName);
+      openModal(`<h2>Cập nhật ${escapeHtml(doc.code)}</h2><p>${localizedHtml(docTypeName.vi,docTypeName.en)}</p><form id="document-update-form"><label>Bước xử lý</label><select id="doc-step"><option value="">Giữ nguyên bước hiện tại</option>${steps}</select><label>Trạng thái</label><select id="doc-status">${statuses}</select><label>Ngày hoàn thành dự kiến</label><input id="doc-expected" type="date" value="${doc.expectedAt?doc.expectedAt.slice(0,10):''}"><label>Phản hồi công khai</label><textarea id="doc-public-note" rows="3">${escapeHtml(doc.publicNote||'')}</textarea><label>Ghi chú nội bộ</label><textarea id="doc-internal-note" rows="3">${escapeHtml(doc.internalNote||'')}</textarea><label class="check-option"><input id="doc-send-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Lưu cập nhật</button></div></form>`);
       $('#document-update-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('updateDocumentProgress',{documentId,version:doc.version,stepId:$('#doc-step').value,status:$('#doc-status').value,expectedAt:$('#doc-expected').value,publicNote:$('#doc-public-note').value,internalNote:$('#doc-internal-note').value,sendEmail:$('#doc-send-email').checked});closeModal();toast('Đã cập nhật tiến độ hồ sơ.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
     } catch(error){showAlert(error.message);}
   }
@@ -488,18 +636,18 @@
   async function loadCatalog() {
     const [types,workflows]=await Promise.all([api('listDocumentTypes',true),api('listWorkflows')]);
     state.workflows=workflows; state.types=types; state.boot.types=types.filter(x=>x.active);
-    const handoverLabel={SUBMIT:'Nộp',RECEIVE:'Nhận',BOTH:'Nộp và nhận'};
+    const handoverLabel={SUBMIT:['Nộp','Submit'],RECEIVE:['Nhận','Collect'],BOTH:['Nộp và nhận','Submit and collect']};
     const handoverClass={SUBMIT:'submit',RECEIVE:'receive',BOTH:'both'};
-    $('#document-types-admin').innerHTML=types.map(item=>`<div class="list-item${item.active?'':' inactive-item'}"><div><strong>${escapeHtml(localized(item.name,item.nameEn))}</strong><small><span class="meta-tag ${handoverClass[item.handoverMode]||'both'}">${escapeHtml(handoverLabel[item.handoverMode]||'Nộp và nhận')}</span><span class="meta-tag ${item.tracksProgress?'track':'record'}">${item.tracksProgress?'Theo dõi tiến độ':'Chỉ ghi nhận'}</span><span class="status ${item.active?'ok':'bad'}">${item.active?'Đang sử dụng':'Ngừng sử dụng'}</span></small></div><div class="review-actions"><button class="link-button" onclick="window.app.editType('${escapeHtml(item.typeId)}')">Sửa</button><button class="link-button danger" onclick="window.app.deleteType('${escapeHtml(item.typeId)}')">Xóa</button></div></div>`).join('')||'<div class="empty">Chưa có loại hồ sơ.</div>';
-    $('#workflows-admin').innerHTML=workflows.map(w=>`<div class="list-item${w.active?'':' inactive-item'}"><div><strong>${escapeHtml(localized(w.name,w.nameEn))}</strong><small><span class="meta-tag record">Phiên bản ${w.version} - ${w.steps.length} bước</span><span class="status ${w.active?'ok':'bad'}">${w.active?'Đang sử dụng':'Ngừng sử dụng'}</span></small></div><button class="link-button" onclick="window.app.viewWorkflow('${w.workflowVersionId}')">Xem</button></div>`).join('')||'<div class="empty">Chưa có quy trình.</div>';
+    $('#document-types-admin').innerHTML=types.map(item=>`<div class="list-item${item.active?'':' inactive-item'}"><div><strong>${localizedHtml(item.name,item.nameEn)}</strong><small><span class="meta-tag ${handoverClass[item.handoverMode]||'both'}">${localizedHtml(...(handoverLabel[item.handoverMode]||handoverLabel.BOTH))}</span><span class="meta-tag ${item.tracksProgress?'track':'record'}">${item.tracksProgress?localizedHtml('Theo dõi tiến độ','Track progress'):localizedHtml('Chỉ ghi nhận','Record only')}</span><span class="status ${item.active?'ok':'bad'}">${localizedHtml(item.active?'Đang sử dụng':'Ngừng sử dụng',item.active?'Active':'Inactive')}</span></small></div><div class="review-actions"><button class="link-button" onclick="window.app.editType('${escapeHtml(item.typeId)}')">Sửa</button><button class="link-button danger" onclick="window.app.deleteType('${escapeHtml(item.typeId)}')">Xóa</button></div></div>`).join('')||'<div class="empty">Chưa có loại hồ sơ.</div>';
+    $('#workflows-admin').innerHTML=workflows.map(w=>`<div class="list-item${w.active?'':' inactive-item'}"><div><strong>${localizedHtml(w.name,w.nameEn)}</strong><small><span class="meta-tag record">${localizedHtml(`Phiên bản ${w.version} - ${w.steps.length} bước`,`Version ${w.version} - ${w.steps.length} steps`)}</span><span class="status ${w.active?'ok':'bad'}">${localizedHtml(w.active?'Đang sử dụng':'Ngừng sử dụng',w.active?'Active':'Inactive')}</span></small></div><button class="link-button" onclick="window.app.viewWorkflow('${w.workflowVersionId}')">Xem</button></div>`).join('')||'<div class="empty">Chưa có quy trình.</div>';
   }
 
   function showTypeForm(item={}) {
-    const options=state.workflows.map(w=>`<option value="${escapeHtml(w.workflowVersionId)}" ${w.workflowVersionId===item.workflowVersionId?'selected':''}>${escapeHtml(localized(w.name,w.nameEn))} - v${w.version}</option>`).join('');
+    const options=state.workflows.map(w=>localizedOption(`${w.name} - v${w.version}`,`${w.nameEn || w.name} - v${w.version}`,w.workflowVersionId,w.workflowVersionId===item.workflowVersionId)).join('');
     const mode=item.handoverMode||'SUBMIT';
     openModal(`<h2>${item.typeId?'Chỉnh sửa':'Thêm'} loại hồ sơ</h2><form id="type-form"><label>Tên loại hồ sơ</label><input id="type-name" value="${escapeHtml(item.name||'')}" required><label>Hình thức</label><select id="type-handover-mode"><option value="SUBMIT" ${mode==='SUBMIT'?'selected':''}>Sinh viên nộp</option><option value="RECEIVE" ${mode==='RECEIVE'?'selected':''}>Sinh viên nhận</option><option value="BOTH" ${mode==='BOTH'?'selected':''}>Cả nộp và nhận</option></select><label>Kiểu theo dõi</label><select id="type-tracking"><option value="NO" ${!item.tracksProgress?'selected':''}>Chỉ ghi nhận giao nhận</option><option value="YES" ${item.tracksProgress?'selected':''}>Có tiến độ xử lý</option></select><details class="advanced-options"><summary>Tùy chọn nâng cao</summary><label>Mô tả</label><textarea id="type-description">${escapeHtml(item.description||'')}</textarea><label>Quy trình</label><select id="type-workflow"><option value="">Dùng quy trình chuẩn</option>${options}</select><label>Thứ tự</label><input id="type-order" type="number" min="1" value="${Number(item.sortOrder||'')}"><label class="check-option"><input id="type-active" type="checkbox" ${item.active!==false?'checked':''}><span><strong>Đang sử dụng</strong></span></label></details><div class="form-actions"><button class="button primary" type="submit">Lưu loại hồ sơ</button></div></form>`);
-    $('#type-name').insertAdjacentHTML('afterend', `<label>Document type (English)</label><input id="type-name-en" value="${escapeHtml(item.nameEn||'')}">`);
-    $('#type-description').insertAdjacentHTML('afterend', `<label>Description (English)</label><textarea id="type-description-en">${escapeHtml(item.descriptionEn||'')}</textarea>`);
+    $('#type-name').insertAdjacentHTML('afterend', `<label>Tên loại hồ sơ (tiếng Anh)</label><input id="type-name-en" value="${escapeHtml(item.nameEn||'')}">`);
+    $('#type-description').insertAdjacentHTML('afterend', `<label>Mô tả (tiếng Anh)</label><textarea id="type-description-en">${escapeHtml(item.descriptionEn||'')}</textarea>`);
     $('#type-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('saveDocumentType',{typeId:item.typeId||'',name:$('#type-name').value,nameEn:$('#type-name-en').value,descriptionEn:$('#type-description-en').value,handoverMode:$('#type-handover-mode').value,description:$('#type-description').value,tracksProgress:$('#type-tracking').value==='YES',workflowVersionId:$('#type-workflow').value,sortOrder:Number($('#type-order').value)||undefined,active:$('#type-active').checked});closeModal();toast('Đã lưu loại hồ sơ.');await loadCatalog();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
   }
   function editTypeById(typeId){showTypeForm(state.types.find(item=>item.typeId===typeId)||{});}
@@ -507,20 +655,20 @@
   function confirmDeleteType(typeId) {
     const item=state.types.find(type=>type.typeId===typeId);
     if(!item){toast('Không tìm thấy loại hồ sơ.',true);return;}
-    openModal(`<h2>Xóa ${escapeHtml(item.name)}?</h2><div class="inline-warning">Chỉ xóa được loại chưa có hồ sơ hay yêu cầu nào. Nếu đã dùng, chọn “Ngừng sử dụng” để giữ lịch sử.</div><form id="delete-type-form"><div class="form-actions"><button id="cancel-delete-type" class="button" type="button">Hủy</button><button class="button danger" type="submit">Xóa loại hồ sơ</button></div></form>`);
+    openModal(`<h2>${localizedHtml('Xóa','Delete')} ${localizedHtml(item.name,item.nameEn)}?</h2><div class="inline-warning">Chỉ xóa được loại chưa có hồ sơ hay yêu cầu nào. Nếu đã dùng, chọn “Ngừng sử dụng” để giữ lịch sử.</div><form id="delete-type-form"><div class="form-actions"><button id="cancel-delete-type" class="button" type="button">Hủy</button><button class="button danger" type="submit">Xóa loại hồ sơ</button></div></form>`);
     $('#cancel-delete-type').addEventListener('click',closeModal);
     $('#delete-type-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true,'Đang xóa…');try{await api('deleteDocumentType',typeId);closeModal();toast('Đã xóa loại hồ sơ.');await loadCatalog();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
   }
 
   function showWorkflowForm() {
     openModal(`<h2>Tạo phiên bản quy trình</h2><p>Quy trình mới không ảnh hưởng hồ sơ đang xử lý.</p><form id="workflow-form"><label>Tên quy trình</label><input id="workflow-name" required><label>Các bước xử lý</label><div id="workflow-steps"></div><button id="add-workflow-step" type="button" class="button small">Thêm bước</button><div class="form-actions"><button class="button primary" type="submit">Tạo quy trình</button></div></form>`);
-    $('#workflow-name').insertAdjacentHTML('afterend', '<label>Workflow name (English)</label><input id="workflow-name-en">');
-    const add=()=>{$('#workflow-steps').insertAdjacentHTML('beforeend',`<div class="grid two-col compact workflow-step-input"><input placeholder="Tên bước" required><input placeholder="Nhãn trạng thái" required><input placeholder="Step name (English)"><input placeholder="Status label (English)"></div>`)}; add(); add();
+    $('#workflow-name').insertAdjacentHTML('afterend', '<label>Tên quy trình (tiếng Anh)</label><input id="workflow-name-en">');
+    const add=()=>{$('#workflow-steps').insertAdjacentHTML('beforeend',`<div class="grid two-col compact workflow-step-input"><input placeholder="Tên bước" required><input placeholder="Nhãn trạng thái" required><input placeholder="Tên bước (tiếng Anh)"><input placeholder="Nhãn trạng thái (tiếng Anh)"></div>`)}; add(); add();
     $('#add-workflow-step').addEventListener('click',add);
     $('#workflow-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{const steps=$$('.workflow-step-input').map(row=>({name:$('input:nth-child(1)',row).value,statusLabel:$('input:nth-child(2)',row).value,nameEn:$('input:nth-child(3)',row).value,statusLabelEn:$('input:nth-child(4)',row).value}));await api('saveWorkflow',{name:$('#workflow-name').value,nameEn:$('#workflow-name-en').value,steps});closeModal();toast('Đã tạo quy trình.');await loadCatalog();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
   }
 
-  function viewWorkflow(id) { const w=state.workflows.find(x=>x.workflowVersionId===id); if(!w)return; openModal(`<h2>${escapeHtml(w.name)}</h2><p>Phiên bản ${w.version}</p><div class="timeline">${w.steps.map(step=>`<div class="timeline-step done"><strong>${step.order}. ${escapeHtml(step.name)}</strong><small>${escapeHtml(step.statusLabel)}</small></div>`).join('')}</div>`); }
+  function viewWorkflow(id) { const w=state.workflows.find(x=>x.workflowVersionId===id); if(!w)return; openModal(`<h2>${localizedHtml(w.name,w.nameEn)}</h2><p>${localizedHtml(`Phiên bản ${w.version}`,`Version ${w.version}`)}</p><div class="timeline">${w.steps.map(step=>`<div class="timeline-step done"><strong>${step.order}. ${localizedHtml(step.name,step.nameEn)}</strong><small>${localizedHtml(step.statusLabel,step.statusLabelEn)}</small></div>`).join('')}</div>`); }
 
   async function loadService() {
     const [active,sessions]=await Promise.all([api('getActiveServiceSession'),api('listServiceSessions',{query:$('#service-search').value})]);
@@ -529,16 +677,16 @@
 
   function renderServiceRecorder(active) {
     clearInterval(state.serviceTimer);
-    if(active){$('#service-recorder').innerHTML=`<div class="timer"><span>${escapeHtml(active.studentName)} - MSSV: ${escapeHtml(active.studentId)}</span><strong id="timer-value">00:00:00</strong><button class="button primary" onclick="window.app.finishService('${active.sessionId}')">Kết thúc buổi tiếp</button></div>`;const start=new Date(active.startedAt).getTime();const tick=()=>{const seconds=Math.max(0,Math.floor((Date.now()-start)/1000));$('#timer-value').textContent=[Math.floor(seconds/3600),Math.floor(seconds%3600/60),seconds%60].map(x=>String(x).padStart(2,'0')).join(':')};tick();state.serviceTimer=setInterval(tick,1000);}else{$('#service-recorder').innerHTML=`<form id="start-service-form"><label>Email hoặc MSSV sinh viên</label><input id="live-student" required><button class="button primary" type="submit">Bắt đầu tiếp sinh viên</button></form>`;$('#start-service-form').addEventListener('submit',async event=>{event.preventDefault();const value=$('#live-student').value.trim();const button=event.submitter;setBusy(button,true);try{const payload=value.includes('@')?{studentEmail:value}:{studentId:value};await api('startServiceSession',payload);await loadService();}catch(error){showAlert(error.message);}finally{setBusy(button,false);}});}
+    if(active){$('#service-recorder').innerHTML=`<div class="timer"><span><span data-no-translate>${escapeHtml(active.studentName)}</span> - MSSV: ${escapeHtml(active.studentId)}</span><strong id="timer-value">00:00:00</strong><button class="button primary" onclick="window.app.finishService('${active.sessionId}')">Kết thúc buổi tiếp</button></div>`;const start=new Date(active.startedAt).getTime();const tick=()=>{const seconds=Math.max(0,Math.floor((Date.now()-start)/1000));$('#timer-value').textContent=[Math.floor(seconds/3600),Math.floor(seconds%3600/60),seconds%60].map(x=>String(x).padStart(2,'0')).join(':')};tick();state.serviceTimer=setInterval(tick,1000);}else{$('#service-recorder').innerHTML=`<form id="start-service-form"><label>Email hoặc MSSV sinh viên</label><input id="live-student" required><button class="button primary" type="submit">Bắt đầu tiếp sinh viên</button></form>`;$('#start-service-form').addEventListener('submit',async event=>{event.preventDefault();const value=$('#live-student').value.trim();const button=event.submitter;setBusy(button,true);try{const payload=value.includes('@')?{studentEmail:value}:{studentId:value};await api('startServiceSession',payload);await loadService();}catch(error){showAlert(error.message);}finally{setBusy(button,false);}});}
   }
 
   function finishService(sessionId) { openModal(`<h2>Kết thúc buổi tiếp sinh viên</h2><form id="finish-service-form"><label>Nội dung trao đổi</label><textarea id="finish-topic" required></textarea><label>Kết quả xử lý</label><textarea id="finish-result" required></textarea><label>Ghi chú</label><textarea id="finish-note"></textarea><div class="form-actions"><button class="button primary" type="submit">Lưu buổi tiếp</button></div></form>`);$('#finish-service-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('finishServiceSession',{sessionId,topic:$('#finish-topic').value,result:$('#finish-result').value,note:$('#finish-note').value});closeModal();toast('Đã lưu buổi tiếp sinh viên.');await loadService();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}}); }
 
   async function saveManualService(event) { event.preventDefault();const button=event.submitter;setBusy(button,true);try{const value=$('#manual-student').value.trim();const student=value.includes('@')?{studentEmail:value}:{studentId:value};await api('addManualServiceSession',{...student,startedAt:$('#manual-start').value,result:$('#manual-result').value,endedAt:$('#manual-end').value,topic:$('#manual-topic').value});event.target.reset();toast('Đã lưu buổi tiếp sinh viên.');await loadServiceHistory();}catch(error){showAlert(error.message);}finally{setBusy(button,false);} }
   async function loadServiceHistory(){const sessions=await api('listServiceSessions',{query:$('#service-search').value});renderServiceHistory(sessions);}
-  function renderServiceHistory(sessions){$('#service-history').innerHTML=table(['Sinh viên','Thời gian','Thời lượng','Nội dung','Kết quả','Cán bộ'],sessions.map(row=>[`<strong>${escapeHtml(row.studentName)}</strong><small>MSSV: ${escapeHtml(row.studentId)} - Lớp: ${escapeHtml(row.className)}</small>`,fmtDate(row.startedAt),`${row.durationMinutes} phút`,escapeHtml(row.topic),escapeHtml(row.result),escapeHtml(row.staffEmail)]));}
+  function renderServiceHistory(sessions){$('#service-history').innerHTML=table(['Sinh viên','Thời gian','Thời lượng','Nội dung','Kết quả','Cán bộ'],sessions.map(row=>[`<strong data-no-translate>${escapeHtml(row.studentName)}</strong><small>${localizedHtml(`MSSV: ${row.studentId} - Lớp: ${row.className}`,`Student ID: ${row.studentId} - Class: ${row.className}`)}</small>`,dateHtml(row.startedAt),localizedHtml(`${row.durationMinutes} phút`,`${row.durationMinutes} minutes`),`<span data-no-translate>${escapeHtml(row.topic)}</span>`,`<span data-no-translate>${escapeHtml(row.result)}</span>`,escapeHtml(row.staffEmail)]));}
 
-  async function loadStudents(){const rows=await api('listStudents',$('#student-search').value);$('#students-table').innerHTML=table(['MSSV','Họ tên','Lớp','Email','Cập nhật'],rows.map(row=>[`<span class="code">${escapeHtml(row.studentId)}</span>`,escapeHtml(row.fullName),escapeHtml(row.className),escapeHtml(row.email),fmtDate(row.updatedAt)]));}
+  async function loadStudents(){const rows=await api('listStudents',$('#student-search').value);$('#students-table').innerHTML=table(['MSSV','Họ tên','Lớp','Email','Cập nhật'],rows.map(row=>[`<span class="code">${escapeHtml(row.studentId)}</span>`,`<span data-no-translate>${escapeHtml(row.fullName)}</span>`,`<span data-no-translate>${escapeHtml(row.className)}</span>`,escapeHtml(row.email),dateHtml(row.updatedAt)]));}
 
   async function loadReport(){const report=await api('getReport',{from:$('#report-from').value,to:$('#report-to').value});$('#report-kpis').innerHTML=kpis([['Yêu cầu đã gửi',report.requestCount,'kpi-prog'],['Còn chờ xác nhận',report.pendingRequestCount,'kpi-act'],['Giấy tờ đã nộp',report.submittedCount,'kpi-store'],['Giấy tờ đã nhận',report.receivedCount,'kpi-store'],['Giấy tờ xác nhận',report.approvedItemCount,'kpi-ok'],['Đang xử lý',report.processingDocuments,'kpi-prog'],['Cần bổ sung',report.supplementDocuments,'kpi-bad'],['Đã hoàn thành',report.completedDocuments,'kpi-ok']]);}
   async function exportReport(){try{const csv=await api('exportReportCsv',{from:$('#report-from').value,to:$('#report-to').value});const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`bao-cao-ho-so-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);}catch(error){showAlert(error.message);}}

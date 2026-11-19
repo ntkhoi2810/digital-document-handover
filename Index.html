@@ -53,7 +53,7 @@
       <div class="sidebar-user">
         <div id="user-avatar" class="user-avatar" aria-hidden="true">T</div>
         <div class="user-meta">
-          <strong id="user-name">Đang tải</strong>
+          <strong id="user-name" data-no-translate>Đang tải</strong>
           <small id="user-email"></small>
         </div>
       </div>
@@ -61,9 +61,9 @@
 
     <main class="main">
       <header class="page-head">
-        <button id="language-toggle" class="button small" type="button" aria-label="Switch language">EN</button>
         <button id="mobile-menu" class="icon-button" aria-label="Mở menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-        <div><h1 id="page-title">Trang chủ</h1><p id="page-subtitle"></p></div>
+        <div class="page-heading"><h1 id="page-title">Trang chủ</h1><p id="page-subtitle"></p></div>
+        <label class="language-switcher"><span class="visually-hidden">Ngôn ngữ</span><select id="language-toggle" class="language-select" aria-label="Ngôn ngữ"><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label>
       </header>
       <div id="alert" class="alert hidden"></div>
 
@@ -96,7 +96,7 @@
       </section>
       <section id="admin-pending" class="view"><div class="toolbar"><input id="pending-search" type="search" placeholder="Tìm theo MSSV, họ tên hoặc mã yêu cầu"></div><div id="pending-transactions" class="cards-list pending-list"></div></section>
       <section id="admin-documents" class="view">
-        <div class="toolbar admin-document-toolbar"><input id="admin-document-search" type="search" placeholder="MSSV, họ tên, email, mã hồ sơ"><select id="admin-document-status"><option value="">Tất cả trạng thái</option><option>Đã tiếp nhận</option><option>Đang kiểm tra hồ sơ</option><option>Yêu cầu bổ sung</option><option>Đang xử lý</option><option>Đang trình duyệt</option><option>Chờ phê duyệt</option><option>Đã hoàn thành</option><option>Chờ sinh viên đến nhận</option><option>Đã bàn giao</option><option>Đã hủy</option></select><button id="search-admin-documents" class="button">Tìm kiếm</button><button id="new-manual-document" class="button primary toolbar-push">Thêm hồ sơ</button></div>
+        <div class="toolbar admin-document-toolbar"><input id="admin-document-search" type="search" placeholder="MSSV, họ tên, email, mã hồ sơ"><select id="admin-document-status"><option value="">Tất cả trạng thái</option><option value="Đã tiếp nhận">Đã tiếp nhận</option><option value="Đang kiểm tra hồ sơ">Đang kiểm tra hồ sơ</option><option value="Yêu cầu bổ sung">Yêu cầu bổ sung</option><option value="Đang xử lý">Đang xử lý</option><option value="Đang trình duyệt">Đang trình duyệt</option><option value="Chờ phê duyệt">Chờ phê duyệt</option><option value="Đã hoàn thành">Đã hoàn thành</option><option value="Chờ sinh viên đến nhận">Chờ sinh viên đến nhận</option><option value="Đã bàn giao">Đã bàn giao</option><option value="Đã hủy">Đã hủy</option></select><button id="search-admin-documents" class="button">Tìm kiếm</button><button id="new-manual-document" class="button primary toolbar-push">Thêm hồ sơ</button></div>
         <div id="document-bulk-actions" class="bulk-actions hidden"><span id="document-selection-count">Đã chọn 0 hồ sơ</span><button id="batch-documents" class="bulk-button">Cập nhật trạng thái</button><button id="clear-document-selection" class="bulk-button">Bỏ chọn</button></div>
         <div id="admin-documents-table" class="table-wrap"></div>
       </section>

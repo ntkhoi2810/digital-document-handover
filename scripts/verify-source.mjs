@@ -39,7 +39,8 @@ assert.equal(helpers.sanitizeId_("../bad"), "");
 assert.equal(helpers.sanitizeText_("  Xin\n chào  ", 20), "Xin chào");
 assert.equal(helpers.toBoolean_("TRUE"), true);
 assert.match(code, /handover_mode/, "Missing handover mode schema");
-assert.match(code, /SCHEMA_VERSION[^\n]*3/, "Missing schema version 3 migration");
+assert.match(code, /SCHEMA_VERSION[^\n]*4/, "Missing schema version 4 migration");
+assert.match(code, /i18n_json/, "Notification translation metadata must be stored");
 assert.match(code, /function\s+ensureDefaultSettings_\s*\(/, "Missing default settings initialization");
 assert.doesNotMatch(code, /function\s+seedIfEmpty_\s*\(/, "Runtime must not recreate sample catalog data");
 assert.doesNotMatch(code, /Bằng tốt nghiệp|Bảng điểm/, "Runtime must not contain sample document types");
@@ -49,5 +50,8 @@ assert.doesNotMatch(index, /·/, "Index.html must not contain middle dot separat
 assert.doesNotMatch(scriptsHtml, /·/, "Scripts.html must not contain middle dot separators");
 assert.match(styles, /\.meta-tag/, "Missing catalog meta-tag styling");
 assert.match(styles, /\.kpi\.kpi-act/, "Missing semantic KPI color styling");
+assert.match(index, /<select id="language-toggle" class="language-select"/, "Missing visible language selector");
+assert.match(scriptsHtml, /requestWaiting/, "Missing bilingual system notification translation");
+assert.match(scriptsHtml, /data-i18n-vi/, "Dynamic catalog labels must retain both languages");
 
 console.log("Source verification passed");
