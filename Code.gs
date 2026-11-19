@@ -408,6 +408,7 @@ function reviewTransactionItem(payload) {
     decision: payload.decision,
     note: payload.note,
     sendEmail: payload.sendEmail,
+    messageBody: payload.messageBody,
     documentSelections: payload.documentId ? (function() { const result = {}; result[payload.itemId] = payload.documentId; return result; })() : {}
   });
 }
@@ -418,6 +419,7 @@ function reviewTransactionItems(payload) {
   const decision = String(payload.decision || '').toUpperCase();
   if (['APPROVE', 'REJECT'].indexOf(decision) === -1) throw new Error('VALIDATION|Quyết định duyệt không hợp lệ.');
   const note = sanitizeText_(payload.note, 1000);
+  const messageBody = sanitizeNotificationBody_(payload.messageBody);
   if (decision === 'REJECT' && !note) throw new Error('VALIDATION|Ghi lý do từ chối.');
   const itemIds = Array.isArray(payload.itemIds) ? payload.itemIds.map(sanitizeId_).filter(Boolean) : [];
   const uniqueIds = itemIds.filter(function(id, index) { return itemIds.indexOf(id) === index; });
@@ -440,7 +442,7 @@ function reviewTransactionItems(payload) {
     const transaction = findBy_(APP.SHEETS.TRANSACTIONS, 'transaction_id', transactionId);
     if (!transaction) throw new Error('DATA_ERROR|Không tìm thấy yêu cầu tương ứng.');
     items.forEach(function(item) {
-      processTransactionItem_(transaction, item, decision, note, sanitizeId_(selections[item.item_id]), admin.email, now, toBoolean_(payload.sendEmail));
+      processTransactionItem_(transaction, item, decision, note, sanitizeId_(selections[item.item_id]), admin.email, now, toBoolean_(payload.sendEmail), messageBody);
     });
     refreshTransactionStatus_(transactionId, admin.email);
     audit_('REVIEW_TRANSACTION_ITEMS', 'Transaction', transactionId, admin.email, { decision: decision, itemIds: uniqueIds });
@@ -450,7 +452,7 @@ function reviewTransactionItems(payload) {
   }
 }
 
-function processTransactionItem_(transaction, item, decision, note, selectedDocumentId, adminEmail, now, sendEmail) {
+function processTransactionItem_(transaction, item, decision, note, selectedDocumentId, adminEmail, now, sendEmail, messageBody) {
   const currentStatus = String(item.status);
   const expectedStatus = decision === 'APPROVE' ? 'APPROVED' : 'REJECTED';
   if (currentStatus === expectedStatus) return;
@@ -480,13 +482,16 @@ function processTransactionItem_(transaction, item, decision, note, selectedDocu
     status: expectedStatus, admin_note: note, document_id: documentId,
     reviewed_at: now, reviewed_by: adminEmail
   });
-  const title = decision === 'APPROVE' ? 'Yêu cầu đã được xác nhận' : 'Có giấy tờ chưa được xác nhận';
-  const names = notificationTypeNames_(item.type_id, item.type_name);
-  const message = item.type_name + (note ? ': ' + note : (decision === 'APPROVE' ? ' đã xác nhận tại quầy.' : ' chưa được xác nhận.'));
+  const relatedDocument = findBy_(APP.SHEETS.DOCUMENTS, 'document_id', documentId || item.related_document_id);
+  const typeName = relatedDocument ? relatedDocument.type_name : item.type_name;
+  const title = typeName || item.type_name || (decision === 'APPROVE' ? 'Yêu cầu đã được xác nhận' : 'Có giấy tờ chưa được xác nhận');
+  const names = notificationTypeNames_(relatedDocument ? relatedDocument.type_id : item.type_id, typeName);
+  const message = messageBody || (item.type_name + (note ? ': ' + note : (decision === 'APPROVE' ? ' đã xác nhận tại quầy.' : ' chưa được xác nhận.')));
   const i18n = {
-    titleKey: decision === 'APPROVE' ? 'requestConfirmedTitle' : 'requestRejectedTitle',
+    titleKey: 'documentTypeTitle',
     messageKey: note ? 'documentReviewNote' : (decision === 'APPROVE' ? 'documentConfirmed' : 'documentNotConfirmed'),
-    params: { nameVi: names.vi, nameEn: names.en, note: note }
+    params: { nameVi: names.vi, nameEn: names.en, note: note },
+    customMessage: !!messageBody
   };
   notify_(transaction.student_email, documentId || item.related_document_id, title, message, adminEmail, sendEmail, i18n);
 }
@@ -677,6 +682,7 @@ function createManualDocument(payload) {
   const admin = assertAdmin_();
   payload = payload || {};
   const student = resolveStudent_(payload);
+  const messageBody = sanitizeNotificationBody_(payload.messageBody);
   const type = findBy_(APP.SHEETS.TYPES, 'type_id', sanitizeId_(payload.typeId));
   if (!type || !toBoolean_(type.active)) throw new Error('VALIDATION|Loại hồ sơ không hợp lệ.');
   const now = new Date();
@@ -696,12 +702,8 @@ function createManualDocument(payload) {
   appendRecord_(APP.SHEETS.DOCUMENTS, document);
   appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_' + shortId_(), document_id: document.document_id, event_type: 'MANUAL_CREATED', from_step_id: '', to_step_id: document.current_step_id, status: status, public_note: document.public_note, internal_note: document.internal_note, created_at: now, created_by: admin.email });
   audit_('CREATE_MANUAL_DOCUMENT', 'Document', document.document_id, admin.email, { studentId: student.student_id, typeId: type.type_id });
-  const names = notificationTypeNames_(type.type_id, document.type_name);
-  const translatedStatus = notificationStatus_(status, type.workflow_version_id);
-  notify_(student.email, document.document_id, 'Văn phòng đã nhận hồ sơ', document.type_name + ': ' + status, admin.email, toBoolean_(payload.sendEmail), {
-    titleKey: 'officeReceivedTitle', messageKey: 'documentStatus',
-    params: { nameVi: names.vi, nameEn: names.en, statusVi: translatedStatus.vi, statusEn: translatedStatus.en }
-  });
+  const content = documentNotificationContent_(document, status, first, document.public_note, messageBody);
+  notify_(student.email, document.document_id, content.title, content.message, admin.email, toBoolean_(payload.sendEmail), content.i18n);
   return publicDocumentAdmin_(document);
 }
 
@@ -713,6 +715,7 @@ function batchUpdateDocuments(payload) {
   const status = sanitizeText_(payload.status, 120);
   if (!status) throw new Error('VALIDATION|Chọn trạng thái mới.');
   const note = sanitizeText_(payload.publicNote, 1500);
+  const messageBody = sanitizeNotificationBody_(payload.messageBody);
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
@@ -722,11 +725,9 @@ function batchUpdateDocuments(payload) {
       if (!document || !toBoolean_(document.active)) return;
       updateRow_(APP.SHEETS.DOCUMENTS, document._row, { status: status, public_note: note || document.public_note, storage_status: status === 'Đã bàn giao' ? 'HANDED_OVER' : document.storage_status, updated_at: now, updated_by: admin.email, version: Number(document.version || 0) + 1 });
       appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_' + shortId_(), document_id: id, event_type: 'BATCH_UPDATED', from_step_id: document.current_step_id, to_step_id: document.current_step_id, status: status, public_note: note, internal_note: '', created_at: now, created_by: admin.email });
-      const translatedStatus = notificationStatus_(status, document.workflow_version_id);
-      notify_(document.student_email, id, 'Cập nhật hồ sơ ' + document.document_code, note || ('Trạng thái mới: ' + status), admin.email, toBoolean_(payload.sendEmail), {
-        titleKey: 'documentUpdatedTitle', messageKey: note ? 'customNote' : 'newDocumentStatus',
-        params: { code: document.document_code, note: note, statusVi: translatedStatus.vi, statusEn: translatedStatus.en }
-      });
+      const step = document.current_step_id ? getWorkflowSteps_(document.workflow_version_id).find(function(item) { return item.step_id === document.current_step_id; }) : null;
+      const content = documentNotificationContent_(document, status, step, note, messageBody);
+      notify_(document.student_email, id, content.title, content.message, admin.email, toBoolean_(payload.sendEmail), content.i18n);
     });
     audit_('BATCH_UPDATE_DOCUMENTS', 'Document', ids.join(','), admin.email, { count: ids.length, status: status });
     return { ok: true, updated: ids.length };
@@ -748,11 +749,17 @@ function updateDocumentProgress(payload) {
       throw new Error('VERSION_CONFLICT|Hồ sơ vừa được người khác cập nhật. Tải lại để xem bản mới.');
     }
     const steps = getWorkflowSteps_(document.workflow_version_id);
-    const step = payload.stepId ? steps.find(function(row) { return row.step_id === payload.stepId; }) : null;
+    const rawStepId = String(payload.stepId || '').trim();
+    const stepId = sanitizeId_(rawStepId);
+    if (rawStepId && !stepId) throw new Error('VALIDATION|Bước xử lý không thuộc quy trình của hồ sơ.');
+    const step = stepId ? steps.find(function(row) { return row.step_id === stepId; }) : null;
+    if (stepId && !step) throw new Error('VALIDATION|Bước xử lý không thuộc quy trình của hồ sơ.');
     const explicitStatus = sanitizeText_(payload.status, 120);
-    const status = explicitStatus || (step ? step.status_label : document.status);
+    const statusOverride = toBoolean_(payload.overrideStepStatus);
+    const status = step && !statusOverride ? step.status_label : (explicitStatus || (step ? step.status_label : document.status));
     const publicNote = sanitizeText_(payload.publicNote, 1500);
     const internalNote = sanitizeText_(payload.internalNote, 1500);
+    const messageBody = sanitizeNotificationBody_(payload.messageBody);
     const expectedAt = parseDateInput_(payload.expectedAt);
     const now = new Date();
     updateRow_(APP.SHEETS.DOCUMENTS, document._row, {
@@ -772,12 +779,8 @@ function updateDocumentProgress(payload) {
       from_step_id: document.current_step_id, to_step_id: step ? step.step_id : document.current_step_id,
       status: status, public_note: publicNote, internal_note: internalNote, created_at: now, created_by: admin.email
     });
-    const translatedStatus = notificationStatus_(status, document.workflow_version_id);
-    notify_(document.student_email, documentId, 'Cập nhật hồ sơ ' + document.document_code,
-      publicNote || ('Trạng thái mới: ' + status), admin.email, toBoolean_(payload.sendEmail), {
-        titleKey: 'documentUpdatedTitle', messageKey: publicNote ? 'customNote' : 'newDocumentStatus',
-        params: { code: document.document_code, note: publicNote, statusVi: translatedStatus.vi, statusEn: translatedStatus.en }
-      });
+    const content = documentNotificationContent_(document, status, step || steps.find(function(item) { return item.step_id === document.current_step_id; }), publicNote, messageBody);
+    notify_(document.student_email, documentId, content.title, content.message, admin.email, toBoolean_(payload.sendEmail), content.i18n);
     audit_('UPDATE_DOCUMENT_PROGRESS', 'Document', documentId, admin.email, { status: status, stepId: step ? step.step_id : '' });
     return getDocumentDetail(documentId);
   } finally {
@@ -792,11 +795,15 @@ function cancelDocument(payload) {
   if (!document) throw new Error('NOT_FOUND|Không tìm thấy hồ sơ.');
   const reason = sanitizeText_(payload.reason, 1000);
   if (!reason) throw new Error('VALIDATION|Nhập lý do hủy hồ sơ.');
+  const messageBody = sanitizeNotificationBody_(payload.messageBody);
   const now = new Date();
   updateRow_(APP.SHEETS.DOCUMENTS, document._row, { status: 'Đã hủy', active: false, public_note: reason, updated_at: now, updated_by: admin.email, version: Number(document.version || 0) + 1 });
   appendRecord_(APP.SHEETS.EVENTS, { event_id: 'evt_' + shortId_(), document_id: document.document_id, event_type: 'CANCELLED', from_step_id: document.current_step_id, to_step_id: document.current_step_id, status: 'Đã hủy', public_note: reason, internal_note: '', created_at: now, created_by: admin.email });
-  notify_(document.student_email, document.document_id, 'Hồ sơ đã hủy', reason, admin.email, toBoolean_(payload.sendEmail), {
-    titleKey: 'documentCancelledTitle', messageKey: 'customNote', params: { note: reason }
+  const message = messageBody || reason;
+  notify_(document.student_email, document.document_id, document.type_name, message, admin.email, toBoolean_(payload.sendEmail), {
+    titleKey: 'documentTypeTitle', messageKey: messageBody ? '' : 'customNote',
+    params: { nameVi: document.type_name, nameEn: notificationTypeNames_(document.type_id, document.type_name).en, note: reason },
+    customMessage: !!messageBody
   });
   audit_('CANCEL_DOCUMENT', 'Document', document.document_id, admin.email, { reason: reason });
   return { ok: true };
@@ -889,7 +896,11 @@ function finishServiceSession(payload) {
   const topic = sanitizeText_(payload.topic, 1500);
   const result = sanitizeText_(payload.result, 1500);
   if (!topic || !result) throw new Error('VALIDATION|Nhập nội dung trao đổi và kết quả xử lý.');
+  const messageTitle = sanitizeNotificationTitle_(payload.messageTitle);
+  const messageBody = sanitizeNotificationBody_(payload.messageBody);
   updateRow_(APP.SHEETS.SERVICES, row._row, { ended_at: now, duration_minutes: duration, topic: topic, result: result, note: sanitizeText_(payload.note, 1000), status: 'COMPLETED', updated_at: now });
+  const content = serviceNotificationContent_(topic, result, messageTitle, messageBody);
+  notify_(row.student_email, row.document_id, content.title, content.message, admin.email, toBoolean_(payload.sendEmail), content.i18n);
   audit_('FINISH_SERVICE_SESSION', 'ServiceSession', row.session_id, admin.email, { duration: duration });
   return publicService_(Object.assign({}, row, { ended_at: now, duration_minutes: duration, topic: topic, result: result, note: payload.note || '', status: 'COMPLETED', updated_at: now }));
 }
@@ -904,6 +915,8 @@ function addManualServiceSession(payload) {
   const topic = sanitizeText_(payload.topic, 1500);
   const result = sanitizeText_(payload.result, 1500);
   if (!topic || !result) throw new Error('VALIDATION|Nhập nội dung trao đổi và kết quả xử lý.');
+  const messageTitle = sanitizeNotificationTitle_(payload.messageTitle);
+  const messageBody = sanitizeNotificationBody_(payload.messageBody);
   const now = new Date();
   const record = {
     session_id: 'svc_' + shortId_(), student_id: student.student_id, student_email: student.email,
@@ -914,6 +927,8 @@ function addManualServiceSession(payload) {
     status: 'COMPLETED', created_at: now, updated_at: now
   };
   appendRecord_(APP.SHEETS.SERVICES, record);
+  const content = serviceNotificationContent_(topic, result, messageTitle, messageBody);
+  notify_(student.email, record.document_id, content.title, content.message, admin.email, toBoolean_(payload.sendEmail), content.i18n);
   audit_('ADD_MANUAL_SERVICE_SESSION', 'ServiceSession', record.session_id, admin.email, { duration: record.duration_minutes });
   return publicService_(record);
 }
@@ -1406,14 +1421,69 @@ function notificationStatus_(status, workflowId) {
   return { vi: status || '', en: step && step.status_label_en ? step.status_label_en : (status || '') };
 }
 
+function documentNotificationContent_(document, status, step, publicNote, customMessage) {
+  const names = notificationTypeNames_(document.type_id, document.type_name);
+  const workflow = document.workflow_version_id ? findBy_(APP.SHEETS.WORKFLOW_VERSIONS, 'workflow_version_id', document.workflow_version_id) : null;
+  const translatedStatus = notificationStatus_(status, document.workflow_version_id);
+  const workflowVi = workflow ? workflow.name : '';
+  const workflowEn = workflow ? (workflow.name_en || workflow.name) : '';
+  const stepVi = step ? (step.name || step.status_label) : '';
+  const stepEn = step ? (step.name_en || step.status_label_en || step.name || step.status_label) : '';
+  const note = sanitizeMessageText_(publicNote, 1500);
+  const lines = [];
+  if (workflowVi) lines.push('Quy trình: ' + workflowVi);
+  if (stepVi) lines.push('Giai đoạn xử lý: ' + stepVi);
+  if (status) lines.push('Trạng thái: ' + status);
+  if (note) lines.push('Phản hồi: ' + note);
+  const workflowLineVi = workflowVi ? 'Quy trình: ' + workflowVi : '';
+  const workflowLineEn = workflowEn ? 'Workflow: ' + workflowEn : '';
+  const stepLineVi = stepVi ? 'Giai đoạn xử lý: ' + stepVi : '';
+  const stepLineEn = stepEn ? 'Processing stage: ' + stepEn : '';
+  const statusLineVi = status ? 'Trạng thái: ' + translatedStatus.vi : '';
+  const statusLineEn = status ? 'Status: ' + translatedStatus.en : '';
+  const noteLineVi = note ? 'Phản hồi: ' + note : '';
+  const noteLineEn = note ? 'Note: ' + note : '';
+  const message = customMessage || lines.join('\n');
+  return {
+    title: names.vi,
+    message: message,
+    i18n: {
+      titleKey: 'documentTypeTitle',
+      messageKey: customMessage ? '' : 'documentProgressSummary',
+      params: {
+        nameVi: names.vi, nameEn: names.en,
+        workflowLineVi: workflowLineVi, workflowLineEn: workflowLineEn,
+        stepLineVi: stepLineVi, stepLineEn: stepLineEn,
+        statusLineVi: statusLineVi, statusLineEn: statusLineEn,
+        noteLineVi: noteLineVi, noteLineEn: noteLineEn
+      },
+      customMessage: !!customMessage
+    }
+  };
+}
+
+function serviceNotificationContent_(topic, result, customTitle, customMessage) {
+  return {
+    title: customTitle || 'Kết quả tiếp sinh viên',
+    message: customMessage || ('Nội dung trao đổi: ' + topic + '\nKết quả xử lý: ' + result),
+    i18n: {
+      titleKey: customTitle ? '' : 'serviceSessionTitle',
+      messageKey: customMessage ? '' : 'serviceSessionSummary',
+      params: { topic: topic, result: result },
+      customTitle: !!customTitle,
+      customMessage: !!customMessage
+    }
+  };
+}
+
 function notify_(recipient, documentId, title, message, actor, sendEmail, i18n) {
-  const notification = { notification_id: 'ntf_' + shortId_(), student_email: normalizeEmail_(recipient), document_id: documentId || '', title: sanitizeText_(title, 200), message: sanitizeText_(message, 2000), read: false, created_at: new Date(), created_by: actor, i18n_json: i18n ? JSON.stringify(i18n) : '' };
+  const notification = { notification_id: 'ntf_' + shortId_(), student_email: normalizeEmail_(recipient), document_id: documentId || '', title: sanitizeNotificationTitle_(title) || 'Thông báo', message: sanitizeNotificationBody_(message), read: false, created_at: new Date(), created_by: actor, i18n_json: i18n ? JSON.stringify(i18n) : '' };
   appendRecord_(APP.SHEETS.NOTIFICATIONS, notification);
-  if (sendEmail) queueAndSendEmail_(recipient, title, message);
+  if (sendEmail) queueAndSendEmail_(recipient, notification.title, notification.message);
 }
 
 function queueAndSendEmail_(recipient, subject, body) {
-  const row = { email_id: 'mail_' + shortId_(), recipient: normalizeEmail_(recipient), subject: sanitizeText_(subject, 200), body: sanitizeText_(body, 5000), status: 'PENDING', attempts: 0, last_error: '', created_at: new Date(), sent_at: '' };
+  const row = { email_id: 'mail_' + shortId_(), recipient: normalizeEmail_(recipient), subject: sanitizeNotificationTitle_(subject) || 'Thông báo', body: sanitizeNotificationBody_(body), status: 'PENDING', attempts: 0, last_error: '', created_at: new Date(), sent_at: '' };
   appendRecord_(APP.SHEETS.EMAIL_QUEUE, row);
   row._row = getSheet_(APP.SHEETS.EMAIL_QUEUE).getLastRow();
   sendQueuedEmail_(row);
@@ -1472,6 +1542,16 @@ function isStudentEmail_(email) { return new RegExp('^[^@\\s]+@' + APP.STUDENT_D
 function extractStudentId_(email) { const local = normalizeEmail_(email).split('@')[0]; return /^\d{5,20}$/.test(local) ? local : ''; }
 function normalizeEmail_(value) { return String(value || '').trim().toLowerCase(); }
 function sanitizeText_(value, maxLength) { return String(value == null ? '' : value).replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLength || 1000); }
+function sanitizeMessageText_(value, maxLength) {
+  const text = String(value == null ? '' : value).replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, ' ').trim();
+  if (text.length > maxLength) throw new Error('VALIDATION|Nội dung thông báo không được vượt quá ' + maxLength + ' ký tự.');
+  return text;
+}
+function sanitizeNotificationTitle_(value) {
+  const text = sanitizeMessageText_(value, 200).replace(/[\t\n ]+/g, ' ').trim();
+  return text;
+}
+function sanitizeNotificationBody_(value) { return sanitizeMessageText_(value, 5000); }
 function sanitizeId_(value) { const id = String(value || '').trim(); return /^[a-zA-Z0-9_-]{1,100}$/.test(id) ? id : ''; }
 function toBoolean_(value) { return value === true || ['true', '1', 'yes', 'active'].indexOf(String(value || '').toLowerCase()) !== -1; }
 function normalizeHandoverMode_(value) { const mode = String(value || '').toUpperCase(); return ['SUBMIT', 'RECEIVE', 'BOTH'].indexOf(mode) !== -1 ? mode : 'BOTH'; }
