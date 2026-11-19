@@ -39,7 +39,7 @@ assert.equal(helpers.sanitizeId_("../bad"), "");
 assert.equal(helpers.sanitizeText_("  Xin\n chào  ", 20), "Xin chào");
 assert.equal(helpers.toBoolean_("TRUE"), true);
 assert.match(code, /handover_mode/, "Missing handover mode schema");
-assert.match(code, /SCHEMA_VERSION[^\n]*2/, "Missing schema version 2 migration");
+assert.match(code, /SCHEMA_VERSION[^\n]*3/, "Missing schema version 3 migration");
 assert.match(code, /function\s+ensureDefaultSettings_\s*\(/, "Missing default settings initialization");
 assert.doesNotMatch(code, /function\s+seedIfEmpty_\s*\(/, "Runtime must not recreate sample catalog data");
 assert.doesNotMatch(code, /Bằng tốt nghiệp|Bảng điểm/, "Runtime must not contain sample document types");

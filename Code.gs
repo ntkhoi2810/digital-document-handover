@@ -26,9 +26,9 @@ const HEADERS = Object.freeze({
   Settings: ['key', 'value', 'description', 'updated_at', 'updated_by'],
   Admins: ['email', 'name', 'role', 'active', 'created_at', 'updated_at'],
   Students: ['student_id', 'email', 'full_name', 'class_name', 'active', 'created_at', 'updated_at', 'updated_by'],
-  DocumentTypes: ['type_id', 'name', 'description', 'tracks_progress', 'workflow_version_id', 'active', 'sort_order', 'created_at', 'updated_at', 'handover_mode'],
-  WorkflowVersions: ['workflow_version_id', 'name', 'version', 'active', 'created_at', 'created_by'],
-  WorkflowSteps: ['step_id', 'workflow_version_id', 'step_order', 'name', 'status_label', 'created_at'],
+  DocumentTypes: ['type_id', 'name', 'description', 'tracks_progress', 'workflow_version_id', 'active', 'sort_order', 'created_at', 'updated_at', 'handover_mode', 'name_en', 'description_en'],
+  WorkflowVersions: ['workflow_version_id', 'name', 'version', 'active', 'created_at', 'created_by', 'name_en'],
+  WorkflowSteps: ['step_id', 'workflow_version_id', 'step_order', 'name', 'status_label', 'created_at', 'name_en', 'status_label_en'],
   Documents: ['document_id', 'document_code', 'student_id', 'student_email', 'student_name', 'class_name', 'type_id', 'type_name', 'workflow_version_id', 'current_step_id', 'current_step_order', 'status', 'storage_status', 'submitted_at', 'expected_at', 'updated_at', 'updated_by', 'public_note', 'internal_note', 'version', 'active'],
   DocumentEvents: ['event_id', 'document_id', 'event_type', 'from_step_id', 'to_step_id', 'status', 'public_note', 'internal_note', 'created_at', 'created_by'],
   Transactions: ['transaction_id', 'transaction_code', 'student_id', 'student_email', 'student_name', 'class_name', 'transaction_type', 'status', 'student_note', 'request_token', 'created_at', 'updated_at', 'reviewed_by'],
@@ -41,7 +41,7 @@ const HEADERS = Object.freeze({
 
 const CACHE_TTL_SECONDS = 300;
 const INIT_CACHE_TTL_SECONDS = 21600;
-const INIT_VERSION_KEY = 'SCHEMA_INIT_V2';
+const INIT_VERSION_KEY = 'SCHEMA_INIT_V3';
 const CACHED_SHEETS = Object.freeze({
   Settings: true,
   Admins: true,
@@ -251,7 +251,9 @@ function saveDocumentType(payload) {
     sort_order: Number(payload.sortOrder || (existing && existing.sort_order) || (maxSortOrder + 1)),
     created_at: existing ? existing.created_at : now,
     updated_at: now,
-    handover_mode: handoverMode
+    handover_mode: handoverMode,
+    name_en: sanitizeText_(payload.nameEn, 160) || (existing && existing.name_en) || '',
+    description_en: sanitizeText_(payload.descriptionEn, 500) || (existing && existing.description_en) || ''
   };
   if (existing) updateRow_(APP.SHEETS.TYPES, existing._row, record);
   else appendRecord_(APP.SHEETS.TYPES, record);
@@ -779,10 +781,11 @@ function listWorkflows() {
     return {
       workflowVersionId: version.workflow_version_id,
       name: version.name,
+      nameEn: version.name_en || '',
       version: Number(version.version || 1),
       active: toBoolean_(version.active),
       steps: getWorkflowSteps_(version.workflow_version_id).map(function(step) {
-        return { stepId: step.step_id, order: Number(step.step_order), name: step.name, statusLabel: step.status_label };
+        return { stepId: step.step_id, order: Number(step.step_order), name: step.name, nameEn: step.name_en || '', statusLabel: step.status_label, statusLabelEn: step.status_label_en || '' };
       })
     };
   });
@@ -796,11 +799,11 @@ function saveWorkflow(payload) {
   if (!name || !steps.length) throw new Error('VALIDATION|Quy trình phải có tên và ít nhất một bước.');
   const now = new Date();
   const workflowId = 'wf_' + shortId_();
-  appendRecord_(APP.SHEETS.WORKFLOW_VERSIONS, { workflow_version_id: workflowId, name: name, version: Number(payload.version || 1), active: true, created_at: now, created_by: admin.email });
+  appendRecord_(APP.SHEETS.WORKFLOW_VERSIONS, { workflow_version_id: workflowId, name: name, name_en: sanitizeText_(payload.nameEn, 160), version: Number(payload.version || 1), active: true, created_at: now, created_by: admin.email });
   steps.forEach(function(item, index) {
     const stepName = sanitizeText_(item.name, 160);
     if (!stepName) throw new Error('VALIDATION|Tên bước xử lý không được để trống.');
-    appendRecord_(APP.SHEETS.WORKFLOW_STEPS, { step_id: workflowId + '_s' + (index + 1), workflow_version_id: workflowId, step_order: index + 1, name: stepName, status_label: sanitizeText_(item.statusLabel, 120) || stepName, created_at: now });
+    appendRecord_(APP.SHEETS.WORKFLOW_STEPS, { step_id: workflowId + '_s' + (index + 1), workflow_version_id: workflowId, step_order: index + 1, name: stepName, name_en: sanitizeText_(item.nameEn, 160), status_label: sanitizeText_(item.statusLabel, 120) || stepName, status_label_en: sanitizeText_(item.statusLabelEn, 120), created_at: now });
   });
   audit_('CREATE_WORKFLOW', 'WorkflowVersion', workflowId, admin.email, { name: name, stepCount: steps.length });
   return listWorkflows();
@@ -1030,7 +1033,7 @@ function setupSystem() {
   const admin = assertAdmin_();
   const spreadsheet = getSpreadsheet_();
   PropertiesService.getScriptProperties().setProperty('SPREADSHEET_ID', spreadsheet.getId());
-  audit_('SETUP_SYSTEM', 'System', spreadsheet.getId(), admin.email, { schemaVersion: 2 });
+  audit_('SETUP_SYSTEM', 'System', spreadsheet.getId(), admin.email, { schemaVersion: 3 });
   return { ok: true, spreadsheetId: spreadsheet.getId(), spreadsheetUrl: spreadsheet.getUrl(), webAppUrl: ScriptApp.getService().getUrl() };
 }
 
@@ -1076,7 +1079,7 @@ function markSystemInitialized_(spreadsheetId, stateValue) {
 
 function ensureSystemInitialized_(force) {
   const configuredId = getConfiguredSpreadsheetId_();
-  const expectedState = configuredId ? (configuredId + ':v2') : '';
+  const expectedState = configuredId ? (configuredId + ':v3') : '';
   if (!force && isSystemInitializedFast_(expectedState)) return;
 
   const lock = LockService.getScriptLock();
@@ -1084,7 +1087,7 @@ function ensureSystemInitialized_(force) {
   try {
     if (!force && isSystemInitializedFast_(expectedState)) return;
     const spreadsheet = getSpreadsheet_();
-    const actualState = spreadsheet.getId() + ':v2';
+    const actualState = spreadsheet.getId() + ':v3';
     if (!force && isSystemInitializedFast_(actualState)) return;
 
     Object.keys(HEADERS).forEach(function(name) {
@@ -1129,9 +1132,9 @@ function migrateSystemData_() {
   }
   const version = findBy_(APP.SHEETS.SETTINGS, 'key', 'SCHEMA_VERSION');
   if (version) {
-    if (String(version.value) !== '2') updateRow_(APP.SHEETS.SETTINGS, version._row, { value: '2', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
+    if (String(version.value) !== '3') updateRow_(APP.SHEETS.SETTINGS, version._row, { value: '3', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
   } else {
-    appendRecord_(APP.SHEETS.SETTINGS, { key: 'SCHEMA_VERSION', value: '2', description: 'Phiên bản cấu trúc dữ liệu', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
+    appendRecord_(APP.SHEETS.SETTINGS, { key: 'SCHEMA_VERSION', value: '3', description: 'Phiên bản cấu trúc dữ liệu', updated_at: new Date(), updated_by: APP.DEFAULT_ADMIN });
   }
 }
 
@@ -1147,7 +1150,7 @@ function healthCheck() {
 
 function ensureDefaultSettings_() {
   const now = new Date();
-  [['APP_NAME', APP.NAME, 'Tên hiển thị của ứng dụng'], ['OFFICE_NAME', 'Văn phòng Khoa', 'Tên đơn vị vận hành'], ['TIMEZONE', APP.TIMEZONE, 'Múi giờ vận hành'], ['SCHEMA_VERSION', '2', 'Phiên bản cấu trúc dữ liệu']].forEach(function(row) {
+  [['APP_NAME', APP.NAME, 'Tên hiển thị của ứng dụng'], ['OFFICE_NAME', 'Văn phòng Khoa', 'Tên đơn vị vận hành'], ['TIMEZONE', APP.TIMEZONE, 'Múi giờ vận hành'], ['SCHEMA_VERSION', '3', 'Phiên bản cấu trúc dữ liệu']].forEach(function(row) {
     if (!findBy_(APP.SHEETS.SETTINGS, 'key', row[0])) {
       appendRecord_(APP.SHEETS.SETTINGS, { key: row[0], value: row[1], description: row[2], updated_at: now, updated_by: APP.DEFAULT_ADMIN });
     }
@@ -1419,7 +1422,7 @@ function styleDataSheet_(sheet, columnCount) {
 }
 
 function publicStudent_(row) { return { studentId: row.student_id, email: row.email, fullName: row.full_name || '', className: row.class_name || '', active: toBoolean_(row.active), updatedAt: iso_(row.updated_at) }; }
-function publicType_(row) { return { typeId: row.type_id, name: row.name, description: row.description || '', tracksProgress: toBoolean_(row.tracks_progress), workflowVersionId: row.workflow_version_id || '', active: toBoolean_(row.active), sortOrder: Number(row.sort_order || 0), handoverMode: normalizeHandoverMode_(row.handover_mode || 'BOTH') }; }
+function publicType_(row) { return { typeId: row.type_id, name: row.name, nameEn: row.name_en || '', description: row.description || '', descriptionEn: row.description_en || '', tracksProgress: toBoolean_(row.tracks_progress), workflowVersionId: row.workflow_version_id || '', active: toBoolean_(row.active), sortOrder: Number(row.sort_order || 0), handoverMode: normalizeHandoverMode_(row.handover_mode || 'BOTH') }; }
 function publicDocument_(row) { return { documentId: row.document_id, code: row.document_code, typeId: row.type_id, typeName: row.type_name, status: row.status, storageStatus: row.storage_status, submittedAt: iso_(row.submitted_at), expectedAt: iso_(row.expected_at), updatedAt: iso_(row.updated_at), publicNote: row.public_note || '', currentStepOrder: Number(row.current_step_order || 0), version: Number(row.version || 0) }; }
 function publicDocumentAdmin_(row) { const result = publicDocument_(row); result.studentId = row.student_id; result.studentEmail = row.student_email; result.studentName = row.student_name; result.className = row.class_name; result.internalNote = row.internal_note || ''; result.workflowVersionId = row.workflow_version_id || ''; result.currentStepId = row.current_step_id || ''; return result; }
 function publicEvent_(row, adminView) { const result = { eventId: row.event_id, type: row.event_type, status: row.status, publicNote: row.public_note || '', createdAt: iso_(row.created_at), createdBy: row.created_by || '', toStepId: row.to_step_id || '' }; if (adminView) result.internalNote = row.internal_note || ''; return result; }
