@@ -55,5 +55,11 @@ assert.match(index, /id="language-menu" class="language-menu hidden" role="listb
 assert.match(scriptsHtml, /function\s+openLanguageMenu\(/, "Missing keyboard-accessible language menu behavior");
 assert.match(scriptsHtml, /requestWaiting/, "Missing bilingual system notification translation");
 assert.match(scriptsHtml, /data-i18n-vi/, "Dynamic catalog labels must retain both languages");
+assert.match(code, /response\.notificationTemplates\s*=\s*notificationTemplates_\(\)/, "Admin bootstrap must provide the shared notification templates");
+assert.match(code, /function\s+renderNotificationTemplate_\s*\(/, "Missing server-side merge-field renderer");
+assert.match(scriptsHtml, /data-template-variable/, "Notification forms must provide insertable merge fields");
+assert.match(scriptsHtml, /data-restore-template/, "Notification forms must allow restoring their defaults");
+assert.match(scriptsHtml, /changeTemplateFields\('admin-request'/, "Request action changes must select the corresponding default template");
+assert.match(index, /id="manual-service-template"/, "Manual service entry must render its default template controls");
 
 console.log("Source verification passed");
