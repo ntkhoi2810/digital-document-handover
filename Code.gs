@@ -866,6 +866,10 @@ function listPendingTransactions_() {
 
 function getAdminWorkSummary() {
   assertAdmin_();
+  return buildAdminWorkSummary_();
+}
+
+function buildAdminWorkSummary_() {
   const groups = Object.create(null);
   const types = {};
   readTable_(APP.SHEETS.TYPES).forEach(function(type) { types[type.type_id] = type; });
@@ -955,6 +959,95 @@ function getAdminWorkSummary() {
     pendingCount: result.reduce(function(total, group) { return total + group.pendingCount; }, 0),
     processingCount: result.reduce(function(total, group) { return total + group.processingCount; }, 0),
     groups: result
+  };
+}
+
+function installAdminWorkSummaryReminder() {
+  const identity = assertAdmin_();
+  if (normalizeEmail_(identity.email) !== normalizeEmail_(APP.DEFAULT_ADMIN)) {
+    throw new Error('ADMIN_ONLY|Chỉ chủ sở hữu hệ thống mới có thể cài nhắc email hằng ngày.');
+  }
+  const handler = 'sendAdminWorkSummaryReminder';
+  ScriptApp.getProjectTriggers().forEach(function(trigger) {
+    if (trigger.getHandlerFunction() === handler) ScriptApp.deleteTrigger(trigger);
+  });
+  const trigger = ScriptApp.newTrigger(handler).timeBased().atHour(8).nearMinute(0).everyDays(1).inTimezone(APP.TIMEZONE).create();
+  PropertiesService.getScriptProperties().setProperty('ADMIN_WORK_SUMMARY_TRIGGER_UID', trigger.getUniqueId());
+  return { ok: true, recipient: APP.DEFAULT_ADMIN, hour: 8, timezone: APP.TIMEZONE };
+}
+
+function sendAdminWorkSummaryReminder(event) {
+  const expectedTriggerUid = PropertiesService.getScriptProperties().getProperty('ADMIN_WORK_SUMMARY_TRIGGER_UID');
+  if (!expectedTriggerUid || !event || String(event.triggerUid) !== expectedTriggerUid) {
+    throw new Error('TRIGGER_ONLY|Email nhắc việc chỉ được gửi từ trigger đã cài đặt.');
+  }
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const now = new Date();
+    const dayKey = Utilities.formatDate(now, APP.TIMEZONE, 'yyyy-MM-dd');
+    const propertyKey = 'ADMIN_WORK_SUMMARY_LAST_SENT_DATE';
+    if (properties.getProperty(propertyKey) === dayKey) return { sent: false, reason: 'ALREADY_SENT', day: dayKey };
+    const content = buildAdminWorkSummaryReminder_(buildAdminWorkSummary_(), now);
+    MailApp.sendEmail({
+      to: APP.DEFAULT_ADMIN, subject: content.subject, body: content.body, htmlBody: content.htmlBody
+    });
+    properties.setProperty(propertyKey, dayKey);
+    return { sent: true, recipient: APP.DEFAULT_ADMIN, day: dayKey };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function buildAdminWorkSummaryReminder_(summary, date) {
+  const dateLabel = Utilities.formatDate(date, APP.TIMEZONE, 'dd/MM/yyyy');
+  const sourceLabels = {REQUEST:'Yêu cầu cấp hồ sơ',SUBMIT:'Nộp hồ sơ',RECEIVE:'Nhận hồ sơ',SUPPLEMENT:'Bổ sung giấy tờ',DOCUMENT:'Hồ sơ'};
+  function itemDescription(item) {
+    const source = sourceLabels[item.source] || sourceLabels.DOCUMENT;
+    const codeLabel = item.source === 'DOCUMENT' ? 'Mã hồ sơ' : 'Mã yêu cầu';
+    const pieces = [
+      item.studentName || 'Chưa có họ tên', 'MSSV ' + (item.studentId || '—'), 'Lớp ' + (item.className || '—'),
+      source, codeLabel + ' ' + (item.code || '—'), 'Trạng thái ' + (item.status || '—')
+    ];
+    if (item.secondaryCode) pieces.push('Mã hồ sơ ' + item.secondaryCode);
+    if (Number(item.copyCount || 0)) pieces.push('Số bản ' + Number(item.copyCount));
+    if (item.expectedAt) pieces.push('Dự kiến ' + Utilities.formatDate(dateValue_(item.expectedAt), APP.TIMEZONE, 'dd/MM/yyyy'));
+    return pieces.join(' | ');
+  }
+  const groups = summary.groups || [];
+  const textLines = [
+    'Nhắc hồ sơ cần xử lý và đang xử lý', 'Ngày ' + dateLabel, '',
+    'Cần xử lý: ' + Number(summary.pendingCount || 0),
+    'Đang xử lý: ' + Number(summary.processingCount || 0), ''
+  ];
+  if (!groups.length) textLines.push('Hiện không có hồ sơ cần xử lý hoặc đang xử lý.');
+  groups.forEach(function(group) {
+    textLines.push(group.typeName + ' (' + group.items.length + ')');
+    group.items.forEach(function(item) { textLines.push('- ' + itemDescription(item)); });
+    textLines.push('');
+  });
+  const groupHtml = groups.map(function(group) {
+    const items = group.items.map(function(item) {
+      return '<li style="margin:0 0 10px;padding:12px;border:1px solid #e7e8ef;border-radius:10px">' +
+        '<strong>' + escapeHtml_(item.studentName || 'Chưa có họ tên') + '</strong>' +
+        '<div style="margin-top:5px;color:#475569;font-size:13px">' + escapeHtml_(itemDescription(item)) + '</div></li>';
+    }).join('');
+    return '<section style="margin-top:20px"><h3 style="margin:0 0 10px;font-size:16px">' +
+      escapeHtml_(group.typeName) + ' <span style="color:#64748b;font-weight:400">(' + group.items.length + ')</span></h3>' +
+      '<ul style="margin:0;padding:0;list-style:none">' + items + '</ul></section>';
+  }).join('');
+  const noWorkHtml = groups.length ? '' : '<p>Hiện không có hồ sơ cần xử lý hoặc đang xử lý.</p>';
+  return {
+    subject: 'Nhắc hồ sơ cần xử lý – ' + dateLabel,
+    body: textLines.join('\n'),
+    htmlBody: '<div style="font-family:Arial,sans-serif;line-height:1.55;color:#172033;max-width:760px">' +
+      '<h2 style="margin:0 0 4px;font-size:20px">Nhắc hồ sơ cần xử lý và đang xử lý</h2>' +
+      '<p style="margin:0 0 16px;color:#64748b">Ngày ' + dateLabel + '</p>' +
+      '<table role="presentation" style="width:100%;border-collapse:separate;border-spacing:8px 0"><tr>' +
+      '<td style="padding:12px;border-radius:10px;background:#fff0f7"><strong>Cần xử lý: ' + Number(summary.pendingCount || 0) + '</strong></td>' +
+      '<td style="padding:12px;border-radius:10px;background:#eef1ff"><strong>Đang xử lý: ' + Number(summary.processingCount || 0) + '</strong></td>' +
+      '</tr></table>' + groupHtml + noWorkHtml + '<p style="margin-top:24px;color:#64748b;font-size:12px">Sổ giao nhận hồ sơ</p></div>'
   };
 }
 

@@ -27,6 +27,7 @@ Phiên bản cấu trúc dữ liệu hiện tại là `5`. Lần mở đầu ti�
 2. Tạo Apps Script project, đẩy các tệp bằng `clasp push`.
 3. Đặt Script Property `SPREADSHEET_ID` bằng spreadsheet ID.
 4. Chạy `setupSystem()` một lần và cấp quyền.
-5. Deploy dạng Web app, chạy bằng tài khoản triển khai. Mọi tài khoản Google có thể mở URL nhưng mã máy chủ chỉ chấp nhận sinh viên TDTU và quản trị viên đã cấp quyền.
+5. Đăng nhập Apps Script bằng tài khoản chủ sở hữu `nguyenthaikhoi@tdtu.edu.vn`, chạy `installAdminWorkSummaryReminder()` một lần và cấp quyền tạo trigger, đọc Sheets và gửi email. Trigger gửi bản tóm tắt hằng ngày gần 8:00 theo múi giờ `Asia/Ho_Chi_Minh`.
+6. Deploy dạng Web app, chạy bằng tài khoản triển khai. Mọi tài khoản Google có thể mở URL nhưng mã máy chủ chỉ chấp nhận sinh viên TDTU và quản trị viên đã cấp quyền.
 
 Sau triển khai phải kiểm thử bằng một tài khoản sinh viên thực tế để xác nhận `Session.getActiveUser().getEmail()` trả đúng email TDTU trong cấu hình Google Workspace của trường.
