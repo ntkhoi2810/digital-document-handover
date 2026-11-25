@@ -20,7 +20,7 @@
     'Chưa nhận ra tài khoản Google. Đăng xuất tài khoản cá nhân rồi đăng nhập bằng tài khoản TDTU.':'Could not identify your Google account. Sign out of your personal account, then sign in with your TDTU account.','Chỉ sinh viên (@student.tdtu.edu.vn) và quản trị viên được cấp quyền mới vào được.':'Only students (@student.tdtu.edu.vn) and authorized administrators can access this application.','Chức năng này chỉ dành cho sinh viên.':'This feature is available to students only.','Tài khoản này không có quyền quản trị.':'This account does not have administrator access.','Nhập họ và tên.':'Enter your full name.','Nhập lớp.':'Enter your class.','Email không có MSSV dạng số. Liên hệ quản trị viên để được gán MSSV.':'The email address does not contain a numeric student ID. Contact an administrator to have one assigned.','Chọn từ 1 đến 100 hồ sơ để cập nhật.':'Select between 1 and 100 documents to update.','Chọn trạng thái mới.':'Select a new status.','Hồ sơ vừa được người khác cập nhật. Tải lại để xem bản mới.':'This document was updated by someone else. Reload to see the latest version.','Nhập lý do hủy hồ sơ.':'Enter a reason for cancelling the document.','Quy trình phải có tên và ít nhất một bước.':'A workflow must have a name and at least one step.','Tên bước xử lý không được để trống.':'Step name is required.','Không tìm thấy phiên tiếp sinh viên đang chạy.':'No active student service session was found.','Nhập nội dung trao đổi và kết quả xử lý.':'Enter the discussion topic and outcome.','Thời gian tiếp sinh viên không hợp lệ.':'Invalid student service session time.','Không tìm thấy thông báo.':'Notification not found.','Không tìm thấy email.':'Email not found.','Chưa cấu hình Google Sheets cho ứng dụng.':'Google Sheets has not been configured for this application.','Không tìm thấy sinh viên. Sinh viên cần đăng nhập và hoàn thiện tài khoản trước.':'Student not found. The student must sign in and complete their profile first.'
   });
   Object.assign(translations, {
-    'Tiêu đề thông báo/email':'Notification/email subject','Nội dung thông báo/email':'Notification/email message','Các trường trong {{...}} sẽ được thay bằng dữ liệu thực tế khi gửi.':'Fields in {{...}} are replaced with real data when sent.','Khôi phục mẫu mặc định':'Restore default template','Họ tên sinh viên':'Student name','Mã số sinh viên':'Student ID','Email sinh viên':'Student email','Lớp':'Class','Loại hồ sơ':'Document type','Mã hồ sơ':'Document ID','Mã yêu cầu':'Request ID','Trạng thái':'Status','Ngày dự kiến':'Expected date','Quy trình':'Workflow','Bước xử lý':'Processing step','Phản hồi công khai':'Public response','Nội dung trao đổi':'Discussion','Kết quả xử lý':'Outcome','Giai đoạn xử lý':'Processing stage','Nội dung này sẽ gửi cho sinh viên.':'This message will be sent to the student.','Bước xử lý được chọn tự điền trạng thái.':'Selecting a processing step fills in its status.','Bạn có thể sửa trạng thái riêng.':'You can edit the status separately.','Giữ bước hiện tại khi cập nhật hàng loạt.':'Bulk updates keep the current processing step.','Bước xử lý không thuộc quy trình của hồ sơ.':'The processing step does not belong to this document workflow.','Nội dung thông báo không được vượt quá 5000 ký tự.':'The notification message cannot exceed 5,000 characters.','Nội dung thông báo không được vượt quá 200 ký tự.':'The notification title cannot exceed 200 characters.'
+    'Tiêu đề thông báo/email':'Notification/email subject','Nội dung thông báo/email':'Notification/email message','Các trường màu xanh sẽ tự điền khi gửi.':'Fields highlighted in blue are filled in when the message is sent.','Chèn trường thông tin':'Insert a merge field','Nội dung gửi sinh viên':'Message to student','Tiêu đề':'Subject','Khôi phục mẫu mặc định':'Restore default template','Họ tên sinh viên':'Student name','Mã số sinh viên':'Student ID','Email sinh viên':'Student email','Lớp':'Class','Loại hồ sơ':'Document type','Mã hồ sơ':'Document ID','Mã yêu cầu':'Request ID','Trạng thái':'Status','Ngày dự kiến':'Expected date','Quy trình':'Workflow','Bước xử lý':'Processing step','Phản hồi công khai':'Public response','Nội dung trao đổi':'Discussion','Kết quả xử lý':'Outcome','Giai đoạn xử lý':'Processing stage','Nội dung này sẽ gửi cho sinh viên.':'This message will be sent to the student.','Bước xử lý được chọn tự điền trạng thái.':'Selecting a processing step fills in its status.','Bạn có thể sửa trạng thái riêng.':'You can edit the status separately.','Giữ bước hiện tại khi cập nhật hàng loạt.':'Bulk updates keep the current processing step.','Bước xử lý không thuộc quy trình của hồ sơ.':'The processing step does not belong to this document workflow.','Nội dung thông báo không được vượt quá 5000 ký tự.':'The notification message cannot exceed 5,000 characters.','Nội dung thông báo không được vượt quá 200 ký tự.':'The notification title cannot exceed 200 characters.'
   });
   const originalText = new WeakMap();
   const originalAttributes = new WeakMap();
@@ -164,32 +164,115 @@
   })).observe(document.body, {subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:translatedAttributes});
   const localizedHtml = (vi, en, tag = 'span') => `<${tag} data-i18n-vi="${escapeHtml(vi || '')}" data-i18n-en="${escapeHtml(en || '')}">${escapeHtml(state.language === 'en' && en ? en : (vi || ''))}</${tag}>`;
   const localizedOption = (vi, en, value, selected = false) => `<option value="${escapeHtml(value)}" ${selected ? 'selected' : ''} data-i18n-vi="${escapeHtml(vi || '')}" data-i18n-en="${escapeHtml(en || '')}">${escapeHtml(state.language === 'en' && en ? en : (vi || ''))}</option>`;
-  const templateFieldContent = (prefix, templateKey, withTitle = false) => {
-    const template = state.boot?.notificationTemplates?.[templateKey] || {body:'', title:'', variables:[]};
-    return `${withTitle?`<label>Tiêu đề thông báo/email</label><input id="${escapeHtml(prefix)}-title" maxlength="200" value="${escapeHtml(template.title||'')}">`:''}<label>Nội dung thông báo/email</label><textarea id="${escapeHtml(prefix)}-body" rows="5" maxlength="5000">${escapeHtml(template.body||'')}</textarea><div class="template-tools"><small>Các trường trong {{...}} sẽ được thay bằng dữ liệu thực tế khi gửi.</small><button type="button" class="link-button" data-restore-template="${escapeHtml(prefix)}" data-template-key="${escapeHtml(templateKey)}" data-with-title="${withTitle}">Khôi phục mẫu mặc định</button></div><div class="template-variable-list">${(template.variables||[]).map(item=>`<button type="button" class="button small" data-template-variable="${escapeHtml(item.key)}" data-template-prefix="${escapeHtml(prefix)}" title="${escapeHtml(item.label)}">{{${escapeHtml(item.key)}}} <small>${escapeHtml(item.label)}</small></button>`).join('')}</div>`;
-  };
-  const messageFields = (prefix, templateKey, withTitle = false) => `<div class="template-fields" id="${escapeHtml(prefix)}-template-fields" data-template-key="${escapeHtml(templateKey)}" data-with-title="${withTitle}">${templateFieldContent(prefix,templateKey,withTitle)}</div>`;
-  const messageBodyField = (prefix, templateKey) => messageFields(prefix,templateKey,false);
-  const changeTemplateFields = (prefix, templateKey, withTitle = false, preserveEdited = true) => {
-    const container=$(`#${prefix}-template-fields`);if(!container)return;
-    const currentKey=container.dataset.templateKey;
-    const current=state.boot?.notificationTemplates?.[currentKey]||{};
-    const body=$(`#${prefix}-body`);const title=$(`#${prefix}-title`);
-    const bodyEdited=!!body&&body.value!==current.body;const titleEdited=!!title&&title.value!==(current.title||'');
-    if(preserveEdited&&(bodyEdited||titleEdited))return;
-    container.dataset.templateKey=templateKey;container.dataset.withTitle=String(withTitle);
-    container.innerHTML=templateFieldContent(prefix,templateKey,withTitle);
-  };
-  const insertTemplateVariable = (prefix, variable) => {
-    const field=$(`#${prefix}-body`);if(!field)return;
-    const token=`{{${variable}}}`;const start=field.selectionStart??field.value.length;const end=field.selectionEnd??start;
-    field.setRangeText(token,start,end,'end');field.focus();
-  };
-  const restoreTemplate = (prefix, templateKey, withTitle) => {
-    const container=$(`#${prefix}-template-fields`);if(!container)return;
-    container.dataset.templateKey=templateKey;container.dataset.withTitle=withTitle;
-    container.innerHTML=templateFieldContent(prefix,templateKey,withTitle==='true');
-  };
+  const templateFor = key => state.boot?.notificationTemplates?.[key] || {body:'', title:'', variables:[]};
+  const mergeToken = label => `{{${label}}}`;
+
+  function mapTemplateTokens(text, template, useLabels) {
+    const names = new Map(template.variables.map(({key, label}) => useLabels ? [key, label] : [label, key]));
+    return text.replace(/\{\{([^{}]+)\}\}/g, (token, name) => names.has(name) ? mergeToken(names.get(name)) : token);
+  }
+
+  function templateHighlights(text, template) {
+    const allowed = new Set(template.variables.flatMap(({key, label}) => [key, label]));
+    const tokens = /\{\{([^{}]+)\}\}/g;
+    let html = '', offset = 0;
+    for (const match of text.matchAll(tokens)) {
+      html += escapeHtml(text.slice(offset, match.index));
+      html += `<mark class="${allowed.has(match[1]) ? 'template-token' : 'template-token invalid'}">${escapeHtml(match[0])}</mark>`;
+      offset = match.index + match[0].length;
+    }
+    return html + escapeHtml(text.slice(offset)) + '\u200b';
+  }
+
+  function templateInput(prefix, name, label, text, template) {
+    const id = escapeHtml(`${prefix}-${name}`);
+    const value = mapTemplateTokens(text, template, true);
+    const attrs = `id="${id}" class="template-input" data-template-input="${name}" aria-describedby="${escapeHtml(prefix)}-template-help" data-no-translate`;
+    const field = name === 'title'
+      ? `<input type="text" ${attrs} value="${escapeHtml(value)}">`
+      : `<textarea ${attrs} rows="10" spellcheck="false">${escapeHtml(value)}</textarea>`;
+    return `<label class="template-label" for="${id}">${label}</label>
+      <div class="template-editor template-editor-${name}">
+        <div class="template-highlight" aria-hidden="true" data-no-translate>${templateHighlights(value, template)}</div>
+        ${field}
+      </div>`;
+  }
+
+  function templateFieldContent(prefix, templateKey, withTitle) {
+    const template = templateFor(templateKey);
+    const options = template.variables.map(({key, label}) => localizedOption(label, translations[label] || label, key)).join('');
+    return `
+      <div class="template-toolbar">
+        <strong>Nội dung gửi sinh viên</strong>
+        <div class="template-actions">
+          <select class="template-picker" data-template-variable aria-label="Chèn trường thông tin">
+            ${localizedOption('Chèn trường…', 'Insert field…', '')}${options}
+          </select>
+          <button type="button" class="link-button" data-restore-template>Khôi phục mẫu mặc định</button>
+        </div>
+      </div>
+      <div class="template-content">
+        ${withTitle ? templateInput(prefix, 'title', 'Tiêu đề', template.title, template) : ''}
+        ${templateInput(prefix, 'body', 'Nội dung thông báo/email', template.body, template)}
+        <p class="template-help" id="${escapeHtml(prefix)}-template-help">Các trường màu xanh sẽ tự điền khi gửi.</p>
+      </div>`;
+  }
+
+  const messageFields = (prefix, key, withTitle = false) => `<div class="template-fields" id="${escapeHtml(prefix)}-template-fields" data-template-prefix="${escapeHtml(prefix)}" data-template-key="${escapeHtml(key)}" data-with-title="${withTitle}">${templateFieldContent(prefix,key,withTitle)}</div>`;
+  const messageBodyField = (prefix, key) => messageFields(prefix,key);
+
+  function templateMessage(prefix) {
+    const container = document.getElementById(`${prefix}-template-fields`);
+    const template = templateFor(container.dataset.templateKey);
+    const message = {messageBody: mapTemplateTokens(document.getElementById(`${prefix}-body`).value, template, false)};
+    const title = document.getElementById(`${prefix}-title`);
+    if (title) message.messageTitle = mapTemplateTokens(title.value, template, false);
+    return message;
+  }
+
+  function changeTemplateFields(prefix, templateKey, withTitle = false, preserveEdited = true) {
+    const container = document.getElementById(`${prefix}-template-fields`);
+    if (!container) return;
+    const previous = templateFor(container.dataset.defaultKey || container.dataset.templateKey);
+    const body = $('[data-template-input="body"]', container);
+    const title = $('[data-template-input="title"]', container);
+    const bodyEdited = body.value !== mapTemplateTokens(previous.body, previous, true);
+    const titleEdited = title && title.value !== mapTemplateTokens(previous.title, previous, true);
+    container.dataset.templateKey = templateKey;
+    if (preserveEdited && (bodyEdited || titleEdited)) return;
+    container.innerHTML = templateFieldContent(prefix, templateKey, withTitle);
+    container.dataset.defaultKey = templateKey;
+    delete container.dataset.activeField;
+  }
+
+  function refreshTemplateHighlight(field, redraw = true) {
+    const highlight = $('.template-highlight', field.parentElement);
+    if (redraw) {
+      const template = templateFor(field.closest('.template-fields').dataset.templateKey);
+      highlight.innerHTML = templateHighlights(field.value, template);
+    }
+    highlight.scrollTop = field.scrollTop;
+    highlight.scrollLeft = field.scrollLeft;
+  }
+
+  function insertTemplateVariable(picker) {
+    const container = picker.closest('.template-fields');
+    const template = templateFor(container.dataset.templateKey);
+    const variable = template.variables.find(item => item.key === picker.value);
+    picker.value = '';
+    if (!variable) return;
+    const lastField = container.dataset.activeField;
+    const field = $(lastField === 'title' ? '[data-template-input="title"]' : '[data-template-input="body"]', container);
+    const start = lastField ? field.selectionStart : field.value.length;
+    const end = lastField ? field.selectionEnd : start;
+    field.setRangeText(mergeToken(variable.label), start, end, 'end');
+    field.focus();
+    refreshTemplateHighlight(field);
+  }
+
+  function restoreTemplate(prefix, templateKey, withTitle) {
+    changeTemplateFields(prefix, templateKey, withTitle, false);
+  }
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -221,6 +304,8 @@
   function notificationText(item, field, language = state.language) {
     const metadata = item.i18n || {};
     if (metadata[field === 'title' ? 'customTitle' : 'customMessage']) return String(item[field] || '');
+    const translatedTemplate = metadata[field === 'title' ? 'titleEn' : 'messageEn'];
+    if (translatedTemplate) return language === 'en' ? translatedTemplate : String(item[field] || '');
     const key = field === 'title' ? metadata.titleKey : metadata.messageKey;
     const entry = messageTranslations[key];
     if (!entry) {
@@ -375,13 +460,31 @@
     document.addEventListener('click', event => {
       if (!$('#language-picker')?.contains(event.target)) closeLanguageMenu();
       const nav = event.target.closest('[data-view]'); if (nav) navigate(nav.dataset.view);
-      const variable=event.target.closest('[data-template-variable]');if(variable)insertTemplateVariable(variable.dataset.templatePrefix,variable.dataset.templateVariable);
-      const restore=event.target.closest('[data-restore-template]');if(restore)restoreTemplate(restore.dataset.restoreTemplate,restore.dataset.templateKey,restore.dataset.withTitle);
+      const restore = event.target.closest('[data-restore-template]');
+      if (restore) {
+        const container = restore.closest('.template-fields');
+        restoreTemplate(container.dataset.templatePrefix, container.dataset.templateKey, container.dataset.withTitle === 'true');
+        $('[data-restore-template]', container).focus();
+      }
       const go = event.target.closest('[data-go]'); if (go) navigate(go.dataset.go);
       const sidebar = $('.sidebar');
       if (sidebar && sidebar.classList.contains('open') && !event.target.closest('.sidebar') && !event.target.closest('#mobile-menu')) sidebar.classList.remove('open');
     });
-    document.addEventListener('focusin', event => { if (!$('#language-picker')?.contains(event.target)) closeLanguageMenu(); });
+    document.addEventListener('focusin', event => {
+      if (!$('#language-picker')?.contains(event.target)) closeLanguageMenu();
+      if (event.target.matches('[data-template-input]')) {
+        event.target.closest('.template-fields').dataset.activeField = event.target.dataset.templateInput;
+      }
+    });
+    document.addEventListener('change', event => {
+      if (event.target.matches('[data-template-variable]')) insertTemplateVariable(event.target);
+    });
+    document.addEventListener('input', event => {
+      if (event.target.matches('[data-template-input]')) refreshTemplateHighlight(event.target);
+    });
+    document.addEventListener('scroll', event => {
+      if (event.target.matches?.('[data-template-input]')) refreshTemplateHighlight(event.target, false);
+    }, true);
     window.addEventListener('resize', syncSegmented);
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape' && !$('#modal').classList.contains('hidden')) closeModal();
@@ -765,7 +868,7 @@
     if(!selected.length||selected.length>20){toast('Chọn từ 1 đến 20 yêu cầu.',true);return;}
     const versions={}; selected.forEach(id=>{const request=state.documentRequests.find(item=>item.requestId===id);if(request)versions[id]=request.version;});
     openModal(`<h2>Cập nhật ${selected.length} yêu cầu</h2><form id="request-batch-form"><label>Ngày dự kiến</label><input id="request-batch-expected" type="date"><label>Phản hồi cho sinh viên</label><textarea id="request-batch-note" rows="2"></textarea>${messageFields('request-batch','request_'+action)}<label class="check-option"><input id="request-batch-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Cập nhật hàng loạt</button></div></form>`);
-    $('#request-batch-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('batchUpdateDocumentRequests',{requestIds:selected,versions,action,actionToken:'batch_'+crypto.randomUUID().replaceAll('-',''),expectedAt:$('#request-batch-expected').value,publicNote:$('#request-batch-note').value,messageBody:$('#request-batch-body').value,sendEmail:$('#request-batch-email').checked});closeModal();toast(`Đã cập nhật ${selected.length} yêu cầu.`);await loadAdminDocumentRequests();}catch(error){showAlert(error.message);}finally{setBusy(button,false);}});
+    $('#request-batch-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('batchUpdateDocumentRequests',{requestIds:selected,versions,action,actionToken:'batch_'+crypto.randomUUID().replaceAll('-',''),expectedAt:$('#request-batch-expected').value,publicNote:$('#request-batch-note').value,...templateMessage('request-batch'),sendEmail:$('#request-batch-email').checked});closeModal();toast(`Đã cập nhật ${selected.length} yêu cầu.`);await loadAdminDocumentRequests();}catch(error){showAlert(error.message);}finally{setBusy(button,false);}});
   }
 
   async function openStudentDocumentRequests(email,name) {
@@ -797,7 +900,7 @@
   async function submitAdminDocumentRequest(request,action,button) {
     setBusy(button,true);
     try {
-      const payload={requestId:request.requestId,version:request.version,action,actionToken:'action_'+crypto.randomUUID().replaceAll('-',''),expectedAt:$('#admin-request-expected').value,publicNote:$('#admin-request-public-note').value,internalNote:$('#admin-request-internal-note').value,messageBody:$('#admin-request-body').value,sendEmail:$('#admin-request-email').checked};
+      const payload={requestId:request.requestId,version:request.version,action,actionToken:'action_'+crypto.randomUUID().replaceAll('-',''),expectedAt:$('#admin-request-expected').value,publicNote:$('#admin-request-public-note').value,internalNote:$('#admin-request-internal-note').value,...templateMessage('admin-request'),sendEmail:$('#admin-request-email').checked};
       await api('updateDocumentRequest',payload); closeModal(); toast('Đã cập nhật yêu cầu.'); await loadAdminDocumentRequests();
     } catch(error){showAlert(error.message);} finally{setBusy(button,false);}
   }
@@ -811,7 +914,7 @@
       return `<div class="transaction-item"><div class="review-item-main">${item.status==='PENDING'?`<input class="pending-item-select" type="checkbox" data-transaction-id="${escapeHtml(tx.transactionId)}" value="${escapeHtml(item.itemId)}" aria-label="Chọn ${escapeHtml(typeName.vi)}" onchange="window.app.updatePendingSelection('${escapeHtml(tx.transactionId)}')">`:''}<div><strong>${localizedHtml(typeName.vi,typeName.en)}</strong>${candidateSelect}${item.adminNote?`<small>${escapeHtml(item.adminNote)}</small>`:''}</div></div>${item.status==='PENDING'?`<button class="link-button danger" onclick="window.app.reviewItem('${item.itemId}','REJECT')">Từ chối</button>`:`<span class="status ${statusClass(item.status)}">${statusHtml(itemStatus)}</span>`}</div>`;
     }).join('');
     const pendingCount = tx.items.filter(item => item.status === 'PENDING').length;
-    return `<article class="transaction-card"><div class="transaction-head"><div><h3 data-no-translate>${escapeHtml(tx.studentName)}</h3><div class="transaction-meta"><span>${localizedHtml(`MSSV: ${tx.studentId} - Lớp: ${tx.className}`,`Student ID: ${tx.studentId} - Class: ${tx.className}`)}</span>${dateHtml(tx.createdAt)}<span>${localizedHtml(typeLabel(tx.type),({SUBMIT:'Document Submission',RECEIVE:'Document Collection',SUPPLEMENT:'Submit Supplementary Documents'})[tx.type])}</span><span class="transaction-code">${escapeHtml(tx.code)}</span></div></div><span class="status ${statusClass(tx.status)}">${statusHtml(statusLabel(tx.status))}</span></div>${tx.note?`<p data-no-translate>${escapeHtml(tx.note)}</p>`:''}${pendingCount?`<div class="select-all-row"><span>${localizedHtml(`${pendingCount} giấy tờ chờ đối chiếu`,`${pendingCount} documents awaiting review`)}</span><button class="link-button" onclick="window.app.selectAllPending('${escapeHtml(tx.transactionId)}')">Chọn tất cả</button></div>`:''}<div class="transaction-items">${items}</div>${pendingCount?`<details><summary>Nội dung gửi sinh viên</summary><label>Ghi chú xử lý</label><textarea id="review-note-${escapeHtml(tx.transactionId)}" rows="2"></textarea>${messageFields(`review-${tx.transactionId}`,'transactionApprove')}<label class="check-option"><input id="review-email-${escapeHtml(tx.transactionId)}" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label></details><div class="form-actions"><button id="approve-${escapeHtml(tx.transactionId)}" class="button primary" onclick="window.app.approveTransaction('${escapeHtml(tx.transactionId)}',this)" disabled>Xác nhận (0)</button></div>`:''}</article>`;
+    return `<article class="transaction-card"><div class="transaction-head"><div><h3 data-no-translate>${escapeHtml(tx.studentName)}</h3><div class="transaction-meta"><span>${localizedHtml(`MSSV: ${tx.studentId} - Lớp: ${tx.className}`,`Student ID: ${tx.studentId} - Class: ${tx.className}`)}</span>${dateHtml(tx.createdAt)}<span>${localizedHtml(typeLabel(tx.type),({SUBMIT:'Document Submission',RECEIVE:'Document Collection',SUPPLEMENT:'Submit Supplementary Documents'})[tx.type])}</span><span class="transaction-code">${escapeHtml(tx.code)}</span></div></div><span class="status ${statusClass(tx.status)}">${statusHtml(statusLabel(tx.status))}</span></div>${tx.note?`<p data-no-translate>${escapeHtml(tx.note)}</p>`:''}${pendingCount?`<div class="select-all-row"><span>${localizedHtml(`${pendingCount} giấy tờ chờ đối chiếu`,`${pendingCount} documents awaiting review`)}</span><button class="link-button" onclick="window.app.selectAllPending('${escapeHtml(tx.transactionId)}')">Chọn tất cả</button></div>`:''}<div class="transaction-items">${items}</div>${pendingCount?`<details><summary>Ghi chú và email</summary><label>Ghi chú xử lý</label><textarea id="review-note-${escapeHtml(tx.transactionId)}" rows="2"></textarea>${messageFields(`review-${tx.transactionId}`,'transactionApprove')}<label class="check-option"><input id="review-email-${escapeHtml(tx.transactionId)}" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label></details><div class="form-actions"><button id="approve-${escapeHtml(tx.transactionId)}" class="button primary" onclick="window.app.approveTransaction('${escapeHtml(tx.transactionId)}',this)" disabled>Xác nhận (0)</button></div>`:''}</article>`;
   }
 
   function updatePendingSelection(transactionId) {
@@ -839,7 +942,7 @@
     }
     setBusy(button,true,'Đang xác nhận…');
     try {
-      await api('reviewTransactionItems',{itemIds,decision:'APPROVE',note:$(`#review-note-${transactionId}`).value,messageBody:$(`#review-${transactionId}-body`).value,sendEmail:$(`#review-email-${transactionId}`).checked,documentSelections});
+      await api('reviewTransactionItems',{itemIds,decision:'APPROVE',note:$(`#review-note-${transactionId}`).value,...templateMessage(`review-${transactionId}`),sendEmail:$(`#review-email-${transactionId}`).checked,documentSelections});
       toast(`Đã xác nhận ${itemIds.length} giấy tờ.`); await loadPending();
     } catch(error) { toast(error.message,true); }
     finally { setBusy(button,false); }
@@ -851,7 +954,7 @@
     openModal(`<h2>${title}</h2><p>${decision==='APPROVE'?'Xác nhận sau khi đã đối chiếu sinh viên và giấy tờ thực tế.':'Ghi lý do để sinh viên biết cần làm gì.'}</p><form id="review-form"><label>Ghi chú xử lý</label><textarea id="review-note" rows="4" ${decision==='REJECT'?'required':''}></textarea>${messageBodyField('review',templateKey)}<label class="check-option"><input id="review-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button ${decision==='APPROVE'?'primary':'danger'}" type="submit">${title}</button></div></form>`);
     $('#review-form').addEventListener('submit', async event => {
       event.preventDefault(); const button=event.submitter; setBusy(button,true);
-      try { await api('reviewTransactionItem',{itemId,decision,note:$('#review-note').value,messageBody:$('#review-body').value,sendEmail:$('#review-email').checked}); closeModal(); toast('Đã cập nhật yêu cầu.'); await loadPending(); }
+      try { await api('reviewTransactionItem',{itemId,decision,note:$('#review-note').value,...templateMessage('review'),sendEmail:$('#review-email').checked}); closeModal(); toast('Đã cập nhật yêu cầu.'); await loadPending(); }
       catch(error){ toast(error.message,true); } finally { setBusy(button,false); }
     });
   }
@@ -872,14 +975,14 @@
     const options=state.boot.types.map(type=>{const name=typeNamePair(type.typeId,type.name);return localizedOption(name.vi,name.en,type.typeId);}).join('');
     const initialStatuses=['Đã tiếp nhận','Chờ sinh viên đến nhận','Đang xử lý'].map(s=>localizedOption(s,translations[s],s)).join('');
     openModal(`<h2>Thêm hồ sơ tại văn phòng</h2><form id="manual-document-form"><label>Email hoặc MSSV sinh viên</label><input id="manual-document-student" required><label>Loại hồ sơ</label><select id="manual-document-type" required>${options}</select><label>Trạng thái ban đầu</label><select id="manual-document-status">${initialStatuses}</select><label>Ngày dự kiến</label><input id="manual-document-expected" type="date"><label>Phản hồi công khai</label><textarea id="manual-document-note"></textarea>${messageBodyField('manual-document','documentCreated')}<label class="check-option"><input id="manual-document-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Tạo hồ sơ</button></div></form>`);
-    $('#manual-document-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{const value=$('#manual-document-student').value.trim();const student=value.includes('@')?{studentEmail:value}:{studentId:value};await api('createManualDocument',{...student,typeId:$('#manual-document-type').value,status:$('#manual-document-status').value,expectedAt:$('#manual-document-expected').value,publicNote:$('#manual-document-note').value,messageBody:$('#manual-document-body').value,sendEmail:$('#manual-document-email').checked});closeModal();toast('Đã tạo hồ sơ.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
+    $('#manual-document-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{const value=$('#manual-document-student').value.trim();const student=value.includes('@')?{studentEmail:value}:{studentId:value};await api('createManualDocument',{...student,typeId:$('#manual-document-type').value,status:$('#manual-document-status').value,expectedAt:$('#manual-document-expected').value,publicNote:$('#manual-document-note').value,...templateMessage('manual-document'),sendEmail:$('#manual-document-email').checked});closeModal();toast('Đã tạo hồ sơ.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
   }
 
   function showBatchDocumentForm(){
     const ids=$$('.document-select:checked').map(input=>input.value);if(!ids.length){toast('Chọn ít nhất một hồ sơ.',true);return;}
     const statuses=['Đang kiểm tra hồ sơ','Yêu cầu bổ sung','Đang xử lý','Đang trình duyệt','Chờ phê duyệt','Đã hoàn thành','Chờ sinh viên đến nhận'].map(s=>localizedOption(s,translations[s],s)).join('');
     openModal(`<h2>Cập nhật ${ids.length} hồ sơ</h2><form id="batch-document-form"><label>Trạng thái mới</label><select id="batch-status">${statuses}</select><small>Giữ bước hiện tại khi cập nhật hàng loạt.</small><label>Phản hồi công khai</label><textarea id="batch-note"></textarea>${messageBodyField('batch','documentBatch')}<label class="check-option"><input id="batch-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Cập nhật hàng loạt</button></div></form>`);
-    $('#batch-document-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('batchUpdateDocuments',{documentIds:ids,status:$('#batch-status').value,publicNote:$('#batch-note').value,messageBody:$('#batch-body').value,sendEmail:$('#batch-email').checked});closeModal();toast('Đã cập nhật các hồ sơ đã chọn.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
+    $('#batch-document-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('batchUpdateDocuments',{documentIds:ids,status:$('#batch-status').value,publicNote:$('#batch-note').value,...templateMessage('batch'),sendEmail:$('#batch-email').checked});closeModal();toast('Đã cập nhật các hồ sơ đã chọn.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
   }
 
   async function editDocument(documentId) {
@@ -893,7 +996,7 @@
       let overrideStepStatus=false;
       $('#doc-step').addEventListener('change',event=>{const statusSelect=$('#doc-status');const step=(doc.steps||[]).find(item=>item.stepId===event.target.value);if(!step){statusSelect.value=doc.status;overrideStepStatus=false;return;}if(!Array.from(statusSelect.options).some(option=>option.value===step.statusLabel)){statusSelect.insertAdjacentHTML('beforeend',localizedOption(step.statusLabel,step.statusLabelEn||step.statusLabel,step.statusLabel));}statusSelect.value=step.statusLabel;overrideStepStatus=false;});
       $('#doc-status').addEventListener('change',()=>{overrideStepStatus=true;});
-      $('#document-update-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('updateDocumentProgress',{documentId,version:doc.version,stepId:$('#doc-step').value,status:$('#doc-status').value,overrideStepStatus,expectedAt:$('#doc-expected').value,publicNote:$('#doc-public-note').value,internalNote:$('#doc-internal-note').value,messageBody:$('#doc-body').value,sendEmail:$('#doc-send-email').checked});closeModal();toast('Đã cập nhật tiến độ hồ sơ.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
+      $('#document-update-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('updateDocumentProgress',{documentId,version:doc.version,stepId:$('#doc-step').value,status:$('#doc-status').value,overrideStepStatus,expectedAt:$('#doc-expected').value,publicNote:$('#doc-public-note').value,internalNote:$('#doc-internal-note').value,...templateMessage('doc'),sendEmail:$('#doc-send-email').checked});closeModal();toast('Đã cập nhật tiến độ hồ sơ.');await loadAdminDocuments();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}});
     } catch(error){showAlert(error.message);}
   }
 
@@ -947,9 +1050,9 @@
     if(active){$('#service-recorder').innerHTML=`<div class="timer"><span><span data-no-translate>${escapeHtml(active.studentName)}</span> - MSSV: ${escapeHtml(active.studentId)}</span><strong id="timer-value">00:00:00</strong><button class="button primary" onclick="window.app.finishService('${active.sessionId}')">Kết thúc buổi tiếp</button></div>`;const start=new Date(active.startedAt).getTime();const tick=()=>{const seconds=Math.max(0,Math.floor((Date.now()-start)/1000));$('#timer-value').textContent=[Math.floor(seconds/3600),Math.floor(seconds%3600/60),seconds%60].map(x=>String(x).padStart(2,'0')).join(':')};tick();state.serviceTimer=setInterval(tick,1000);}else{$('#service-recorder').innerHTML=`<form id="start-service-form"><label>Email hoặc MSSV sinh viên</label><input id="live-student" required><button class="button primary" type="submit">Bắt đầu tiếp sinh viên</button></form>`;$('#start-service-form').addEventListener('submit',async event=>{event.preventDefault();const value=$('#live-student').value.trim();const button=event.submitter;setBusy(button,true);try{const payload=value.includes('@')?{studentEmail:value}:{studentId:value};await api('startServiceSession',payload);await loadService();}catch(error){showAlert(error.message);}finally{setBusy(button,false);}});}
   }
 
-  function finishService(sessionId) { openModal(`<h2>Kết thúc buổi tiếp sinh viên</h2><form id="finish-service-form"><label>Nội dung trao đổi</label><textarea id="finish-topic" required></textarea><label>Kết quả xử lý</label><textarea id="finish-result" required></textarea><label>Ghi chú</label><textarea id="finish-note"></textarea>${messageFields('finish-service','service',true)}<label class="check-option"><input id="finish-service-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Lưu buổi tiếp</button></div></form>`);$('#finish-service-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('finishServiceSession',{sessionId,topic:$('#finish-topic').value,result:$('#finish-result').value,note:$('#finish-note').value,messageTitle:$('#finish-service-title').value,messageBody:$('#finish-service-body').value,sendEmail:$('#finish-service-email').checked});closeModal();toast('Đã lưu buổi tiếp sinh viên.');await loadService();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}}); }
+  function finishService(sessionId) { openModal(`<h2>Kết thúc buổi tiếp sinh viên</h2><form id="finish-service-form"><label>Nội dung trao đổi</label><textarea id="finish-topic" required></textarea><label>Kết quả xử lý</label><textarea id="finish-result" required></textarea><label>Ghi chú</label><textarea id="finish-note"></textarea>${messageFields('finish-service','service',true)}<label class="check-option"><input id="finish-service-email" type="checkbox"><span><strong>Gửi email cho sinh viên</strong><small>Thông báo trong ứng dụng luôn được gửi.</small></span></label><div class="form-actions"><button class="button primary" type="submit">Lưu buổi tiếp</button></div></form>`);$('#finish-service-form').addEventListener('submit',async event=>{event.preventDefault();const button=event.submitter;setBusy(button,true);try{await api('finishServiceSession',{sessionId,topic:$('#finish-topic').value,result:$('#finish-result').value,note:$('#finish-note').value,...templateMessage('finish-service'),sendEmail:$('#finish-service-email').checked});closeModal();toast('Đã lưu buổi tiếp sinh viên.');await loadService();}catch(error){toast(error.message,true);}finally{setBusy(button,false);}}); }
 
-  async function saveManualService(event) { event.preventDefault();const button=event.submitter;setBusy(button,true);try{const value=$('#manual-student').value.trim();const student=value.includes('@')?{studentEmail:value}:{studentId:value};await api('addManualServiceSession',{...student,startedAt:$('#manual-start').value,result:$('#manual-result').value,endedAt:$('#manual-end').value,topic:$('#manual-topic').value,messageTitle:$('#manual-service-title').value,messageBody:$('#manual-service-body').value,sendEmail:$('#manual-service-email').checked});event.target.reset();restoreTemplate('manual-service','service','true');toast('Đã lưu buổi tiếp sinh viên.');await loadServiceHistory();}catch(error){showAlert(error.message);}finally{setBusy(button,false);} }
+  async function saveManualService(event) { event.preventDefault();const button=event.submitter;setBusy(button,true);try{const value=$('#manual-student').value.trim();const student=value.includes('@')?{studentEmail:value}:{studentId:value};await api('addManualServiceSession',{...student,startedAt:$('#manual-start').value,result:$('#manual-result').value,endedAt:$('#manual-end').value,topic:$('#manual-topic').value,...templateMessage('manual-service'),sendEmail:$('#manual-service-email').checked});event.target.reset();restoreTemplate('manual-service','service',true);toast('Đã lưu buổi tiếp sinh viên.');await loadServiceHistory();}catch(error){showAlert(error.message);}finally{setBusy(button,false);} }
   async function loadServiceHistory(){const sessions=await api('listServiceSessions',{query:$('#service-search').value});renderServiceHistory(sessions);}
   function renderServiceHistory(sessions){$('#service-history').innerHTML=table(['Sinh viên','Thời gian','Thời lượng','Nội dung','Kết quả','Cán bộ'],sessions.map(row=>[`<strong data-no-translate>${escapeHtml(row.studentName)}</strong><small>${localizedHtml(`MSSV: ${row.studentId} - Lớp: ${row.className}`,`Student ID: ${row.studentId} - Class: ${row.className}`)}</small>`,dateHtml(row.startedAt),localizedHtml(`${row.durationMinutes} phút`,`${row.durationMinutes} minutes`),`<span data-no-translate>${escapeHtml(row.topic)}</span>`,`<span data-no-translate>${escapeHtml(row.result)}</span>`,escapeHtml(row.staffEmail)]));}
 

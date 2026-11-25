@@ -116,45 +116,85 @@ function notificationTemplates_() {
     ngay_du_kien: 'Ngày dự kiến', quy_trinh: 'Quy trình', buoc_xu_ly: 'Bước xử lý', phan_hoi: 'Phản hồi công khai',
     noi_dung_trao_doi: 'Nội dung trao đổi', ket_qua_xu_ly: 'Kết quả xử lý'
   };
-  const make = function(body, keys, title) {
-    return { body: body, title: title || '', variables: keys.map(function(key) { return { key: key, label: variables[key] }; }) };
+  const make = function(linesVi, linesEn, keys, title, titleEn) {
+    return {
+      body: ['Kính gửi sinh viên {{ten_sinh_vien}} (MSSV: {{mssv}}),', '', ...linesVi, '', 'Trân trọng.'].join('\n'),
+      bodyEn: ['Dear {{ten_sinh_vien}} (Student ID: {{mssv}}),', '', ...linesEn, '', 'Sincerely,\nFaculty Office'].join('\n'),
+      title: title || '', titleEn: titleEn || '',
+      variables: keys.map(function(key) { return { key: key, label: variables[key] }; })
+    };
   };
   const documentKeys = common.concat(['loai_ho_so', 'ma_ho_so', 'trang_thai', 'ngay_du_kien', 'quy_trinh', 'buoc_xu_ly', 'phan_hoi']);
-  const greeting = 'Chào {{ten_sinh_vien}} (MSSV: {{mssv}}),';
-  const documentBody = greeting + '\n\nHồ sơ {{loai_ho_so}} ({{ma_ho_so}}) hiện có trạng thái: {{trang_thai}}.\nNgày dự kiến: {{ngay_du_kien}}\nQuy trình: {{quy_trinh}}\nBước xử lý: {{buoc_xu_ly}}\nPhản hồi: {{phan_hoi}}';
-  const serviceKeys = common.concat(['noi_dung_trao_doi', 'ket_qua_xu_ly']);
-  const serviceBody = greeting + '\n\nNội dung trao đổi: {{noi_dung_trao_doi}}\nKết quả xử lý: {{ket_qua_xu_ly}}';
-  const requestKeys = common.concat(['loai_ho_so', 'ma_yeu_cau', 'ma_ho_so', 'trang_thai', 'ngay_du_kien', 'phan_hoi']);
-  const requestBody = function(text) { return greeting + '\n\nYêu cầu {{ma_yeu_cau}} về hồ sơ {{loai_ho_so}} {{ket}}.\nTrạng thái: {{trang_thai}}\nMã hồ sơ: {{ma_ho_so}}\nNgày dự kiến: {{ngay_du_kien}}\nPhản hồi: {{phan_hoi}}'.replace('{{ket}}', text); };
-  const templates = {
-    documentCreated: make(documentBody, documentKeys), documentProgress: make(documentBody, documentKeys), documentBatch: make(documentBody, documentKeys),
-    documentCancel: make(greeting + '\n\nHồ sơ {{loai_ho_so}} ({{ma_ho_so}}) đã bị hủy.\nPhản hồi: {{phan_hoi}}', common.concat(['loai_ho_so', 'ma_ho_so', 'trang_thai', 'phan_hoi'])),
-    transactionApprove: make(greeting + '\n\n{{loai_ho_so}} đã được xác nhận tại quầy.\nPhản hồi: {{phan_hoi}}', common.concat(['loai_ho_so', 'ma_ho_so', 'ma_yeu_cau', 'phan_hoi'])),
-    transactionReject: make(greeting + '\n\n{{loai_ho_so}} chưa được xác nhận.\nPhản hồi: {{phan_hoi}}', common.concat(['loai_ho_so', 'ma_ho_so', 'ma_yeu_cau', 'phan_hoi'])),
-    request_ACCEPT: make(requestBody('đã được tiếp nhận và đang được xử lý'), requestKeys),
-    request_READY: make(requestBody('đã sẵn sàng. Sinh viên vui lòng đến văn phòng để nhận'), requestKeys),
-    request_COMPLETE: make(requestBody('đã được bàn giao'), requestKeys),
-    request_REJECT: make(requestBody('chưa được chấp thuận'), requestKeys),
-    request_CANCEL: make(requestBody('đã bị hủy'), requestKeys),
-    request_UPDATE: make(requestBody('đã được cập nhật'), requestKeys),
-    service: make(serviceBody, serviceKeys, 'Kết quả tiếp sinh viên')
+  const documentTemplate = function(introVi, introEn) {
+    return make(
+      [introVi, '', 'Trạng thái: {{trang_thai}}', 'Ngày dự kiến hoàn thành: {{ngay_du_kien}}', 'Quy trình: {{quy_trinh}}', 'Bước xử lý: {{buoc_xu_ly}}', 'Phản hồi của Văn phòng: {{phan_hoi}}'],
+      [introEn, '', 'Status: {{trang_thai}}', 'Expected completion date: {{ngay_du_kien}}', 'Workflow: {{quy_trinh}}', 'Processing step: {{buoc_xu_ly}}', 'Office response: {{phan_hoi}}'],
+      documentKeys
+    );
   };
-  return templates;
+  const reviewKeys = common.concat(['loai_ho_so', 'ma_ho_so', 'ma_yeu_cau', 'phan_hoi']);
+  const requestKeys = common.concat(['loai_ho_so', 'ma_yeu_cau', 'ma_ho_so', 'trang_thai', 'ngay_du_kien', 'phan_hoi']);
+  const requestTemplate = function(introVi, introEn, instructionVi, instructionEn) {
+    const vi = [introVi, '', 'Mã yêu cầu: {{ma_yeu_cau}}', 'Loại hồ sơ: {{loai_ho_so}}', 'Mã hồ sơ: {{ma_ho_so}}', 'Trạng thái: {{trang_thai}}', 'Ngày dự kiến: {{ngay_du_kien}}', 'Phản hồi của Văn phòng: {{phan_hoi}}'];
+    const en = [introEn, '', 'Request ID: {{ma_yeu_cau}}', 'Document type: {{loai_ho_so}}', 'Document ID: {{ma_ho_so}}', 'Status: {{trang_thai}}', 'Expected date: {{ngay_du_kien}}', 'Office response: {{phan_hoi}}'];
+    if (instructionVi) {
+      vi.push('', instructionVi);
+      en.push('', instructionEn);
+    }
+    return make(vi, en, requestKeys);
+  };
+  const progress = documentTemplate(
+    'Văn phòng thông báo kết quả cập nhật tiến độ xử lý hồ sơ {{loai_ho_so}} (mã hồ sơ: {{ma_ho_so}}).',
+    'The Office is writing to provide an update on the processing of {{loai_ho_so}} (document ID: {{ma_ho_so}}).'
+  );
+  return {
+    documentCreated: documentTemplate(
+      'Văn phòng đã ghi nhận hồ sơ {{loai_ho_so}} (mã hồ sơ: {{ma_ho_so}}) vào hệ thống. Thông tin xử lý như sau.',
+      'The Office has registered {{loai_ho_so}} (document ID: {{ma_ho_so}}) in the system. Processing details are provided below.'
+    ),
+    documentProgress: progress,
+    documentBatch: progress,
+    documentCancel: make(
+      ['Văn phòng thông báo hồ sơ {{loai_ho_so}} (mã hồ sơ: {{ma_ho_so}}) đã được hủy trên hệ thống.', '', 'Lý do: {{phan_hoi}}'],
+      ['The Office is writing to inform you that {{loai_ho_so}} (document ID: {{ma_ho_so}}) has been cancelled in the system.', '', 'Reason: {{phan_hoi}}'],
+      common.concat(['loai_ho_so', 'ma_ho_so', 'trang_thai', 'phan_hoi'])
+    ),
+    transactionApprove: make(
+      ['Văn phòng đã đối chiếu và xác nhận giấy tờ thuộc loại hồ sơ {{loai_ho_so}} tại quầy.', '', 'Mã yêu cầu: {{ma_yeu_cau}}', 'Phản hồi của Văn phòng: {{phan_hoi}}'],
+      ['The Office has verified and confirmed the paperwork for {{loai_ho_so}} at the service counter.', '', 'Request ID: {{ma_yeu_cau}}', 'Office response: {{phan_hoi}}'],
+      reviewKeys
+    ),
+    transactionReject: make(
+      ['Sau khi đối chiếu, Văn phòng chưa thể xác nhận giấy tờ thuộc loại hồ sơ {{loai_ho_so}}.', '', 'Mã yêu cầu: {{ma_yeu_cau}}', 'Lý do: {{phan_hoi}}'],
+      ['After reviewing your paperwork for {{loai_ho_so}}, the Office was unable to confirm it.', '', 'Request ID: {{ma_yeu_cau}}', 'Reason: {{phan_hoi}}'],
+      reviewKeys
+    ),
+    request_ACCEPT: requestTemplate('Văn phòng đã tiếp nhận yêu cầu cấp hồ sơ và đang tiến hành xử lý.', 'The Office has received your document request and is processing it.'),
+    request_READY: requestTemplate('Văn phòng thông báo hồ sơ theo yêu cầu đã được chuẩn bị và sẵn sàng bàn giao.', 'The Office has prepared the requested document and it is ready for collection.', 'Đề nghị sinh viên đến Văn phòng để nhận hồ sơ.', 'Please visit the Office to collect your document.'),
+    request_COMPLETE: requestTemplate('Văn phòng xác nhận hồ sơ theo yêu cầu đã được bàn giao cho sinh viên.', 'The Office confirms that the requested document has been handed over to you.'),
+    request_REJECT: requestTemplate('Sau khi xem xét, Văn phòng chưa thể chấp thuận yêu cầu cấp hồ sơ.', 'After reviewing your document request, the Office was unable to approve it.'),
+    request_CANCEL: requestTemplate('Văn phòng thông báo yêu cầu cấp hồ sơ đã được hủy trên hệ thống.', 'The Office is writing to inform you that your document request has been cancelled in the system.'),
+    request_UPDATE: requestTemplate('Văn phòng thông báo thông tin xử lý yêu cầu cấp hồ sơ đã được cập nhật.', 'The Office is writing to inform you that the processing details for your document request have been updated.'),
+    service: make(
+      ['Văn phòng thông báo nội dung và kết quả xử lý sau buổi tiếp sinh viên như sau.', '', 'Nội dung trao đổi: {{noi_dung_trao_doi}}', 'Kết quả xử lý: {{ket_qua_xu_ly}}'],
+      ['The Office is writing to summarize the discussion and outcome of your appointment.', '', 'Discussion: {{noi_dung_trao_doi}}', 'Outcome: {{ket_qua_xu_ly}}'],
+      common.concat(['noi_dung_trao_doi', 'ket_qua_xu_ly']), 'Thông báo kết quả buổi tiếp sinh viên', 'Outcome of your student services appointment'
+    )
+  };
 }
 
 function renderNotificationTemplate_(text, templateKey, data, maxLength) {
   const templates = notificationTemplates_();
   const template = templates[templateKey];
   if (!template) throw new Error('VALIDATION|Không tìm thấy mẫu thông báo ' + templateKey + '.');
-  const allowed = {};
-  template.variables.forEach(function(item) { allowed[item.key] = true; });
+  const allowed = new Set(template.variables.map(function(item) { return item.key; }));
   const value = String(text == null ? '' : text);
   if (/{{|}}/.test(value.replace(/{{[^{}]+}}/g, ''))) {
     const malformed = value.replace(/{{[^{}]+}}/g, '').match(/{{[^{}]*}}|}}|{{/);
     throw new Error('VALIDATION|Cú pháp biến không hợp lệ: ' + (malformed ? malformed[0] : '') + '.');
   }
   const output = value.replace(/{{([^{}]+)}}/g, function(match, name) {
-    if (!allowed[name]) throw new Error('VALIDATION|Biến không hợp lệ hoặc không dùng được trong mẫu này: {{' + name + '}}.');
+    if (!allowed.has(name)) throw new Error('VALIDATION|Biến không hợp lệ hoặc không dùng được trong mẫu này: {{' + name + '}}.');
     return Object.prototype.hasOwnProperty.call(data || {}, name) && data[name] !== '' && data[name] != null ? String(data[name]) : '—';
   });
   return sanitizeMessageText_(output, maxLength);
@@ -180,7 +220,7 @@ function formatNotificationDate_(value) {
   return Utilities.formatDate(date, APP.TIMEZONE, 'dd/MM/yyyy');
 }
 
-function compileNotificationMessage_(body, title, templateKey, student, fields, fallbackTitle) {
+function compileNotificationMessage_(body, title, templateKey, student, fields, fallbackTitle, translatedFields) {
   const templates = notificationTemplates_();
   const template = templates[templateKey];
   const data = notificationTemplateData_(student, fields);
@@ -191,6 +231,8 @@ function compileNotificationMessage_(body, title, templateKey, student, fields, 
   return {
     body: rawBody ? renderNotificationTemplate_(rawBody, templateKey, data, 5000) : '',
     title: rawTitle ? renderNotificationTemplate_(rawTitle, templateKey, data, 200) : (fallbackTitle || template.title || ''),
+    messageEn: bodyIsDefault ? renderNotificationTemplate_(template.bodyEn, templateKey, Object.assign({}, data, translatedFields), 5000) : '',
+    titleEn: titleIsDefault ? template.titleEn : '',
     bodyIsDefault: bodyIsDefault,
     titleIsDefault: titleIsDefault
   };
@@ -216,7 +258,11 @@ function prepareRequestMessage_(request, action, payload, documentCode) {
     expectedAt: parseDateInput_(payload.expectedAt) || request.expected_at,
     publicNote: sanitizeText_(payload.publicNote, 1500) || request.public_note || ''
   };
-  return compileNotificationMessage_(payload.messageBody, '', 'request_' + action, request, fields, request.type_name);
+  const names = notificationTypeNames_(request.type_id, request.type_name);
+  const labelsEn = {PENDING: 'Pending review', PROCESSING: 'In progress', READY: 'Ready for collection', COMPLETED: 'Collected', REJECTED: 'Rejected', CANCELLED: 'Cancelled'};
+  return compileNotificationMessage_(payload.messageBody, '', 'request_' + action, request, fields, request.type_name, {
+    loai_ho_so: names.en, trang_thai: labelsEn[next] || fields.status
+  });
 }
 
 function getIdentity_() {
@@ -676,6 +722,7 @@ function transitionDocumentRequest_(request, action, payload, actor, actionToken
   if (!preparedNotification.body && !publicNote && action === 'COMPLETE') message = 'Hồ sơ ' + request.type_name + ' đã được bàn giao.';
   const requestI18n = {
     titleKey: '', messageKey: 'requestAction_' + action,
+    messageEn: preparedNotification.messageEn,
     params: {code: request.request_code, type: request.type_name, status: labels[next], expected: formatNotificationDate_(expectedAt || request.expected_at), note: publicNote},
     customMessage: !!preparedNotification.body && !preparedNotification.bodyIsDefault, customTitle: false
   };
@@ -913,11 +960,12 @@ function processTransactionItem_(transaction, item, decision, note, selectedDocu
   const compiled = compileNotificationMessage_(messageBody, '', templateKey || (decision === 'APPROVE' ? 'transactionApprove' : 'transactionReject'), transaction, {
     typeName: typeName || item.type_name, documentCode: relatedDocument ? relatedDocument.document_code : '',
     requestCode: transaction.transaction_code, status: decision === 'APPROVE' ? 'Đã xác nhận' : 'Chưa được xác nhận', publicNote: note
-  }, title);
+  }, title, {loai_ho_so: names.en});
   const message = compiled.body || (item.type_name + (note ? ': ' + note : (decision === 'APPROVE' ? ' đã xác nhận tại quầy.' : ' chưa được xác nhận.')));
   const i18n = {
     titleKey: 'documentTypeTitle',
     messageKey: note ? 'documentReviewNote' : (decision === 'APPROVE' ? 'documentConfirmed' : 'documentNotConfirmed'),
+    messageEn: compiled.messageEn,
     params: { nameVi: names.vi, nameEn: names.en, note: note },
     customMessage: !!messageBody && !compiled.bodyIsDefault
   };
@@ -1947,7 +1995,7 @@ function documentNotificationContent_(document, status, step, publicNote, custom
     typeName: names.vi, documentCode: document.document_code, status: status,
     expectedAt: expectedAt || document.expected_at, workflow: workflowVi,
     step: stepVi, publicNote: note
-  }, names.vi);
+  }, names.vi, {loai_ho_so: names.en, trang_thai: translatedStatus.en, quy_trinh: workflowEn, buoc_xu_ly: stepEn});
   const message = compiled.body || lines.join('\n');
   const isCancel = key === 'documentCancel';
   const params = isCancel ? {note: note} : {
@@ -1963,6 +2011,7 @@ function documentNotificationContent_(document, status, step, publicNote, custom
     i18n: {
       titleKey: isCancel ? 'documentCancelledTitle' : 'documentTypeTitle',
       messageKey: isCancel ? (customMessage && !compiled.bodyIsDefault ? '' : 'customNote') : (customMessage && !compiled.bodyIsDefault ? '' : 'documentProgressSummary'),
+      messageEn: compiled.messageEn,
       params: params,
       customMessage: !!customMessage && !compiled.bodyIsDefault
     }
@@ -1977,6 +2026,8 @@ function serviceNotificationContent_(topic, result, customTitle, customMessage, 
     i18n: {
       titleKey: customTitle && !compiled.titleIsDefault ? '' : 'serviceSessionTitle',
       messageKey: customMessage && !compiled.bodyIsDefault ? '' : 'serviceSessionSummary',
+      messageEn: compiled.messageEn,
+      titleEn: compiled.titleEn,
       params: { topic: topic, result: result },
       customTitle: !!customTitle && !compiled.titleIsDefault,
       customMessage: !!customMessage && !compiled.bodyIsDefault

@@ -119,6 +119,11 @@ assert.throws(() => api.renderNotificationTemplate_("{{ten_sinh_vien}}".repeat(3
 const defaultService = api.compileNotificationMessage_(templates.service.body, templates.service.title, "service", {student_name:"Nguyễn Văn A",student_id:"52200001"}, {topic:"Tư vấn",result:"Đã hướng dẫn"}, "Kết quả tiếp sinh viên");
 assert.equal(defaultService.bodyIsDefault, true, "The untouched default template remains identifiable for bilingual notifications");
 assert.equal(defaultService.titleIsDefault, true);
+assert.match(defaultService.body, /^Kính gửi sinh viên Nguyễn Văn A \(MSSV: 52200001\),\n\n/);
+assert.match(defaultService.body, /Kết quả xử lý: Đã hướng dẫn\n\nTrân trọng\.$/);
+assert.match(defaultService.messageEn, /^Dear Nguyễn Văn A \(Student ID: 52200001\),\n\n/);
+assert.match(defaultService.messageEn, /Outcome: Đã hướng dẫn\n\nSincerely,/);
+assert.equal(api.compileNotificationMessage_("Nội dung riêng cho {{ten_sinh_vien}}", "", "service", {student_name:"Nguyễn Văn A"}, {}).messageEn, "", "A custom template is never replaced by the default translation");
 assert.throws(() => api.compileNotificationMessage_("body", "{{ten_sinh_vien}}".repeat(11), "service", {student_name:"A".repeat(25)}, {}, "Kết quả"), /200/);
 
 const requestStorage = {
