@@ -118,7 +118,7 @@ function notificationTemplates_() {
   };
   const make = function(linesVi, linesEn, keys, title, titleEn) {
     return {
-      body: ['Kính gửi sinh viên {{ten_sinh_vien}} (MSSV: {{mssv}}),', '', ...linesVi, '', 'Trân trọng.'].join('\n'),
+      body: ['Thân gửi sinh viên {{ten_sinh_vien}} (MSSV: {{mssv}}),', '', ...linesVi, '', 'Trân trọng.'].join('\n'),
       bodyEn: ['Dear {{ten_sinh_vien}} (Student ID: {{mssv}}),', '', ...linesEn, '', 'Sincerely,\nFaculty Office'].join('\n'),
       title: title || '', titleEn: titleEn || '',
       variables: keys.map(function(key) { return { key: key, label: variables[key] }; })
@@ -127,16 +127,16 @@ function notificationTemplates_() {
   const documentKeys = common.concat(['loai_ho_so', 'ma_ho_so', 'trang_thai', 'ngay_du_kien', 'quy_trinh', 'buoc_xu_ly', 'phan_hoi']);
   const documentTemplate = function(introVi, introEn) {
     return make(
-      [introVi, '', 'Trạng thái: {{trang_thai}}', 'Ngày dự kiến hoàn thành: {{ngay_du_kien}}', 'Quy trình: {{quy_trinh}}', 'Bước xử lý: {{buoc_xu_ly}}', 'Phản hồi của Văn phòng: {{phan_hoi}}'],
-      [introEn, '', 'Status: {{trang_thai}}', 'Expected completion date: {{ngay_du_kien}}', 'Workflow: {{quy_trinh}}', 'Processing step: {{buoc_xu_ly}}', 'Office response: {{phan_hoi}}'],
+      [introVi, '', 'Trạng thái: {{trang_thai}}', 'Ngày dự kiến hoàn thành: {{ngay_du_kien}}', 'Quy trình: {{quy_trinh}}', 'Bước xử lý: {{buoc_xu_ly}}', 'Phản hồi của Văn phòng Khoa: {{phan_hoi}}'],
+      [introEn, '', 'Status: {{trang_thai}}', 'Expected completion date: {{ngay_du_kien}}', 'Workflow: {{quy_trinh}}', 'Processing step: {{buoc_xu_ly}}', 'Faculty Office response: {{phan_hoi}}'],
       documentKeys
     );
   };
   const reviewKeys = common.concat(['loai_ho_so', 'ma_ho_so', 'ma_yeu_cau', 'phan_hoi']);
   const requestKeys = common.concat(['loai_ho_so', 'ma_yeu_cau', 'ma_ho_so', 'trang_thai', 'ngay_du_kien', 'phan_hoi']);
   const requestTemplate = function(introVi, introEn, instructionVi, instructionEn) {
-    const vi = [introVi, '', 'Mã yêu cầu: {{ma_yeu_cau}}', 'Loại hồ sơ: {{loai_ho_so}}', 'Mã hồ sơ: {{ma_ho_so}}', 'Trạng thái: {{trang_thai}}', 'Ngày dự kiến: {{ngay_du_kien}}', 'Phản hồi của Văn phòng: {{phan_hoi}}'];
-    const en = [introEn, '', 'Request ID: {{ma_yeu_cau}}', 'Document type: {{loai_ho_so}}', 'Document ID: {{ma_ho_so}}', 'Status: {{trang_thai}}', 'Expected date: {{ngay_du_kien}}', 'Office response: {{phan_hoi}}'];
+    const vi = [introVi, '', 'Mã yêu cầu: {{ma_yeu_cau}}', 'Loại hồ sơ: {{loai_ho_so}}', 'Mã hồ sơ: {{ma_ho_so}}', 'Trạng thái: {{trang_thai}}', 'Ngày dự kiến: {{ngay_du_kien}}', 'Phản hồi của Văn phòng Khoa: {{phan_hoi}}'];
+    const en = [introEn, '', 'Request ID: {{ma_yeu_cau}}', 'Document type: {{loai_ho_so}}', 'Document ID: {{ma_ho_so}}', 'Status: {{trang_thai}}', 'Expected date: {{ngay_du_kien}}', 'Faculty Office response: {{phan_hoi}}'];
     if (instructionVi) {
       vi.push('', instructionVi);
       en.push('', instructionEn);
@@ -144,40 +144,40 @@ function notificationTemplates_() {
     return make(vi, en, requestKeys);
   };
   const progress = documentTemplate(
-    'Văn phòng thông báo kết quả cập nhật tiến độ xử lý hồ sơ {{loai_ho_so}} (mã hồ sơ: {{ma_ho_so}}).',
-    'The Office is writing to provide an update on the processing of {{loai_ho_so}} (document ID: {{ma_ho_so}}).'
+    'Văn phòng Khoa thông báo kết quả cập nhật tiến độ xử lý hồ sơ {{loai_ho_so}} (mã hồ sơ: {{ma_ho_so}}).',
+    'The Faculty Office is writing to provide an update on the processing of {{loai_ho_so}} (document ID: {{ma_ho_so}}).'
   );
   return {
     documentCreated: documentTemplate(
-      'Văn phòng đã ghi nhận hồ sơ {{loai_ho_so}} (mã hồ sơ: {{ma_ho_so}}) vào hệ thống. Thông tin xử lý như sau.',
-      'The Office has registered {{loai_ho_so}} (document ID: {{ma_ho_so}}) in the system. Processing details are provided below.'
+      'Văn phòng Khoa đã ghi nhận hồ sơ {{loai_ho_so}} (mã hồ sơ: {{ma_ho_so}}) vào hệ thống. Thông tin xử lý như sau.',
+      'The Faculty Office has registered {{loai_ho_so}} (document ID: {{ma_ho_so}}) in the system. Processing details are provided below.'
     ),
     documentProgress: progress,
     documentBatch: progress,
     documentCancel: make(
-      ['Văn phòng thông báo hồ sơ {{loai_ho_so}} (mã hồ sơ: {{ma_ho_so}}) đã được hủy trên hệ thống.', '', 'Lý do: {{phan_hoi}}'],
-      ['The Office is writing to inform you that {{loai_ho_so}} (document ID: {{ma_ho_so}}) has been cancelled in the system.', '', 'Reason: {{phan_hoi}}'],
+      ['Văn phòng Khoa thông báo hồ sơ {{loai_ho_so}} (mã hồ sơ: {{ma_ho_so}}) đã được hủy trên hệ thống.', '', 'Lý do: {{phan_hoi}}'],
+      ['The Faculty Office is writing to inform you that {{loai_ho_so}} (document ID: {{ma_ho_so}}) has been cancelled in the system.', '', 'Reason: {{phan_hoi}}'],
       common.concat(['loai_ho_so', 'ma_ho_so', 'trang_thai', 'phan_hoi'])
     ),
     transactionApprove: make(
-      ['Văn phòng đã đối chiếu và xác nhận giấy tờ thuộc loại hồ sơ {{loai_ho_so}} tại quầy.', '', 'Mã yêu cầu: {{ma_yeu_cau}}', 'Phản hồi của Văn phòng: {{phan_hoi}}'],
-      ['The Office has verified and confirmed the paperwork for {{loai_ho_so}} at the service counter.', '', 'Request ID: {{ma_yeu_cau}}', 'Office response: {{phan_hoi}}'],
+      ['Văn phòng Khoa đã đối chiếu và xác nhận giấy tờ thuộc loại hồ sơ {{loai_ho_so}} tại quầy.', '', 'Mã yêu cầu: {{ma_yeu_cau}}', 'Phản hồi của Văn phòng Khoa: {{phan_hoi}}'],
+      ['The Faculty Office has verified and confirmed the paperwork for {{loai_ho_so}} at the service counter.', '', 'Request ID: {{ma_yeu_cau}}', 'Faculty Office response: {{phan_hoi}}'],
       reviewKeys
     ),
     transactionReject: make(
-      ['Sau khi đối chiếu, Văn phòng chưa thể xác nhận giấy tờ thuộc loại hồ sơ {{loai_ho_so}}.', '', 'Mã yêu cầu: {{ma_yeu_cau}}', 'Lý do: {{phan_hoi}}'],
-      ['After reviewing your paperwork for {{loai_ho_so}}, the Office was unable to confirm it.', '', 'Request ID: {{ma_yeu_cau}}', 'Reason: {{phan_hoi}}'],
+      ['Sau khi đối chiếu, Văn phòng Khoa chưa thể xác nhận giấy tờ thuộc loại hồ sơ {{loai_ho_so}}.', '', 'Mã yêu cầu: {{ma_yeu_cau}}', 'Lý do: {{phan_hoi}}'],
+      ['After reviewing your paperwork for {{loai_ho_so}}, the Faculty Office was unable to confirm it.', '', 'Request ID: {{ma_yeu_cau}}', 'Reason: {{phan_hoi}}'],
       reviewKeys
     ),
-    request_ACCEPT: requestTemplate('Văn phòng đã tiếp nhận yêu cầu cấp hồ sơ và đang tiến hành xử lý.', 'The Office has received your document request and is processing it.'),
-    request_READY: requestTemplate('Văn phòng thông báo hồ sơ theo yêu cầu đã được chuẩn bị và sẵn sàng bàn giao.', 'The Office has prepared the requested document and it is ready for collection.', 'Đề nghị sinh viên đến Văn phòng để nhận hồ sơ.', 'Please visit the Office to collect your document.'),
-    request_COMPLETE: requestTemplate('Văn phòng xác nhận hồ sơ theo yêu cầu đã được bàn giao cho sinh viên.', 'The Office confirms that the requested document has been handed over to you.'),
-    request_REJECT: requestTemplate('Sau khi xem xét, Văn phòng chưa thể chấp thuận yêu cầu cấp hồ sơ.', 'After reviewing your document request, the Office was unable to approve it.'),
-    request_CANCEL: requestTemplate('Văn phòng thông báo yêu cầu cấp hồ sơ đã được hủy trên hệ thống.', 'The Office is writing to inform you that your document request has been cancelled in the system.'),
-    request_UPDATE: requestTemplate('Văn phòng thông báo thông tin xử lý yêu cầu cấp hồ sơ đã được cập nhật.', 'The Office is writing to inform you that the processing details for your document request have been updated.'),
+    request_ACCEPT: requestTemplate('Văn phòng Khoa đã tiếp nhận yêu cầu cấp hồ sơ và đang tiến hành xử lý.', 'The Faculty Office has received your document request and is processing it.'),
+    request_READY: requestTemplate('Văn phòng Khoa thông báo hồ sơ theo yêu cầu đã được chuẩn bị và sẵn sàng bàn giao.', 'The Faculty Office has prepared the requested document and it is ready for collection.', 'Đề nghị sinh viên đến Văn phòng Khoa để nhận hồ sơ.', 'Please visit the Faculty Office to collect your document.'),
+    request_COMPLETE: requestTemplate('Văn phòng Khoa xác nhận hồ sơ theo yêu cầu đã được bàn giao cho sinh viên.', 'The Faculty Office confirms that the requested document has been handed over to you.'),
+    request_REJECT: requestTemplate('Sau khi xem xét, Văn phòng Khoa chưa thể chấp thuận yêu cầu cấp hồ sơ.', 'After reviewing your document request, the Faculty Office was unable to approve it.'),
+    request_CANCEL: requestTemplate('Văn phòng Khoa thông báo yêu cầu cấp hồ sơ đã được hủy trên hệ thống.', 'The Faculty Office is writing to inform you that your document request has been cancelled in the system.'),
+    request_UPDATE: requestTemplate('Văn phòng Khoa thông báo thông tin xử lý yêu cầu cấp hồ sơ đã được cập nhật.', 'The Faculty Office is writing to inform you that the processing details for your document request have been updated.'),
     service: make(
-      ['Văn phòng thông báo nội dung và kết quả xử lý sau buổi tiếp sinh viên như sau.', '', 'Nội dung trao đổi: {{noi_dung_trao_doi}}', 'Kết quả xử lý: {{ket_qua_xu_ly}}'],
-      ['The Office is writing to summarize the discussion and outcome of your appointment.', '', 'Discussion: {{noi_dung_trao_doi}}', 'Outcome: {{ket_qua_xu_ly}}'],
+      ['Văn phòng Khoa thông báo nội dung và kết quả xử lý sau buổi tiếp sinh viên như sau.', '', 'Nội dung trao đổi: {{noi_dung_trao_doi}}', 'Kết quả xử lý: {{ket_qua_xu_ly}}'],
+      ['The Faculty Office is writing to summarize the discussion and outcome of your appointment.', '', 'Discussion: {{noi_dung_trao_doi}}', 'Outcome: {{ket_qua_xu_ly}}'],
       common.concat(['noi_dung_trao_doi', 'ket_qua_xu_ly']), 'Thông báo kết quả buổi tiếp sinh viên', 'Outcome of your student services appointment'
     )
   };
@@ -717,8 +717,8 @@ function transitionDocumentRequest_(request, action, payload, actor, actionToken
   appendDocumentRequestEvent_(updated, current, next, publicNote, internalNote, actor.email, actionToken);
   const labels = DOCUMENT_REQUEST_STATUS_LABELS_;
   let message = preparedNotification.body || publicNote || ('Yêu cầu ' + request.request_code + ' đã chuyển sang trạng thái: ' + labels[next] + '.');
-  if (!preparedNotification.body && !publicNote && action === 'ACCEPT') message = 'Văn phòng đã tiếp nhận yêu cầu ' + request.request_code + ' và đang xử lý.';
-  if (!preparedNotification.body && !publicNote && action === 'READY') message = 'Hồ sơ ' + request.type_name + ' đã sẵn sàng. Sinh viên vui lòng đến văn phòng để nhận.';
+  if (!preparedNotification.body && !publicNote && action === 'ACCEPT') message = 'Văn phòng Khoa đã tiếp nhận yêu cầu ' + request.request_code + ' và đang xử lý.';
+  if (!preparedNotification.body && !publicNote && action === 'READY') message = 'Hồ sơ ' + request.type_name + ' đã sẵn sàng. Sinh viên vui lòng đến Văn phòng Khoa để nhận.';
   if (!preparedNotification.body && !publicNote && action === 'COMPLETE') message = 'Hồ sơ ' + request.type_name + ' đã được bàn giao.';
   const requestI18n = {
     titleKey: '', messageKey: 'requestAction_' + action,
@@ -862,6 +862,100 @@ function listPendingTransactions_() {
     return ['PENDING', 'PARTIAL'].indexOf(String(row.status)) !== -1;
   }).sort(sortDesc_('created_at'));
   return buildTransactionResults_(txs, '', true);
+}
+
+function getAdminWorkSummary() {
+  assertAdmin_();
+  const groups = Object.create(null);
+  const types = {};
+  readTable_(APP.SHEETS.TYPES).forEach(function(type) { types[type.type_id] = type; });
+  const documents = readTable_(APP.SHEETS.DOCUMENTS);
+  const documentsById = {};
+  const linkedDocumentIds = Object.create(null);
+  const workflowStatuses = {};
+  documents.forEach(function(document) { documentsById[document.document_id] = document; });
+  const requests = readTable_(APP.SHEETS.REQUESTS);
+  requests.forEach(function(request) {
+    if (request.document_id) linkedDocumentIds[request.document_id] = true;
+    if (request.request_id) linkedDocumentIds['doc_request_' + request.request_id] = true;
+  });
+
+  function documentStatusEnglish_(document) {
+    const workflowId = document.workflow_version_id;
+    if (!workflowId) return '';
+    if (!workflowStatuses[workflowId]) {
+      workflowStatuses[workflowId] = {};
+      getWorkflowSteps_(workflowId).forEach(function(step) {
+        workflowStatuses[workflowId][step.status_label] = step.status_label_en || '';
+      });
+    }
+    return workflowStatuses[workflowId][document.status] || '';
+  }
+
+  function addItem(row, bucket, source, code, status, createdAt, expectedAt, secondaryCode, statusEn) {
+    const type = types[row.type_id] || {};
+    const typeName = type.name || row.type_name || 'Khác';
+    const key = String(row.type_id || typeName);
+    if (!groups[key]) {
+      groups[key] = {
+        typeId: row.type_id || '', typeName: typeName,
+        typeNameEn: type.name_en || typeName, pendingCount: 0, processingCount: 0, items: []
+      };
+    }
+    const group = groups[key];
+    if (bucket === 'PENDING') group.pendingCount += 1;
+    else group.processingCount += 1;
+    group.items.push({
+      studentName: row.student_name || '', studentId: row.student_id || '', className: row.class_name || '',
+      code: code || '', secondaryCode: secondaryCode || '', source: source || '',
+      status: status || '', statusEn: statusEn || '', bucket: bucket, copyCount: Number(row.copy_count || 0),
+      createdAt: iso_(createdAt), expectedAt: iso_(expectedAt)
+    });
+  }
+
+  requests.forEach(function(request) {
+    const status = String(request.status || '');
+    if (status !== 'PENDING' && status !== 'PROCESSING') return;
+    addItem(request, status === 'PENDING' ? 'PENDING' : 'PROCESSING', 'REQUEST', request.request_code,
+      DOCUMENT_REQUEST_STATUS_LABELS_[status] || status, request.created_at, request.expected_at);
+  });
+
+  const transactionsById = {};
+  readTable_(APP.SHEETS.TRANSACTIONS).forEach(function(transaction) { transactionsById[transaction.transaction_id] = transaction; });
+  readTable_(APP.SHEETS.ITEMS).forEach(function(item) {
+    if (String(item.status) !== 'PENDING') return;
+    const transaction = transactionsById[item.transaction_id];
+    if (!transaction || ['PENDING', 'PARTIAL'].indexOf(String(transaction.status)) === -1) return;
+    const linkedDocument = documentsById[item.document_id || item.related_document_id];
+    addItem({
+      type_id: item.type_id, type_name: item.type_name, student_name: transaction.student_name,
+      student_id: transaction.student_id, class_name: transaction.class_name
+    }, 'PENDING', transaction.transaction_type, transaction.transaction_code, 'Chờ xác nhận',
+    transaction.created_at, '', linkedDocument && linkedDocument.document_code);
+  });
+
+  const finishedStatuses = ['Đã hoàn thành', 'Đã bàn giao', 'Đã hủy', 'Chờ sinh viên đến nhận', 'Yêu cầu bổ sung'];
+  documents.forEach(function(document) {
+    if (!toBoolean_(document.active) || linkedDocumentIds[document.document_id] || document.request_id) return;
+    const status = String(document.status || '');
+    if (finishedStatuses.indexOf(status) !== -1) return;
+    const bucket = status === 'Đã tiếp nhận' ? 'PENDING' : 'PROCESSING';
+    addItem(document, bucket, 'DOCUMENT', document.document_code, status, document.submitted_at, document.expected_at, '', documentStatusEnglish_(document));
+  });
+
+  const result = Object.keys(groups).map(function(key) {
+    const group = groups[key];
+    group.items.sort(function(a, b) { return dateValue_(b.createdAt).getTime() - dateValue_(a.createdAt).getTime(); });
+    return group;
+  });
+  result.sort(function(a, b) {
+    return b.pendingCount - a.pendingCount || (b.pendingCount + b.processingCount) - (a.pendingCount + a.processingCount) || a.typeName.localeCompare(b.typeName);
+  });
+  return {
+    pendingCount: result.reduce(function(total, group) { return total + group.pendingCount; }, 0),
+    processingCount: result.reduce(function(total, group) { return total + group.processingCount; }, 0),
+    groups: result
+  };
 }
 
 function reviewTransactionItem(payload) {

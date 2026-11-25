@@ -11,6 +11,7 @@ new Function(scriptsHtml.replace(/^<script>\s*/, "").replace(/\s*<\/script>\s*$/
 
 const requiredServerFunctions = [
   "doGet", "getBootstrap", "saveStudentProfile", "createTransaction", "reviewTransactionItem", "reviewTransactionItems",
+  "getAdminWorkSummary",
   "getMyDocuments", "getDocumentDetail", "updateDocumentProgress", "batchUpdateDocuments",
   "createManualDocument", "deleteDocumentType", "startServiceSession", "finishServiceSession", "getReport", "setupSystem", "healthCheck",
 ];
