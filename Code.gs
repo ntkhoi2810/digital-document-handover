@@ -971,9 +971,9 @@ function installAdminWorkSummaryReminder() {
   ScriptApp.getProjectTriggers().forEach(function(trigger) {
     if (trigger.getHandlerFunction() === handler) ScriptApp.deleteTrigger(trigger);
   });
-  const trigger = ScriptApp.newTrigger(handler).timeBased().atHour(8).nearMinute(0).everyDays(1).inTimezone(APP.TIMEZONE).create();
+  const trigger = ScriptApp.newTrigger(handler).timeBased().atHour(7).nearMinute(30).everyDays(1).inTimezone(APP.TIMEZONE).create();
   PropertiesService.getScriptProperties().setProperty('ADMIN_WORK_SUMMARY_TRIGGER_UID', trigger.getUniqueId());
-  return { ok: true, recipient: APP.DEFAULT_ADMIN, hour: 8, timezone: APP.TIMEZONE };
+  return { ok: true, recipient: APP.DEFAULT_ADMIN, hour: 7, timezone: APP.TIMEZONE };
 }
 
 function sendAdminWorkSummaryReminder(event) {

@@ -65,7 +65,7 @@ api.installAdminWorkSummaryReminder();
 api.installAdminWorkSummaryReminder();
 const reminderTriggers = triggerList.filter(trigger => trigger.handler === "sendAdminWorkSummaryReminder");
 assert.equal(reminderTriggers.length, 1, "Repeated setup leaves one reminder trigger");
-assert.deepEqual({hour:reminderTriggers[0].hour,minute:reminderTriggers[0].minute,days:reminderTriggers[0].days,timezone:reminderTriggers[0].timezone}, {hour:8,minute:0,days:1,timezone:"Asia/Ho_Chi_Minh"});
+assert.deepEqual({hour:reminderTriggers[0].hour,minute:reminderTriggers[0].minute,days:reminderTriggers[0].days,timezone:reminderTriggers[0].timezone}, {hour:7,minute:30,days:1,timezone:"Asia/Ho_Chi_Minh"});
 assert.equal(scriptProperties.get("ADMIN_WORK_SUMMARY_TRIGGER_UID"), "trigger-1");
 
 assert.throws(() => api.sendAdminWorkSummaryReminder(), /TRIGGER_ONLY/, "Direct calls cannot send the owner reminder");
