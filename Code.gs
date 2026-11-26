@@ -66,7 +66,7 @@ function doGet(e) {
   const template = HtmlService.createTemplateFromFile('Index');
   template.initialView = sanitizeText_((e && e.parameter && e.parameter.view) || '', 40);
   return template.evaluate()
-    .setTitle(APP.NAME)
+    .setTitle('Sổ công tác trực tuyến')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
@@ -355,9 +355,7 @@ function getStudentDashboard_(email, preloadedDocuments) {
   const transactions = readTable_(APP.SHEETS.TRANSACTIONS).filter(function(row) {
     return normalizeEmail_(row.student_email) === target;
   });
-  const notifications = readTable_(APP.SHEETS.NOTIFICATIONS).filter(function(row) {
-    return normalizeEmail_(row.student_email) === target;
-  });
+  const notifications = getStudentNotifications_(target);
   return {
     processing: documents.filter(function(row) { return ['Đã hoàn thành', 'Chờ sinh viên đến nhận', 'Đã bàn giao', 'Đã hủy'].indexOf(String(row.status)) === -1; }).length,
     supplement: documents.filter(function(row) { return String(row.status) === 'Yêu cầu bổ sung'; }).length,
@@ -1668,19 +1666,41 @@ function listServiceSessions(filters) {
   }).sort(sortDesc_('started_at')).slice(0, 500).map(publicService_);
 }
 
-function listMyNotifications() {
-  const identity = assertStudent_();
+function getStudentNotifications_(email) {
   return readTable_(APP.SHEETS.NOTIFICATIONS).filter(function(row) {
-    return normalizeEmail_(row.student_email) === identity.email;
-  }).sort(sortDesc_('created_at')).slice(0, 200).map(publicNotification_);
+    return normalizeEmail_(row.student_email) === email;
+  });
+}
+
+function listMyNotifications(includeUnreadCount) {
+  const notifications = getStudentNotifications_(assertStudent_().email);
+  const items = notifications.sort(sortDesc_('created_at')).slice(0, 200).map(publicNotification_);
+  if (!includeUnreadCount) return items;
+  const unreadCount = notifications.filter(function(row) { return !toBoolean_(row.read); }).length;
+  return { items: items, unreadCount: unreadCount };
 }
 
 function markNotificationRead(notificationId) {
   const identity = assertStudent_();
   const row = findBy_(APP.SHEETS.NOTIFICATIONS, 'notification_id', sanitizeId_(notificationId));
   if (!row || normalizeEmail_(row.student_email) !== identity.email) throw new Error('NOT_FOUND|Không tìm thấy thông báo.');
-  updateRow_(APP.SHEETS.NOTIFICATIONS, row._row, { read: true });
+  markNotificationRowsRead_([row]);
   return { ok: true };
+}
+
+function markAllNotificationsRead() {
+  const notifications = getStudentNotifications_(assertStudent_().email);
+  markNotificationRowsRead_(notifications.filter(function(row) { return !toBoolean_(row.read); }));
+  return { ok: true };
+}
+
+function markNotificationRowsRead_(rows) {
+  if (!rows.length) return;
+  const name = APP.SHEETS.NOTIFICATIONS;
+  const column = HEADERS[name].indexOf('read') + 1;
+  const cells = rows.map(function(row) { return 'R' + row._row + 'C' + column; });
+  getSheet_(name).getRangeList(cells).setValue(true);
+  rows.forEach(function(row) { row.read = true; });
 }
 
 function getReport(filters) {

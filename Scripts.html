@@ -1,7 +1,7 @@
 <script>
 (() => {
   'use strict';
-  const state = { boot: null, documents: [], transactions: [], notifications: [], pending: [], adminDocuments: [], documentRequests: [], requestPage: 1, requestPages: 1, studentRequestPage: 1, studentRequestPages: 1, workflows: [], types: [], serviceTimer: null, toastTimer: null, bootFresh: false, lastRefreshAt: 0, summaryReturnFocus: null, summaryLoadToken: 0, language: localStorage.getItem('ddh-language') === 'en' ? 'en' : 'vi' };
+  const state = { boot: null, documents: [], transactions: [], notificationLoad: null, pending: [], adminDocuments: [], documentRequests: [], requestPage: 1, requestPages: 1, studentRequestPage: 1, studentRequestPages: 1, workflows: [], types: [], serviceTimer: null, toastTimer: null, bootFresh: false, lastRefreshAt: 0, summaryReturnFocus: null, summaryLoadToken: 0, language: localStorage.getItem('ddh-language') === 'en' ? 'en' : 'vi' };
   const translations = {
     'Đang đăng nhập…':'Signing in…','Sổ giao nhận hồ sơ':'Document Submission & Collection','Văn phòng Khoa':'Faculty Office','Trang chủ':'Home','Nộp & nhận':'Submit & Collect','Hồ sơ của tôi':'My Documents','Lịch sử':'History','Thông báo':'Notifications','Tài khoản':'Account','Tổng quan':'Overview','Chờ xác nhận':'Pending Review','Hồ sơ':'Documents','Danh mục':'Catalog','Tiếp sinh viên':'Student Service','Sinh viên':'Students','Báo cáo':'Reports','Cài đặt':'Settings','Đang tải':'Loading','Mở menu':'Open menu','Tạo yêu cầu':'Create Request','Lịch sử yêu cầu':'Request History','MSSV lấy từ email trường, không sửa được.':'Student ID is taken from your university email and cannot be changed.','Chỉ xác nhận khi đã đối chiếu sinh viên và giấy tờ thực tế.':'Confirm only after verifying the student and physical documents.','Hồ sơ gần đây':'Recent Documents','Xem tất cả':'View All','Nộp hoặc nhận giấy tờ':'Submit or Collect Documents','Chọn giấy tờ rồi gửi yêu cầu. Yêu cầu hoàn tất khi cán bộ xác nhận tại quầy.':'Select documents and submit a request. Staff will confirm it at the counter.','Nhập họ tên và lớp trước khi gửi yêu cầu.':'Enter your name and class before submitting a request.','Cập nhật':'Update','Nộp hồ sơ':'Document Submission','Nhận hồ sơ':'Document Collection','Bổ sung giấy tờ':'Submit Supplementary Documents','Loại yêu cầu':'Request type','Ghi chú':'Note','Không bắt buộc':'Optional','Chọn ít nhất một giấy tờ.':'Select at least one document.','Gửi yêu cầu':'Submit Request','Tìm theo mã hoặc tên hồ sơ':'Search by code or document name','Email TDTU':'TDTU Email','Mã số sinh viên':'Student ID','Họ và tên':'Full Name','Lớp':'Class','Lưu':'Save','Quản lý & cập nhật tiến độ hồ sơ':'Manage Documents and Track Progress','Tra cứu, thêm hồ sơ trực tiếp tại văn phòng hoặc cập nhật trạng thái hàng loạt.':'Search, add documents at the office, or update multiple statuses.','Quản lý hồ sơ':'Manage Documents','Mở danh sách':'Open List','Tìm theo MSSV, họ tên hoặc mã yêu cầu':'Search by student ID, name, or request code','Tất cả trạng thái':'All statuses','Tìm kiếm':'Search','Thêm hồ sơ':'Add Document','Đã chọn 0 hồ sơ':'0 documents selected','Cập nhật trạng thái':'Update Status','Bỏ chọn':'Clear Selection','Danh mục hồ sơ':'Document Catalog','Thêm loại':'Add Type','Quy trình xử lý':'Workflows','Tạo quy trình':'Create Workflow','Ghi nhận trực tiếp':'Live Session','Ghi nhận thủ công':'Manual Entry','Bắt đầu':'Start','Kết thúc':'End','Nội dung trao đổi':'Discussion','Kết quả xử lý':'Outcome','Lưu buổi tiếp':'Save Session','Lịch sử tiếp sinh viên':'Student Service History','Tìm sinh viên hoặc nội dung':'Search students or topics','Email hoặc MSSV':'Email or Student ID','MSSV, họ tên, lớp hoặc email':'Student ID, name, class, or email','Từ ngày':'From','Đến ngày':'To','Xem báo cáo':'View Report','Xuất CSV':'Export CSV','Cài đặt ứng dụng':'Application Settings','Tên ứng dụng':'Application Name','Tên văn phòng':'Office Name','Kiểm tra hệ thống':'System Check','Chạy kiểm tra':'Run Check','Đang xử lý…':'Processing…','Đang xác nhận…':'Confirming…','Đã hoàn thành':'Completed','Đã bàn giao':'Handed Over','Đã tiếp nhận':'Received','Đang kiểm tra hồ sơ':'Under Document Review','Yêu cầu bổ sung':'Supplement Required','Đang xử lý':'Processing','Đang trình duyệt':'Under Review','Chờ phê duyệt':'Awaiting Approval','Chờ sinh viên đến nhận':'Ready for Collection','Đã hủy':'Cancelled','Chưa có hồ sơ.':'No documents yet.','Chưa có yêu cầu nào.':'No requests yet.','Chưa có thông báo nào.':'No notifications yet.','Không có dữ liệu.':'No data.','Không có yêu cầu nào đang chờ.':'No requests are pending.','Loại hồ sơ':'Document Type','Hình thức':'Handling','Sinh viên nộp':'Student submits','Sinh viên nhận':'Student collects','Cả nộp và nhận':'Submission and collection','Kiểu theo dõi':'Tracking','Chỉ ghi nhận giao nhận':'Record handover only','Có tiến độ xử lý':'Track processing progress','Tùy chọn nâng cao':'Advanced Options','Mô tả':'Description','Quy trình':'Workflow','Dùng quy trình chuẩn':'Use standard workflow','Thứ tự':'Order','Đang sử dụng':'Active','Ngừng sử dụng':'Inactive','Lưu loại hồ sơ':'Save Document Type','Phiên bản':'Version','Các bước xử lý':'Workflow Steps','Tên bước':'Step name','Nhãn trạng thái':'Status label','Thêm bước':'Add Step','Xác nhận':'Confirm','Từ chối':'Reject','Đã đọc':'Read','Xem hồ sơ':'View Document','Ghi nhận':'Recorded','Dự kiến xong':'Expected completion','Tiến độ':'Progress','Không vào được':'Unable to open','Đăng nhập bằng tài khoản TDTU rồi tải lại trang.':'Sign in with your TDTU account and reload the page.','Tải lại':'Reload','Student':'Student'
   };
@@ -24,6 +24,10 @@
   });
   Object.assign(translations, {
     'Tiêu đề thông báo/email':'Notification/email subject','Nội dung thông báo/email':'Notification/email message','Các trường màu xanh sẽ tự điền khi gửi.':'Fields highlighted in blue are filled in when the message is sent.','Chèn trường thông tin':'Insert a merge field','Nội dung gửi sinh viên':'Message to student','Tiêu đề':'Subject','Khôi phục mẫu mặc định':'Restore default template','Họ tên sinh viên':'Student name','Mã số sinh viên':'Student ID','Email sinh viên':'Student email','Lớp':'Class','Loại hồ sơ':'Document type','Mã hồ sơ':'Document ID','Mã yêu cầu':'Request ID','Trạng thái':'Status','Ngày dự kiến':'Expected date','Quy trình':'Workflow','Bước xử lý':'Processing step','Phản hồi công khai':'Public response','Nội dung trao đổi':'Discussion','Kết quả xử lý':'Outcome','Giai đoạn xử lý':'Processing stage','Nội dung này sẽ gửi cho sinh viên.':'This message will be sent to the student.','Bước xử lý được chọn tự điền trạng thái.':'Selecting a processing step fills in its status.','Bạn có thể sửa trạng thái riêng.':'You can edit the status separately.','Giữ bước hiện tại khi cập nhật hàng loạt.':'Bulk updates keep the current processing step.','Bước xử lý không thuộc quy trình của hồ sơ.':'The processing step does not belong to this document workflow.','Nội dung thông báo không được vượt quá 5000 ký tự.':'The notification message cannot exceed 5,000 characters.','Nội dung thông báo không được vượt quá 200 ký tự.':'The notification title cannot exceed 200 characters.'
+  });
+  Object.assign(translations, {
+    'Đánh dấu tất cả là đã đọc':'Mark all as read',
+    'Đã đánh dấu tất cả thông báo là đã đọc.':'All notifications marked as read.'
   });
   const originalText = new WeakMap();
   const originalAttributes = new WeakMap();
@@ -104,7 +108,7 @@
   }
   function applyLanguage() {
     document.documentElement.lang = state.language;
-    document.title = state.language === 'en' ? 'Document Submission & Collection - TDTU' : 'Sổ giao nhận hồ sơ - TDTU';
+    document.title = state.language === 'en' ? 'Document Submission & Collection - TDTU' : 'Sổ công tác trực tuyến';
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) translateNode(walker.currentNode);
     document.querySelectorAll('[data-i18n-vi]').forEach(element => {
@@ -426,8 +430,7 @@
     $('#admin-nav').classList.toggle('hidden', identity.role !== 'ADMIN');
     if (identity.role === 'STUDENT') {
       renderStudentKpis(dashboard); renderProfile();
-      $('#notice-badge').textContent = dashboard.unreadNotifications || 0;
-      $('#notice-badge').classList.toggle('hidden', !dashboard.unreadNotifications);
+      renderNotificationBadge(dashboard.unreadNotifications || 0);
       $('#profile-required').classList.toggle('hidden', Boolean(profile));
     } else {
       renderAdminKpis(dashboard);
@@ -502,6 +505,7 @@
     $('#profile-form').addEventListener('submit', saveProfile);
     $('#transaction-form').addEventListener('submit', submitTransaction);
     $('#new-document-request').addEventListener('click', showDocumentRequestForm);
+    $('#mark-all-notifications').addEventListener('click', readAllNotifications);
     $$('input[name="transactionType"]').forEach(input => input.addEventListener('change', () => syncSegmented() || renderTransactionOptions().catch(error => showAlert(error.message))));
     $('#my-document-search').addEventListener('input', renderMyDocuments);
     $('#transaction-options').addEventListener('change', updateTransactionSelection);
@@ -711,12 +715,33 @@
     return `<article class="transaction-card"><div class="transaction-head"><div><h3>${localizedHtml(typeLabel(tx.type),({SUBMIT:'Document Submission',RECEIVE:'Document Collection',SUPPLEMENT:'Submit Supplementary Documents'})[tx.type])}</h3><div class="transaction-meta">${admin?`<span data-no-translate>${escapeHtml(tx.studentName)} - MSSV: ${escapeHtml(tx.studentId)}</span>`:''}<span class="transaction-code">${escapeHtml(tx.code)}</span>${dateHtml(tx.createdAt)}<span>${localizedHtml(`${tx.items.length} mục`,`${tx.items.length} items`)}</span></div></div><span class="status ${statusClass(tx.status)}">${statusHtml(txStatus)}</span></div>${tx.note?`<p data-no-translate>${escapeHtml(tx.note)}</p>`:''}<div class="transaction-items">${items}</div></article>`;
   }
 
-  async function loadNotifications() {
-    state.notifications = await api('listMyNotifications');
-    const unread = state.notifications.filter(item => !item.read).length;
+  function renderNotificationBadge(unread) {
     $('#notice-badge').textContent = unread;
     $('#notice-badge').classList.toggle('hidden', !unread);
-    $('#my-notifications').innerHTML = state.notifications.map(item => `<article class="notification-card ${item.read?'read':'unread'}"><div class="document-head"><div><h3 class="notification-title">${localizedHtml(notificationText(item,'title','vi'),notificationText(item,'title','en'))}</h3><div class="document-meta">${dateHtml(item.createdAt)}</div></div></div><p>${localizedHtml(notificationText(item,'message','vi'),notificationText(item,'message','en'))}</p><div class="notification-actions">${item.requestId?`<button class="link-button" onclick="window.app.openDocumentRequest('${item.requestId}')">${localizedHtml('Xem yêu cầu','View request')}</button>`:''}${item.documentId?`<button class="link-button" onclick="window.app.openDocument('${item.documentId}')">Xem hồ sơ</button>`:''}${item.read?'':`<button class="link-button" onclick="window.app.readNotification('${item.notificationId}')">Đã đọc</button>`}</div></article>`).join('') || '<div class="empty">Chưa có thông báo nào.</div>';
+  }
+
+  async function loadNotifications() {
+    const load = api('listMyNotifications', true);
+    state.notificationLoad = load;
+    const {items, unreadCount} = await load;
+    if (state.notificationLoad !== load) return;
+    renderNotificationBadge(unreadCount);
+    $('#mark-all-notifications').classList.toggle('hidden', !unreadCount);
+    $('#my-notifications').innerHTML = items.map(item => `<article class="notification-card ${item.read?'read':'unread'}"><div class="document-head"><div><h3 class="notification-title">${localizedHtml(notificationText(item,'title','vi'),notificationText(item,'title','en'))}</h3><div class="document-meta">${dateHtml(item.createdAt)}</div></div></div><p>${localizedHtml(notificationText(item,'message','vi'),notificationText(item,'message','en'))}</p><div class="notification-actions">${item.requestId?`<button class="link-button" onclick="window.app.openDocumentRequest('${item.requestId}')">${localizedHtml('Xem yêu cầu','View request')}</button>`:''}${item.documentId?`<button class="link-button" onclick="window.app.openDocument('${item.documentId}')">Xem hồ sơ</button>`:''}${item.read?'':`<button class="link-button" onclick="window.app.readNotification('${item.notificationId}')">Đã đọc</button>`}</div></article>`).join('') || '<div class="empty">Chưa có thông báo nào.</div>';
+  }
+
+  async function readAllNotifications(event) {
+    const button = event.currentTarget;
+    setBusy(button, true, translateText('Đang xử lý…'));
+    try {
+      await api('markAllNotificationsRead');
+      await loadNotifications();
+      toast(translateText('Đã đánh dấu tất cả thông báo là đã đọc.'));
+    } catch (error) {
+      toast(error.message, true);
+    } finally {
+      setBusy(button, false);
+    }
   }
 
   async function openDocument(documentId) {
@@ -833,11 +858,13 @@
   function showDocumentRequestForm() {
     if (!state.boot.profile) { navigate('student-profile'); showAlert('Nhập họ tên và lớp trong mục Tài khoản trước khi gửi yêu cầu.'); return; }
     const options = (state.boot.requestTypes || []).map(type => localizedOption(type.name,type.nameEn || type.name,type.typeId)).join('');
-    openModal(`<h2>${localizedHtml('Tạo yêu cầu cấp hồ sơ','Create Document Request')}</h2>${options?'':`<div class="inline-warning">${localizedHtml('Chưa có loại hồ sơ nào được bật cho phép yêu cầu cấp.','No document types are enabled for student requests yet.')}</div>`}<form id="document-request-form"><label>${localizedHtml('Loại hồ sơ','Document Type')}</label><select id="document-request-type" required ${options?'':'disabled'}><option value="">${localizedHtml('Chọn loại hồ sơ','Select a document type')}</option>${options}</select><p id="document-request-description" class="page-note"></p><label>${localizedHtml('Mục đích sử dụng','Purpose')}</label><textarea id="document-request-purpose" rows="3" maxlength="1000" required></textarea><label>${localizedHtml('Số bản','Number of copies')}</label><input id="document-request-copies" type="number" min="1" max="20" value="1" required><label>${localizedHtml('Ghi chú','Note')} <small>${localizedHtml('Không bắt buộc','Optional')}</small></label><textarea id="document-request-note" rows="2" maxlength="1000"></textarea><div class="form-actions"><button class="button primary" type="submit" ${options?'':'disabled'}>${localizedHtml('Gửi yêu cầu','Submit Request')}</button></div></form>`);
-    $('#document-request-type').addEventListener('change', event => {
-      const type = (state.boot.requestTypes || []).find(item => item.typeId === event.target.value);
-      $('#document-request-description').innerHTML = type ? localizedHtml(type.description,type.descriptionEn || type.description) : '';
-    });
+    openModal(`<h2>${localizedHtml('Tạo yêu cầu cấp hồ sơ','Create Document Request')}</h2>${options?'':`<div class="inline-warning">${localizedHtml('Chưa có loại hồ sơ nào được bật cho phép yêu cầu cấp.','No document types are enabled for student requests yet.')}</div>`}<form id="document-request-form">
+      <label for="document-request-type">${localizedHtml('Loại hồ sơ','Document Type')}</label><select id="document-request-type" required ${options?'':'disabled'}><option value="">${localizedHtml('Chọn loại hồ sơ','Select a document type')}</option>${options}</select>
+      <label for="document-request-purpose">${localizedHtml('Mục đích sử dụng','Purpose')}</label><textarea id="document-request-purpose" rows="3" maxlength="1000" required></textarea>
+      <label for="document-request-copies">${localizedHtml('Số bản','Number of copies')}</label><input id="document-request-copies" type="number" min="1" max="20" value="1" required>
+      <label for="document-request-note">${localizedHtml('Ghi chú','Note')} <small>${localizedHtml('Không bắt buộc','Optional')}</small></label><textarea id="document-request-note" rows="2" maxlength="1000"></textarea>
+      <div class="form-actions"><button class="button primary" type="submit" ${options?'':'disabled'}>${localizedHtml('Gửi yêu cầu','Submit Request')}</button></div>
+    </form>`);
     $('#document-request-form').addEventListener('submit', async event => {
       event.preventDefault(); const button=event.submitter; setBusy(button,true);
       try {

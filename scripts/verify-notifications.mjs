@@ -20,14 +20,27 @@ const MailApp = {sendEmail: message => {
 const api = new Function("Utilities", "LockService", "MailApp", `${code}
   return {
     updateDocumentProgress, batchUpdateDocuments, finishServiceSession, addManualServiceSession,
+    listMyNotifications, markNotificationRead, markAllNotificationsRead,
     sanitizeNotificationBody_, sanitizeNotificationTitle_, documentNotificationContent_, serviceNotificationContent_,
     notificationTemplates_, notificationTemplateData_, renderNotificationTemplate_, compileNotificationMessage_, batchUpdateDocumentRequests, reviewTransactionItems, APP,
+    setIdentity(identity) { getIdentity_ = () => identity; },
     setStorage(storage) {
       readTable_ = name => (storage[name] || []).map((row, index) => ({...row, _row: index + 2}));
       findBy_ = (name, field, value) => readTable_(name).find(row => String(row[field] || '').toLowerCase() === String(value || '').toLowerCase()) || null;
       appendRecord_ = (name, record) => { storage[name] ||= []; storage[name].push({...record}); };
       updateRow_ = (name, rowNumber, patch) => Object.assign(storage[name][rowNumber - 2], patch);
-      getSheet_ = name => ({getLastRow: () => (storage[name] || []).length + 1});
+      getSheet_ = name => ({
+        getLastRow: () => (storage[name] || []).length + 1,
+        getRangeList(cells) {
+          if (!cells.length) throw new Error('Expected at least one cell');
+          return {setValue(value) {
+            cells.forEach(cell => {
+              const [, row, column] = cell.match(/^R([0-9]+)C([0-9]+)$/);
+              storage[name][Number(row) - 2][HEADERS[name][Number(column) - 1]] = value;
+            });
+          }};
+        }
+      });
       getWorkflowSteps_ = workflowId => (storage.WorkflowSteps || []).filter(step => step.workflow_version_id === workflowId).sort((a, b) => Number(a.step_order) - Number(b.step_order));
       assertAdmin_ = () => ({email: "admin@tdtu.edu.vn", role: "ADMIN"});
       resolveStudent_ = () => ({student_id: "52200001", email: "52200001@student.tdtu.edu.vn", full_name: "Nguyễn Văn A", class_name: "K28"});
@@ -191,5 +204,32 @@ api.addManualServiceSession({
 assert.equal(serviceStorage.Notifications.length, 3, "A failed email does not prevent the in-app notification from being saved");
 assert.equal(serviceStorage.EmailQueue[1].status, "FAILED");
 assert.equal(serviceStorage.EmailQueue[1].attempts, 1);
+
+const studentEmail = "52200001@student.tdtu.edu.vn";
+const notifications = Array.from({length: 203}, (_, index) => ({
+  notification_id: `ntf_${index}`, student_email: ` ${studentEmail.toUpperCase()} `,
+  title: "Cập nhật hồ sơ", read: [0, 2, 202].includes(index) ? "FALSE" : "TRUE",
+  created_at: new Date(Date.UTC(2026, 0, index + 1)),
+}));
+const otherStudent = {notification_id: "ntf_other", student_email: "52200002@student.tdtu.edu.vn", read: false};
+api.setStorage({Notifications: [otherStudent, ...notifications]});
+api.setIdentity({email: studentEmail, role: "STUDENT"});
+assert.equal(api.listMyNotifications().length, 200);
+assert.equal(api.listMyNotifications(true).unreadCount, 3);
+assert.throws(() => api.markNotificationRead(otherStudent.notification_id), /NOT_FOUND/);
+api.markNotificationRead("ntf_202");
+const inbox = api.listMyNotifications(true);
+assert.equal(inbox.items.every(item => item.read), true);
+assert.equal(inbox.unreadCount, 2, "Older unread notifications still count outside the visible list");
+api.markAllNotificationsRead();
+assert.equal(notifications[0].read, true);
+assert.equal(notifications[0].title, "Cập nhật hồ sơ");
+assert.equal(notifications[1].read, "TRUE", "Already-read values are skipped");
+assert.equal(notifications[2].read, true);
+assert.equal(otherStudent.read, false);
+assert.equal(api.listMyNotifications(true).unreadCount, 0);
+assert.deepEqual(api.markAllNotificationsRead(), {ok: true});
+api.setIdentity({email: "admin@tdtu.edu.vn", role: "ADMIN"});
+assert.throws(() => api.markAllNotificationsRead(), /STUDENT_ONLY/);
 
 console.log("Notification and email behavior verification passed");
