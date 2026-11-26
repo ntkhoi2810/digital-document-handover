@@ -434,8 +434,8 @@
   }
 
   async function loadPetSprites(session) {
-    const { husky, corgi } = window.PET_ASSETS;
-    const results = await Promise.allSettled([husky, corgi].map(async src => {
+    const { husky, corgi, corgiShortTail } = window.PET_ASSETS;
+    const results = await Promise.allSettled([husky, corgi, corgiShortTail].map(async src => {
       const sheet = new Image();
       sheet.className = 'pet-sheet';
       sheet.alt = '';
