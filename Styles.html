@@ -1189,25 +1189,21 @@ details .check-option{margin-top:12px!important;padding:12px 14px}
 .pet-toggle.is-active{background:var(--primary-fill);color:#FFFFFF}
 .pet-toggle-icon{width:34px;height:34px;object-fit:contain;image-rendering:auto}
 .pet-toggle.is-active .pet-toggle-icon{filter:brightness(0) invert(1)}
-.pet-reduced-dog{display:none;position:absolute;right:calc(100% + 8px);bottom:0;width:66px;height:40px;overflow:hidden}
-.pet-reduced-dog .pet-art{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
 .pet-arena{position:fixed;inset:0;z-index:52;overflow:hidden;pointer-events:none}
 .pet-runner{
   position:absolute;
   bottom:calc(10px + env(safe-area-inset-bottom));
   left:0;
+  width:96px;
+  height:72px;
   overflow:hidden;
-  animation:pet-run-across 8.5s linear var(--pet-delay,0ms) both;
 }
-.pet-run-sheet{
-  display:block;
-  width:800%;
-  height:100%;
-  image-rendering:pixelated;
-  animation:pet-run-frames .64s steps(8,end) infinite;
+.pet-runner.is-seated{
+  left:auto;
+  right:calc(88px + env(safe-area-inset-right));
+  bottom:calc(22px + env(safe-area-inset-bottom));
 }
-@keyframes pet-run-across{from{transform:translateX(-100%)}to{transform:translateX(100vw)}}
-@keyframes pet-run-frames{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+.pet-sheet{display:block;width:600%;height:300%}
 
 .modal{
   position:fixed;
@@ -1298,6 +1294,7 @@ details .check-option{margin-top:12px!important;padding:12px 14px}
 }
 
 @media(max-width:760px){
+  .pet-runner{width:80px;height:60px}
   .list-item{flex-wrap:wrap;align-items:flex-start;gap:10px 16px;padding:16px 18px}
   .list-item>div:first-child{flex-basis:100%}
   .list-item-end{width:100%;justify-content:space-between}
@@ -1431,9 +1428,7 @@ details .check-option{margin-top:12px!important;padding:12px 14px}
 
 @media (prefers-reduced-motion:reduce){
   *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
-  .pet-arena .pet-runner{display:none}
-  #pet-toggle[aria-pressed="true"] .pet-reduced-dog{display:block}
-  .pet-runner{animation:none!important;transform:none!important}
+  .pet-runner:not(.is-seated){display:none}
 }
 .template-fields{
   min-width:0;
