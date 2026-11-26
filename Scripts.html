@@ -397,14 +397,10 @@
   }
 
   const petSprites = [
-    { name:'shiba', coat:'#d78338', shade:'#ae5e2d', light:'#fff0d8', body:'M31 25h44v-4h10v7h7v17h-6v5H28v-5h-6V32h9z', belly:'M37 38h31v10H37z', head:'M14 20h8v-8h7v-5h9v8h8v7h6v10h-5v6h-7v5H22v-5h-7v-7h-5v-9h4z', ears:'M15 15h8v8h-8zM30 8h8v9h-8z', tail:'M76 28h8v-7h6v-7h7v5h-3v8h-6v8h-7v5h-6z', muzzle:'M10 28h15v8h-7v4h-8z', eyeX:19, bib:'M26 33h7v5h-7zM32 38h6v6h-6z' },
-    { name:'corgi', coat:'#d89343', shade:'#a75f31', light:'#fff0dc', body:'M27 27h57v-4h7v8h6v14h-6v5H27v-4h-5V33h5z', belly:'M38 39h37v9H38z', head:'M12 20h8v-5h6v-7h7v9h8v5h6v8h5v9h-7v5H21v-5h-7v-7h-4v-8h2z', ears:'M14 17h8v-8h5v16h-7v-3h-6zM29 17h7V9h5v17h-8v-4h-4z', tail:'M80 27h8v-5h6v5h-4v6h-7z', muzzle:'M9 29h15v7h-7v4H9z', eyeX:18, bib:'M25 34h8v4h-8zM32 38h8v8h-8z' },
-    { name:'dachshund', coat:'#70452f', shade:'#493027', light:'#dfbd91', body:'M25 27h61v-4h6v8h5v14h-5v5H24v-5h-5V33h6z', belly:'M39 39h42v8H39z', head:'M11 20h10v-5h6v-4h8v5h6v6h7v9h5v8h-7v5H20v-5h-7v-7h-4v-8h2z', ears:'M14 19h8v-6h7v4h-3v13h-6v-4h-6zM31 16h8v4h5v8h-7v-4h-6z', tail:'M85 30h5v-7h5v7h-4v8h-5z', muzzle:'M9 30h18v6h-9v4h-9z', eyeX:18, bib:'M26 34h8v5h-8zM33 39h7v7h-7z' }
+    { name:'golden', ...window.PET_ASSETS.golden },
+    { name:'akita', ...window.PET_ASSETS.akita },
+    { name:'husky', ...window.PET_ASSETS.husky }
   ];
-
-  function petDogSvg(sprite) {
-    return `<svg class="pet-art" viewBox="0 0 112 64" shape-rendering="crispEdges" aria-hidden="true"><ellipse cx="55" cy="57" rx="34" ry="3" fill="rgba(36,43,70,.12)"/><g class="pet-dog-bob"><path d="${sprite.tail}" fill="${sprite.coat}"/><g class="pet-legs pet-legs-back"><path d="M68 42h7v11h6v4H67v-4zM80 41h7v12h4v4H79v-4z" fill="${sprite.shade}"/></g><path d="${sprite.body}" fill="${sprite.coat}"/><path d="${sprite.belly}" fill="${sprite.light}"/><path d="${sprite.bib}" fill="${sprite.light}"/><g class="pet-legs pet-legs-front"><path d="M34 42h7v11h5v4H32v-4zM48 42h7v11h5v4H46v-4z" fill="${sprite.shade}"/></g><path d="${sprite.head}" fill="${sprite.coat}"/><path d="${sprite.ears}" fill="${sprite.shade}"/><path d="${sprite.muzzle}" fill="${sprite.light}"/><rect x="${sprite.eyeX}" y="23" width="3" height="3" fill="#263047"/><rect x="10" y="29" width="3" height="3" fill="#263047"/><path d="M31 34h9v3h-9z" fill="${sprite.shade}"/><rect x="56" y="29" width="5" height="10" rx="2" fill="#7585d8"/></g></svg>`;
-  }
 
   function setPetMode(enabled) {
     const isAdmin = state.boot?.identity?.role === 'ADMIN';
@@ -419,16 +415,23 @@
     if (state.petMode) {
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reducedMotion) {
-        $('#pet-reduced-dog').innerHTML = petDogSvg(petSprites[0]);
+        const dog = document.createElement('img');
+        dog.className = 'pet-art';
+        dog.alt = '';
+        dog.src = window.PET_ASSETS.sitting;
+        $('#pet-reduced-dog').replaceChildren(dog);
       } else {
         const sendPack = () => {
           petSprites.forEach((sprite, index) => {
             const runner = document.createElement('span');
             runner.className = `pet-runner pet-runner-${sprite.name}`;
             runner.style.setProperty('--pet-delay', `${index * 420}ms`);
-            runner.innerHTML = petDogSvg(sprite);
+            const scale = 64 / sprite.frameHeight;
+            runner.style.width = `${sprite.frameWidth * scale}px`;
+            runner.style.height = `${sprite.frameHeight * scale}px`;
+            runner.style.backgroundImage = `url("${sprite.data}")`;
             arena.appendChild(runner);
-            window.setTimeout(() => runner.remove(), 9500 + index * 420);
+            window.setTimeout(() => runner.remove(), 8800 + index * 420);
           });
         };
         sendPack();
@@ -473,6 +476,7 @@
     updateAvatar(name);
     $('#student-nav').classList.toggle('hidden', identity.role !== 'STUDENT');
     $('#admin-nav').classList.toggle('hidden', identity.role !== 'ADMIN');
+    $('#pet-toggle-icon').src = window.PET_ASSETS.paw;
     $('#pet-toggle').classList.toggle('hidden', identity.role !== 'ADMIN');
     if (identity.role !== 'ADMIN') setPetMode(false);
     if (identity.role === 'STUDENT') {
