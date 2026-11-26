@@ -429,7 +429,11 @@
             const scale = 64 / sprite.frameHeight;
             runner.style.width = `${sprite.frameWidth * scale}px`;
             runner.style.height = `${sprite.frameHeight * scale}px`;
-            runner.style.backgroundImage = `url("${sprite.data}")`;
+            const sheet = document.createElement('img');
+            sheet.className = 'pet-run-sheet';
+            sheet.alt = '';
+            sheet.src = `data:image/png;base64,${sprite.data}`;
+            runner.appendChild(sheet);
             arena.appendChild(runner);
             window.setTimeout(() => runner.remove(), 8800 + index * 420);
           });

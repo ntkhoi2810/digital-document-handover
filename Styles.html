@@ -1192,9 +1192,22 @@ details .check-option{margin-top:12px!important;padding:12px 14px}
 .pet-reduced-dog{display:none;position:absolute;right:calc(100% + 8px);bottom:0;width:66px;height:40px;overflow:hidden}
 .pet-reduced-dog .pet-art{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
 .pet-arena{position:fixed;inset:0;z-index:52;overflow:hidden;pointer-events:none}
-.pet-runner{position:absolute;bottom:calc(10px + env(safe-area-inset-bottom));left:0;background-repeat:no-repeat;background-size:800% 100%;image-rendering:pixelated;animation:pet-run-across 8.5s linear var(--pet-delay,0ms) both,pet-run-frames .64s steps(8,end) infinite}
-@keyframes pet-run-across{from{transform:translate3d(-112px,0,0)}to{transform:translate3d(calc(100vw + 112px),0,0)}}
-@keyframes pet-run-frames{from{background-position:0 0}to{background-position:100% 0}}
+.pet-runner{
+  position:absolute;
+  bottom:calc(10px + env(safe-area-inset-bottom));
+  left:0;
+  overflow:hidden;
+  animation:pet-run-across 8.5s linear var(--pet-delay,0ms) both;
+}
+.pet-run-sheet{
+  display:block;
+  width:800%;
+  height:100%;
+  image-rendering:pixelated;
+  animation:pet-run-frames .64s steps(8,end) infinite;
+}
+@keyframes pet-run-across{from{transform:translateX(-100%)}to{transform:translateX(100vw)}}
+@keyframes pet-run-frames{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 
 .modal{
   position:fixed;
