@@ -136,6 +136,11 @@
 
   <div id="modal" class="modal hidden" role="dialog" aria-modal="true"><div class="modal-panel"><button id="modal-close" class="modal-close" aria-label="Đóng">×</button><div id="modal-content"></div></div></div>
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+  <button id="pet-toggle" class="pet-toggle hidden" type="button" aria-label="Bật đàn chó" title="Bật đàn chó" aria-pressed="false">
+    <svg class="pet-toggle-icon" viewBox="0 0 32 32" aria-hidden="true"><ellipse cx="16" cy="21.5" rx="6.2" ry="5.7"/><ellipse cx="7.6" cy="13.2" rx="3.4" ry="4.4" transform="rotate(-25 7.6 13.2)"/><ellipse cx="15.5" cy="9.8" rx="3.5" ry="4.5"/><ellipse cx="23.3" cy="13.2" rx="3.4" ry="4.4" transform="rotate(25 23.3 13.2)"/></svg>
+    <span id="pet-reduced-dog" class="pet-reduced-dog" aria-hidden="true"></span>
+  </button>
+  <div id="pet-arena" class="pet-arena" aria-hidden="true"></div>
   <script>window.INITIAL_VIEW = <?!= JSON.stringify(initialView || '') ?>;</script>
   <?!= include('Scripts'); ?>
 </body>
